@@ -1,0 +1,20 @@
+// Copyright (C) 2024-2025 by Haguk Kim
+
+#pragma once
+
+#include "CoreMinimal.h"
+
+#include "Characters/BotCharacter.h"
+#include "LichBot.generated.h"
+
+/**
+ * 
+ */
+UCLASS()
+class PROJECTTR_API ALichBot : public ABotCharacter
+{
+	GENERATED_BODY()
+	
+public:
+	ALichBot(const FObjectInitializer& ObjectInitializer);
+};
