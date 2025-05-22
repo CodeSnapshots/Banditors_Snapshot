@@ -7,6 +7,7 @@
 
 #include "Core/TRMacros.h"
 #include "Core/TRUtils.h"
+#include "Core/TRCVar.h"
 #include "Core/ProjectTRGameModeBase.h"
 #include "Characters/Components/BaseCharacterMovementComponent.h"
 #include "Characters/FPSCharacter.h"
@@ -106,6 +107,10 @@ ABotCharacter::ABotCharacter(const FObjectInitializer& ObjectInitializer)
 			DropTokenClass = TokenClassFinder.Class;
 		}
 	}
+
+	// 봇의 경우 최적화를 위해 봇간 밀리 판정을 해제
+	HitObjectTypes.Empty();
+	HitObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_PlayerPawn));
 }
 
 void ABotCharacter::Deactivate()
@@ -143,7 +148,6 @@ void ABotCharacter::Activate()
 	{
 		AIController->StartAILogic();
 	}
-	TR_PRINT("ACTIVATE!");
 }
 
 TPair<FVector, FRotator> ABotCharacter::GetMuzzleInfo()
@@ -307,7 +311,12 @@ bool ABotCharacter::IsAimingAtTarget(const AActor* Target)
 		const FVector& LineEnd = LineStart + (TargetDist * MuzzleInfo.Get<1>().Vector().GetSafeNormal());
 		bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, LineStart, LineEnd, ECC_Projectile, TraceParams);
 
-		DrawDebugLine(World, LineStart, LineEnd, FColor::Red, true, -1, 0, 1.0f);
+#if WITH_EDITOR
+		if (CVarShowDebugShapes.GetValueOnGameThread())
+		{
+			DrawDebugLine(World, LineStart, LineEnd, FColor::Red, true, -1, 0, 1.0f);
+		}
+#endif
 
 		return !bHit;
 	}
@@ -471,11 +480,6 @@ void ABotCharacter::Server_OnDeathHandleLastAttacker(AGameCharacter* Attacker)
 					}
 				}
 			}
-		}
-		else
-		{
-			//TEMP
-			TR_PRINT("The dungeon level is in red mode, you cannot earn exp anymore!");
 		}
 	}
 	return;

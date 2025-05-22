@@ -20,40 +20,34 @@ APlayerTriggerVolume::APlayerTriggerVolume()
 
 void APlayerTriggerVolume::BeginPlay()
 {
+    Super::BeginPlay();
+
     // 서버의 경우에만 델리게이트 등록
     if (HasAuthority())
     {
-        OnActorBeginOverlap.AddDynamic(this, &APlayerTriggerVolume::Server_OnOverlapBegin);
-        OnActorEndOverlap.AddDynamic(this, &APlayerTriggerVolume::Server_OnOverlapEnd);
+        OnActorBeginOverlap.AddDynamic(this, &APlayerTriggerVolume::Server_OverlapEntered);
+        OnActorEndOverlap.AddDynamic(this, &APlayerTriggerVolume::Server_OverlapLeft);
     }
 }
 
-void APlayerTriggerVolume::Server_OnOverlapBegin(AActor* OverlappedActor, AActor* OtherActor)
+void APlayerTriggerVolume::Server_OverlapEntered(AActor* OverlappedActor, AActor* OtherActor)
 {
     if (!HasAuthority()) return;
     if (OtherActor && (OtherActor != this))
     {
-        TR_PRINT_FSTRING("Overlapped with %s", *OtherActor->GetName());
         AFPSCharacter* Player = Cast<AFPSCharacter>(OtherActor);
         if (IsValid(Player))
         {
             Server_OnPlayerOverlapBegin(Player);
         }
     }
-
-    ///////////TESTING
-    if (IsAllPlayerOverlapped())
-    {
-        TR_PRINT("All player overlapped!");
-    }
 }
 
-void APlayerTriggerVolume::Server_OnOverlapEnd(AActor* OverlappedActor, AActor* OtherActor)
+void APlayerTriggerVolume::Server_OverlapLeft(AActor* OverlappedActor, AActor* OtherActor)
 {
     if (!HasAuthority()) return;
     if (OtherActor && (OtherActor != this))
     {
-        TR_PRINT_FSTRING("Overlap ended with %s", *OtherActor->GetName());
         AFPSCharacter* Player = Cast<AFPSCharacter>(OtherActor);
         if (IsValid(Player))
         {

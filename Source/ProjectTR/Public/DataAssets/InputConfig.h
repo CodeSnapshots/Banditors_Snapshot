@@ -53,7 +53,13 @@ public:
     TObjectPtr<UInputAction> DuckAction;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    TObjectPtr<UInputAction> SlideAction;
+    TObjectPtr<UInputAction> DescendAction;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    TObjectPtr<UInputAction> AscendAction;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    TObjectPtr<UInputAction> DebugAction;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     TObjectPtr<UInputAction> TauntAction;

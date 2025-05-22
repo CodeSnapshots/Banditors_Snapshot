@@ -269,7 +269,7 @@ class PROJECTTR_API UStatusEffect : public UReplicatedObject
 	}
 
 public:
-	// TODO: 현재는 레벨 트랜지션 사이에 StatusEffect는 유지되지 않음.
+	// NOTE: 현재는 레벨 트랜지션 사이에 StatusEffect는 유지되지 않음.
 	// InvObject 내에 종속된 경우 유지되는 것처럼 보이지만, 이건 사실 인벤토리 export/import 과정을 통해 다시 복구되는 것에 불과함
 	// 즉 그 외의 방법으로 획득한 상태이상 (일시적 중독, 화염 데미지 등)은 레벨 트랜지션 과정에서 삭제됨.
 	void ChangeOuterRecursive(UObject* NewOuter);

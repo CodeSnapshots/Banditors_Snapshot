@@ -30,34 +30,30 @@ bool ATRSoul::RestoreFromItemData(UItemData* Data)
 	if (!HasAuthority())
 	{
 		// 클라이언트는 아무 것도 복구하지 않음
-		// TODO: 만약 클라에 복구해야 할 값이 생길 경우 현재 코드 블록에 진입하기 이전에 처리를 완료하게 작성하면 됨
+		// 만약 클라에 복구해야 할 값이 생길 경우 현재 코드 블록에 진입하기 이전에 처리를 완료하게 작성하면 됨
 		UE_LOG(LogTemp, Warning, TEXT("Client does not have anything to restore from soul item data. This is a normal behaviour."), *(Data->GetName()));
 		return true;
 	}
-	if (!IsValid(SoulData->GetCachedCharacterClass()) || !IsValid(SoulData->GetCachedController()))
+	if (!IsValid(SoulData->GetCachedController()))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s has invalid cached data! Aborting."), *(Data->GetName()));
 		return false;
 	}
 
 	// 복구 로직
-	if (SoulData->GetCachedCharacterClass())
-	{
-		Server_SetCharacterClass(SoulData->GetCachedCharacterClass());
-	}
 	if (SoulData->GetCachedController())
 	{
 		Server_SetController(SoulData->GetCachedController());
 	}
-	Server_SetInstanceData(SoulData->GetCachedInstanceData());
 	return true;
 }
 
 bool ATRSoul::IsReadyToRespawnPlayer() const
 {
-	if (!IsValid(Server_CharacterClass) || !IsValid(Server_Controller))
+	// TODO: 소울이 특정인이 아닌 아무 사람이나 살릴 수 있게 하기
+	if (!IsValid(Server_Controller))
 	{
-		UE_LOG(LogTemp, Error, TEXT("IsReadyToRespawnPlayer - Lacking necessary data! %d %d"), (Server_CharacterClass != nullptr), (Server_Controller != nullptr));
+		UE_LOG(LogTemp, Error, TEXT("IsReadyToRespawnPlayer - Lacking necessary data! %d"), (Server_Controller != nullptr));
 		return false;
 	}
 

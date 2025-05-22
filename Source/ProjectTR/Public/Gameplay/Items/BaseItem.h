@@ -65,9 +65,6 @@ public:
 	// NOTE: 이 함수는 아이템 정보를 변형시킬 수 있으므로 특수한 경우를 제외하면 가급적 아이템 파괴 직전에만 호출하는 것이 권장된다
 	void CacheBeforeDestruction(UObject* NewOuter);
 
-	UFUNCTION(BlueprintCallable, Category = "Action")
-	virtual void ThrowInDirection(const FVector& Direction);
-
 #pragma region /** Networking */
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override
 	{
@@ -340,10 +337,5 @@ protected:
 	// NOTE: 이 값은 클라이언트의 동적 메쉬에서는 즉각적으로 적용되지 않을 수 있다
 	// 이 경우 동적메쉬들의 레플리케이션이 끝나는 대로 값이 적용된다
 	bool bItemVisibility = true;
-#pragma endregion
-
-#pragma region /** Debug */
-public:
-	void PrintItemDataTestValue();
 #pragma endregion
 };

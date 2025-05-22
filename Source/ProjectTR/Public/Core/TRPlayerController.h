@@ -37,6 +37,9 @@ public:
 	// 폰 Possession이 변경될 경우 서버와 클라 모두에게서 호출된다
 	UFUNCTION()
 	void Local_OnPawnPossessionChange(APawn* OldPosPawn, APawn* NewPosPawn);
+
+	UFUNCTION(Client, Reliable)
+	void Client_CancelAllDragAndDropRPC();
 #pragma endregion
 
 #pragma region /** Level transition */
@@ -60,8 +63,8 @@ public:
 	// 로컬에서 바로 RPC를 호출하는 것은 지양할 것
 	// Duration이 음수인 경우 1초로 설정됨
 	UFUNCTION(Client, Reliable)
-	void Local_DrawGlobalPingRPC(UPrimitiveComponent* TargetComp, float Duration, bool bIsServerRequest = false);
-	void Local_DrawOutline(UPrimitiveComponent* TargetComp, bool bIsServerRequest);
+	void Local_DrawGlobalPingRPC(UPrimitiveComponent* TargetComp, float Duration, int32 StencilValue, bool bIsServerRequest = false);
+	void Local_DrawOutline(UPrimitiveComponent* TargetComp, bool bIsServerRequest, int32 StencilValue);
 	void Local_EraseOutline(UPrimitiveComponent* TargetComp, bool bIsServerRequest);
 
 protected:

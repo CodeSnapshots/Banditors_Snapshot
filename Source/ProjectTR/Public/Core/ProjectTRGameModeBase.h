@@ -45,6 +45,9 @@ public:
 	// 이미 동일한 정보로 업데이트 한 내역이 있다면 불필요한 네트워크 부하를 막기 위해 아무 것도 처리하지 않는다
 	void UpdatePlayerNames();
 
+	// 관전에 영향을 미칠 수 있는 어떤 변경사항이 발생한 경우 사용할 수 있다
+	void RefreshAllSpectators();
+
 protected:
 	// 경로 불문하고 현재 스폰된 봇들의 수; 보스에는 해당되지 않는다
 	// 델리게이트를 사용해 파괴시 감소하는 형태로 관리된다
@@ -224,6 +227,9 @@ public:
 	// 층의 깊이가 주어졌을 때 그 층에 해당하는 레벨의 이름을 반환한다
 	FString GetLevelNameOfDepth(int32 TargetDepth);
 
+	// 캐릭터 생성 시 (트랜지션 후) 클래스 결정 로직
+	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
+
 	// Getters
 	int32 GetCurrentDungeonDepth() const { return DungeonDepth; }
 
@@ -274,7 +280,7 @@ public:
 	TArray<class AFPSCharacter*> GetInGamePlayerCharacters(bool bIgnoreDead);
 
 	// 특정 레벨의 주어진 위치에 주어진 클래스 인스턴스를 새로 스폰하고 컨트롤러를 Possess 시킨다
-	// 클래스 타입이 주어지지 않은 경우 이 게임모드에 할당된 Default Pawn Class를 사용한다
+	// 클래스 타입이 invalid 한 경우 이 게임모드에 할당된 Default Pawn Class를 사용한다
 	// 인스턴스 정보가 주어진 경우 해당 정보를 사용해 스폰된 인스턴스를 편집한다
 	// NOTE: 컨트롤러가 현재 Possess 중인 Pawn이 있을 경우 이를 Destroy하므로, 기존 폰을 살려야 할 경우 먼저 UnPossess 시킨 후 호출해야 한다
 	void RespawnPlayer(class ATRPlayerController* Controller, FTransform RespawnTransform, TSubclassOf<class AFPSCharacter> CharacterClass, FGameCharacterInstanceData InstanceData, bool bRegenHealthAndLife);
@@ -290,7 +296,7 @@ public:
 	void UpdateGameOverStatus();
 
 	// 게임 오버 시 처리 로직
-	void OnGameOver();
+	void OnGameOverStateChanged();
 
 	/* Getters */
 	// 게임 오버되었는지 확인한다
@@ -643,9 +649,6 @@ public:
 #pragma region /** UI */
 public:
 	// 모든 연결된 호스트에게 핑잉을 처리한다
-	void PingTargetOnAllHosts(UPrimitiveComponent* TargetComp, float Duration);
-#pragma endregion
-
-#pragma region /** Debug */
+	void PingTargetOnAllHosts(UPrimitiveComponent* TargetComp, float Duration, int32 StencilValue);
 #pragma endregion
 };

@@ -3,6 +3,7 @@
 
 #include "Items/GunParts/GPC_RC_Shotgun3.h"
 #include "Core/TRMacros.h"
+#include "Gameplay/Damage/DamageTypePhysical.h"
 
 UGPC_RC_Shotgun3::UGPC_RC_Shotgun3()
 {
@@ -10,8 +11,10 @@ UGPC_RC_Shotgun3::UGPC_RC_Shotgun3()
 	USkeletalMesh* Asset = MeshAsset.Object;
 	SetupMeshComp(nullptr, Asset);
 
-	// TEMP TODO FIXME
-	bOverrideGunType = true;
-	GunTypeValue = EWeaponFireType::WFT_PROJECTILE;
-	DeltaFireInterval = 0.65f;
+	// TEMP: Tier 1
+	bOverrideDamageType = true;
+	DamageTypeValue = UDamageTypePhysical::StaticClass();
+
+	DeltaMissileSpawnedPerShot = 2;
+	DeltaDmgEnemyDirect = 15.0f;
 }

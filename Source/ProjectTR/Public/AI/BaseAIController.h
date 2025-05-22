@@ -42,7 +42,7 @@ protected:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result) override;
 	
-#pragma region /** Perception */
+#pragma region /** Logic */
 public:
 	// 현재 타깃이 유효한지를 재확인해 상태를 업데이트한다
 	// 만약 타깃이 더이상 유효하지 않다면 그에 맞는 로직을 실행한다
@@ -67,6 +67,7 @@ public:
 
 	// 타깃의 마지막 목격 위치를 설정한다
 	// NOTE: 정확히는 마지막 목격된 위치와 근접한 걸을 수 있는 네브메쉬 공간
+	// NOTE: 우선순위가 타깃 이하, 공격자 이상이기 때문에, 일종의 어그로성 위치를 지정하기 위해 사용 가능하다 (호드 러시)
 	void SetTargetLastLocationOf(AActor* Target);
 	
 	// 타깃의 마지막 목격 정보를 초기화한다
@@ -92,15 +93,18 @@ public:
 
 	// Getter
 	TWeakObjectPtr<AActor> GetCurrentTarget() { return CurrentTarget; }
-	int32 GetConsecutiveMovementFailure() { return ConsecutiveMovementFailure; }
+	int32 GetConsecutivePatrolFailure() { return ConsecutivePatrolFailure; }
+
+	// Setters
+	void IncrementConsecutivePatrolFailure() { ConsecutivePatrolFailure++; }
 
 protected:
 	// 인지 컴포넌트 이벤트
 	UFUNCTION()
-	void UpdatePerception(const TArray<AActor*>& Actors);
+	void Server_OnUpdatePerception(const TArray<AActor*>& Actors);
 
 	UFUNCTION()
-	void UpdateTargetPerception(AActor* Actor, FAIStimulus Stimulus);
+	void Server_OnUpdateTargetPerception(AActor* Actor, FAIStimulus Stimulus);
 
 	// 인지 정보가 업데이트 되었을 때의 로직을 처리한다
 	virtual void OnPerceptionUpdate(const TArray<AActor*>& Actors);
@@ -138,8 +142,8 @@ protected:
 	// Level Persistent - 트랜지션 발생 시 액터는 파괴되므로 WeakPtr가 Invalidate 됨
 	TWeakObjectPtr<AActor> CurrentTarget = nullptr;
 
-	// 연속으로 이동에 실패한 횟수
-	int32 ConsecutiveMovementFailure = 0;
+	// 연속으로 Patrol 이동에 실패한 횟수
+	int32 ConsecutivePatrolFailure = 0;
 #pragma endregion
 
 protected:
@@ -154,7 +158,4 @@ protected:
 	// Level Persistent
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI")
 	TObjectPtr<class UAIPerceptionComponent> AIPerception = nullptr;
-
-public:
-	void PrintDebug() const;
 };

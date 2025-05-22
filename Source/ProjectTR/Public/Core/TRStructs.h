@@ -39,8 +39,6 @@ public:
 	UPROPERTY()
 	bool bHasDiedCached = false;
 
-	// TODO: Melee Damage 및 부위별 멀티플라이어
-
 	// InventoryComponent
 	UPROPERTY()
 	TArray<class UInvObject*> InvObjectValues;
@@ -162,4 +160,20 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 StockTier = 1;
+};
+
+USTRUCT(BlueprintType)
+struct FLocalSyncData
+{
+	GENERATED_BODY()
+
+	FLocalSyncData() {}
+	FLocalSyncData(float Pitch)
+	{
+		LocalViewPitch = Pitch;
+	}
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float LocalViewPitch;
 };

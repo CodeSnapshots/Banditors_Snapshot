@@ -31,26 +31,14 @@ public:
 	// 저장되어있는 플레이어 컨트롤러가 이미 AFPSCharacter 하위 인스턴스를 Possess중인 경우 false를 반환한다
 	bool IsReadyToRespawnPlayer() const;
 
-	/* Getters */
-	TSubclassOf<AFPSCharacter> Server_GetCharacterClass() const { return Server_CharacterClass; }
 	class ATRPlayerController* Server_GetController() const { return Server_Controller; }
-	const FGameCharacterInstanceData& Server_GetInstanceData() const { return Server_InstanceData; }
-
-	/* Setters */
-	void Server_SetCharacterClass(TSubclassOf<class AFPSCharacter> Class) { Server_CharacterClass = Class; }
 	void Server_SetController(class ATRPlayerController* Controller) { Server_Controller = Controller; }
-	void Server_SetInstanceData(const FGameCharacterInstanceData Data) { Server_InstanceData = Data; }
 
 protected:
-	// 부활에 쓰이는 캐릭터 클래스
-	UPROPERTY(BlueprintReadOnly)
-	TSubclassOf<class AFPSCharacter> Server_CharacterClass = nullptr;
-
 	// 부활 대상 플레이어
 	UPROPERTY(BlueprintReadOnly)
 	class ATRPlayerController* Server_Controller = nullptr;
 
-	// 부활 시 사용할 복구 데이터
-	UPROPERTY(BlueprintReadOnly)
-	FGameCharacterInstanceData Server_InstanceData;
+	// NOTE: 영혼석 자체는 인스턴스 정보를 저장하지 않음
+	// PlayerState에 정보가 저장됨
 };

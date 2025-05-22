@@ -5,6 +5,8 @@
 #include "Math/UnrealMathUtility.h"
 
 #include "Core/TRPlayerController.h"
+#include "Core/TRMacros.h"
+#include "Core/TRCVar.h"
 #include "Characters/GameCharacter.h"
 #include "Characters/FPSCharacter.h"
 #include "UI/TRHUDWidget.h"
@@ -160,9 +162,12 @@ void UExpComponent::LevelUp()
 		FPSOwner->Server_OnLevelUp(Level);
 	}
 
-	/////TESTING
-	FString DebugString = FString::Printf(TEXT("Level up! CurrLevel: %d Total exp: %d Exp required for next lvl: %d"), GetLevel(), GetCurrTotalExp(), GetCurrExpReqToLvlup());
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, DebugString);
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT_ARGS("Level up! CurrLevel: %d Total exp: %d Exp required for next lvl: %d", GetLevel(), GetCurrTotalExp(), GetCurrExpReqToLvlup());
+	}
+#endif
 }
 
 void UExpComponent::OnRep_Experience()

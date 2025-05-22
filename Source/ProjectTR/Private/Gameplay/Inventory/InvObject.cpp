@@ -96,7 +96,6 @@ FInvObjSize UInvObject::GetDimensions() const
 
 UMaterialInstance* UInvObject::GetCurrIcon() const
 {
-    // TODO: Rotation
     return GetIcon();
 }
 

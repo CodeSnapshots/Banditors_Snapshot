@@ -10,7 +10,11 @@ UGPC_BR_Sniper6::UGPC_BR_Sniper6()
 	USkeletalMesh* Asset = MeshAsset.Object;
 	SetupMeshComp(nullptr, Asset);
 
-	// TEMP TODO FIXME
-	DeltaDmgEnemyDirect = 42.0f;
-	DeltaDmgAllyDirect = -15.0f;
+	// TEMP: Tier 1
+	bOverrideFireMode = true;
+	FireModeValue = EWeaponFireMode::WFM_AUTO;
+	DeltaFireInterval = 0.5f;
+	DeltaMissileSpawnedPerShot = 1;
+	DeltaDmgEnemyDirect = 15.f;
+	DeltaRecoilOffsetRange = 1.0f;
 }

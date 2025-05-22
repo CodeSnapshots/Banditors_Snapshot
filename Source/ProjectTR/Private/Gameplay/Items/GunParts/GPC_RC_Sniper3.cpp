@@ -3,6 +3,7 @@
 
 #include "Items/GunParts/GPC_RC_Sniper3.h"
 #include "Core/TRMacros.h"
+#include "Gameplay/Damage/DamageTypePhysical.h"
 
 UGPC_RC_Sniper3::UGPC_RC_Sniper3()
 {
@@ -10,8 +11,10 @@ UGPC_RC_Sniper3::UGPC_RC_Sniper3()
 	USkeletalMesh* Asset = MeshAsset.Object;
 	SetupMeshComp(nullptr, Asset);
 
-	// TEMP TODO FIXME
-	bOverrideGunType = true;
-	GunTypeValue = EWeaponFireType::WFT_HITSCAN;
-	DeltaFireInterval = -0.45f;
+	// TEMP: Tier 1
+	bOverrideDamageType = true;
+	DamageTypeValue = UDamageTypePhysical::StaticClass();
+
+	DeltaMissileSpawnedPerShot = 0;
+	DeltaDmgEnemyDirect = 10.0f;
 }

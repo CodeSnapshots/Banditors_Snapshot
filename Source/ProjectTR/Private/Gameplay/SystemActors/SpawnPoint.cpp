@@ -3,6 +3,7 @@
 
 #include "SystemActors/SpawnPoint.h"
 #include "Core/TRUtils.h"
+#include "Core/TRCVar.h"
 
 ASpawnPoint::ASpawnPoint()
 {
@@ -36,7 +37,10 @@ void ASpawnPoint::OnConstruction(const FTransform& Transform)
 	Super::OnConstruction(Transform);
 
 #if WITH_EDITOR
-	DrawDebugSphere(GetWorld(), GetActorLocation(), Radius, 32, FColor::Green, false, 0.1f);
+	if (CVarShowDebugShapes.GetValueOnGameThread())
+	{
+		DrawDebugSphere(GetWorld(), GetActorLocation(), Radius, 32, FColor::Green, false, 0.1f);
+	}
 #endif
 }
 

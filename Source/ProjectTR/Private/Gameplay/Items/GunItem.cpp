@@ -235,12 +235,15 @@ void AGunItem::OnDeployerStatChanged()
 	// (그 외 단순 소지중인 invobject들의 경우에는 그 아이템 고유 스테이터스만 보여주는 방식)
 }
 
+void AGunItem::OnActorSpawnedFromZero()
+{
+	// MaxAmmo만큼 Ammo refill
+	Server_SetCurrAmmo(GetStat_MaxAmmo(GetItemDeployer()/*대부분의 상황에서 nullptr*/));
+}
+
 void AGunItem::Server_InitGunParts()
 {
 	if (!HasAuthority()) return;
-
-	// 레플리케이션 해야 할 파츠의 수 설정
-	GunPartsToReplicateCount = GetGunParts().Num();
 
 	// 메쉬 변경 및 메쉬 트리 빌드
 	SetMeshToReceiver();
@@ -525,7 +528,7 @@ const FExplosionInfo AGunItem::GetStat_GunExplosionInfo(class AGameCharacter* Wi
 	GunExplosionInfoValue.MinExplosionMultiplier = GetStat_GunMinExplosionMultiplier(Wielder);
 	GunExplosionInfoValue.DmgMultOnExplInstigator = GetStat_GunDmgMultOnExplInstigator(Wielder);
 	GunExplosionInfoValue.BaseImpactStrength = GetStat_GunExplImpactStrength(Wielder);
-	GunExplosionInfoValue.ExplosionDamageType = GetStat_DamageType(Wielder); // TODO: Explosion damage type 따로 구분
+	GunExplosionInfoValue.ExplosionDamageType = GetStat_DamageType(Wielder); // 총기 데미지 타입을 그대로 사용; 필요 시 수정
 	GunExplosionInfoValue.ExplosionVFXEnum = ExplosionVFXEnum;
 	GunExplosionInfoValue.VFXRadiusConstant = ExplosionVFXRadiusConstant;
 
@@ -960,7 +963,7 @@ void AGunItem::InitGunStats()
 
 void AGunItem::ValidateStats()
 {
-	// 최소한 1 이상의 최대장탄을 가져야 함
+	// 최소한 0 이상의 최대장탄을 가져야 함
 	SetStat_MaxAmmo(FMath::Max(MaxAmmo, GunConst::GUN_MIN_MAXAMMO));
 
 	// 탄약을 음수만큼 소비할 수 없음
@@ -968,6 +971,9 @@ void AGunItem::ValidateStats()
 
 	// 최소 하나 이상의 대상을 발사
 	SetStat_MissileSpawnedPerShot(FMath::Max(MissileSpawnedPerShot, GunConst::GUN_MIN_MISSILEPERSHOT));
+
+	// 연사 주기는 일정 값보다 커야함 (단일 틱 길이보다 작아질 수 없음)
+	SetStat_FireInterval(FMath::Max(FireInterval, GunConst::GUN_MIN_FIRE_INTERVAL));
 
 	// 게이지 범위 지정
 	GunGauge = FMath::Clamp(GunGauge, GunConst::GUN_MIN_GAUGE, GunConst::GUN_MAX_GAUGE);
@@ -993,8 +999,6 @@ void AGunItem::ValidateStats()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ValidateStats - Projectile cannot pierce pawns while being able to bounce. Check TRProjMovementComponent.h for details."));
 	}
-
-	// TODO: 필요 시 추가
 }
 
 void AGunItem::Local_ApplyGunStats()
@@ -1044,13 +1048,13 @@ void AGunItem::Local_ApplyGunStats()
 TArray<UGunPartComponent*> AGunItem::GetGunParts()
 {
 	TArray<UGunPartComponent*> GunPartsArray;
-	if (ReceiverComp) GunPartsArray.Add(ReceiverComp);
-	if (BarrelComp) GunPartsArray.Add(BarrelComp);
-	if (GripComp) GunPartsArray.Add(GripComp);
-	if (MagazineComp) GunPartsArray.Add(MagazineComp);
-	if (SightComp) GunPartsArray.Add(SightComp);
-	if (StockComp) GunPartsArray.Add(StockComp);
-	if (MuzzleComp) GunPartsArray.Add(MuzzleComp);
+	if (GetReceiver()) GunPartsArray.Add(GetReceiver());
+	if (GetBarrel()) GunPartsArray.Add(GetBarrel());
+	if (GetGrip()) GunPartsArray.Add(GetGrip());
+	if (GetMagazine()) GunPartsArray.Add(GetMagazine());
+	if (GetSight()) GunPartsArray.Add(GetSight());
+	if (GetStock()) GunPartsArray.Add(GetStock());
+	if (GetMuzzle()) GunPartsArray.Add(GetMuzzle());
 	return GunPartsArray;
 }
 
@@ -1163,19 +1167,15 @@ void AGunItem::OnRep_GunPartComp()
 {
 	if (!HasAuthority())
 	{
-		// 모든 파츠를 다 수신했다면 모든 동적 오브젝트가 최신화된 상태이므로 후처리를 수행한다
-		if (GetGunParts().Num() >= GunPartsToReplicateCount)
+		bClient_AllPartsReplicated = true;
+
+		Client_InitGunParts();
+
+		// 현재 장착중인 경우 파츠에 의해 애니메이션 등이 변경될 수 있으므로 재호출이 필요
+		AGameCharacter* Deployer = GetItemDeployer();
+		if (Deployer && Deployer->EquipSystem)
 		{
-			bClient_AllPartsReplicated = true;
-
-			Client_InitGunParts();
-
-			// 현재 장착중인 경우 파츠에 의해 애니메이션 등이 변경될 수 있으므로 재호출이 필요
-			AGameCharacter* Deployer = GetItemDeployer();
-			if (Deployer && Deployer->EquipSystem)
-			{
-				Deployer->EquipSystem->Local_OnCurrWeaponActorUpdated();
-			}
+			Deployer->EquipSystem->Local_OnCurrWeaponActorUpdated();
 		}
 	}
 }
@@ -1184,18 +1184,18 @@ void AGunItem::SetRelativeAttachTransform()
 {
 	if (ShouldHoldWithBothArms())
 	{
-		if (GripComp)
+		if (GetGrip())
 		{
-			this->AttachRelativeLocation = GripComp->GetRelativeLocation();
+			this->AttachRelativeLocation = GetGrip()->GetRelativeLocation();
 		}
 		this->AttachRelativeLocation += FVector(-20.0f, 0.0f, 5.0f);
 		this->AttachRelativeRotation = FRotator(0.0f, 90.0f, 10.0f);
 	}
 	else
 	{
-		if (GripComp)
+		if (GetGrip())
 		{
-			this->AttachRelativeLocation = GripComp->GetRelativeLocation();
+			this->AttachRelativeLocation = GetGrip()->GetRelativeLocation();
 		}
 		this->AttachRelativeLocation += FVector(-20.0f, 7.0f, 8.0f);
 		this->AttachRelativeRotation = FRotator(0.0f, 70.0f, 8.0f);
@@ -1254,7 +1254,7 @@ void AGunItem::ConstructMeshTree()
 	// 머즐
 	AttachToPart(GetBarrel(), GetMuzzle(), MUZZLE_SOCKET);
 	// 사이트
-	AttachToPart(GetReceiver(), GetSight(), SIGHT_SOCKET); // TODO: 배럴 사이트로 부착할 수도 있음
+	AttachToPart(GetReceiver(), GetSight(), SIGHT_SOCKET); // NOTE: 배럴 사이트로 부착할 수도 있음
 	// 스톡
 	AttachToPart(GetReceiver(), GetStock(), STOCK_SOCKET); // NOTE: 스켈레톤, 스태틱 둘 다 허용
 	// 어태치먼트

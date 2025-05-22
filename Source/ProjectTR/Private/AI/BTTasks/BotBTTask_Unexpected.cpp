@@ -27,6 +27,5 @@ EBTNodeResult::Type UBotBTTask_Unexpected::ExecuteTask(UBehaviorTreeComponent& O
 	}
 
 	// 태스크 종료
-	FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 	return EBTNodeResult::Succeeded;
 }

@@ -6,13 +6,6 @@
 AMimicBot::AMimicBot(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UBaseCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
-	// 미믹의 경우 회전 속도를 높임
-	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
-	if (MoveComp)
-	{
-		MoveComp->RotationRate = FRotator(0, 360, 0);
-	}
-
 	// 소켓 네임 수정
 	HeadSockName = "mimic_top";
 	TorsoSockName = "mimic_body";

@@ -12,6 +12,7 @@
 #include "RecoilAnimationComponent.h"
 
 #include "Core/ProjectTRGameModeBase.h"
+#include "Core/TRCVar.h"
 #include "Characters/TRPlayerState.h"
 #include "Characters/Components/HitboxComponent.h"
 #include "Characters/Components/OuterHitboxComponent.h"
@@ -126,6 +127,11 @@ AGameCharacter::AGameCharacter(const FObjectInitializer& ObjectInitializer)
 	// 장착품
 	EquipSystem = CreateDefaultSubobject<UEquipSystem>(TEXT("Equipments"));
 	check(EquipSystem != nullptr);
+
+	// 밀리 공격 가능 타입 추가
+	HitObjectTypes.Empty();
+	HitObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_PlayerPawn));
+	HitObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_BotPawn));
 }
 
 // Called when the game starts or when spawned
@@ -408,7 +414,7 @@ void AGameCharacter::Server_ProcessPickup(ABaseItem* TargetItem)
 			{
 				if (TargetItem->OnItemPickup(InvComponent))
 				{
-					// TODO: 픽업 성공 시 별도 로직 필요 시 추가
+					// 픽업 성공 시 별도 로직 필요 시 추가
 				}
 			}
 		}
@@ -434,7 +440,7 @@ ABaseItem* AGameCharacter::ReachItem()
 
 void AGameCharacter::ProcessBeforeItemPickup(ABaseItem* ReachedItem)
 {
-	// TODO: 로직 필요 시 추가
+	// 로직 필요 시 추가
 	// NOTE: FPSCharacter 로직 참고
 }
 
@@ -852,7 +858,7 @@ float AGameCharacter::TakeDamage(float DamageTaken, FDamageEvent const& DamageEv
 	// 데미지 값이 0 초과일때 공격자 콜백 (적대 관계 무관)
 	if (IsValid(DamageChar) && ActualDamage > 0)
 	{
-		DamageChar->Server_OnDamageInflictedToTarget(this, DamageEvent, ActualDamage, bIsKilledByDamage, false/* TODO: DamageType 기반 크리티컬 판정 */);
+		DamageChar->Server_OnDamageInflictedToTarget(this, DamageEvent, ActualDamage, bIsKilledByDamage, false);
 	}
 	return ActualDamage;
 }
@@ -885,16 +891,10 @@ void AGameCharacter::Server_SetHealthPointTo(const int32 Value)
 	{
 		HealthPoint = FMath::Clamp<int32>(Value, 0, GetStat_MaxHealth());
 
-		/////TESTING
-		FString Message = FString::Printf(TEXT("%s - %d hp"), *GetFName().ToString(), HealthPoint);
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, Message);
-		/////
-
 		if (HealthPoint <= 0)
 		{
 			HealthPoint = 0;
 			Server_OnHealthReachedZeroOrLower();
-			UE_LOG(LogTemp, Warning, TEXT("Server_OnHealthReachedZeroOrLower"));
 		}
 
 		// 서버의 경우 수동 호출
@@ -911,9 +911,6 @@ void AGameCharacter::OnLifeUpdate()
 {
 	if (HasAuthority())
 	{
-		FString Message = FString::Printf(TEXT("%s - life %d."), *GetFName().ToString(), bHasDied);
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, Message);
-
 		if (bHasDied)
 		{
 			Server_OnDeath();
@@ -940,6 +937,14 @@ void AGameCharacter::Multicast_OnDeathRPC_Implementation()
 
 void AGameCharacter::Server_ProcessDeath()
 {
+	// 오닝 컨트롤러 로직
+	ATRPlayerController* TRPC = Cast<ATRPlayerController>(GetController());
+	if (TRPC)
+	{
+		// 크래시 방지
+		TRPC->Client_CancelAllDragAndDropRPC();
+	}
+
 	// 마지막 공격자 대상 로직 처리
 	AGameCharacter* LastAttacker = Server_GetLastAttackedByAndDeref();
 	if (IsValid(LastAttacker))
@@ -957,6 +962,14 @@ void AGameCharacter::Server_ProcessDeath()
 
 	// 래그돌화
 	Server_Ragdollfy();
+
+	// 사망 직후 상태 캐시 기록
+	// 인벤토리는 이미 다 드랍된 상태임에 유의
+	ATRPlayerState* TRPS = GetPlayerState<ATRPlayerState>();
+	if (TRPS)
+	{
+		TRPS->Server_CachePlayerInstanceData();
+	}
 	return;
 }
 
@@ -1056,6 +1069,32 @@ void AGameCharacter::ProcessMeleeAtk(AGameCharacter* Target, const FHitResult& M
 	ModifiedHitRes.TraceStart = this->GetActorLocation();
 
 	UGameplayStatics::ApplyPointDamage(Target, Damage, ModifiedHitRes.ImpactNormal, ModifiedHitRes, GetController(), this, MeleeDamageType);
+}
+
+bool AGameCharacter::TraceMelee(FHitResult& out_HitResult, FVector StartLocation, FVector EndLocation, bool bDrawDebug)
+{
+	if (!GetMesh())
+	{
+		UE_LOG(LogTemp, Error, TEXT("TraceMelee - Invalid mesh!"));
+		return false;
+	}
+
+	TArray<AActor*> ActorsToIgnore;
+	//ActorsToIgnore.Add(MeshComp->GetOwner()); // bIgnoreSelf = true 설정 시 필요 없음
+
+	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
+		this, 
+		StartLocation,
+		EndLocation,
+		MeleeSphereRadius, 
+		HitObjectTypes, 
+		false, 
+		ActorsToIgnore, 
+		bDrawDebug ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None,
+		out_HitResult,
+		1.0f
+	);
+	return bHit;
 }
 
 void AGameCharacter::Multicast_PlayItemFxRPC_Implementation(bool bIsPrimary, APlayerController* InvokeHost)
@@ -1180,7 +1219,6 @@ TPair<FVector, FRotator> AGameCharacter::GetHandPointInfo()
 
 TPair<FVector, FRotator> AGameCharacter::GetMuzzleInfo()
 {
-	// TODO: AI의 머즐 로직 제작
 	UE_LOG(LogTemp, Error, TEXT("Unable to get MuzzleInfo!"));
 	return TPair<FVector, FRotator>();
 }
@@ -1284,13 +1322,11 @@ void AGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 void AGameCharacter::Server_OnRoomEnter(ARoomLevel* RoomLevel)
 {
 	LastEnteredRoomLevel = RoomLevel;
-	//TR_PRINT_FSTRING("Server_OnRoomEnter - %s", *(GetName()));
 }
 
 void AGameCharacter::Server_OnRoomExit(ARoomLevel* RoomLevel)
 {
 	// Exit 시 LastEnteredRoom을 수정하진 않는다
-	//TR_PRINT_FSTRING("Server_OnRoomExit - %s", *(GetName()));
 }
 
 ARoomLevel* AGameCharacter::GetLastEnteredRoomLevel() const
@@ -1302,8 +1338,7 @@ ARoomLevel* AGameCharacter::GetLastEnteredRoomLevel() const
 
 void AGameCharacter::Multicast_Roll_Implementation(float Forward, float Right)
 {
-	TR_PRINT("Multicast_Roll()");
-	// TODO
+	// 필요 시 추가
 }
 
 UAnimMontage* AGameCharacter::GetDeployAnimMontage(EHumanoidWeaponState WeaponState)
@@ -1502,11 +1537,15 @@ void AGameCharacter::ActivateDetailedHitbox()
 		DetailedHitbox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	}
 
-	//////////////TEMP
-	/*for (UHitboxComponent* DetailedHitbox : DetailColComponents)
+#if WITH_EDITOR
+	if (CVarShowDebugShapes.GetValueOnGameThread())
 	{
-		DrawDebugBox(GetWorld(), DetailedHitbox->GetComponentLocation(), DetailedHitbox->GetScaledBoxExtent(), DetailedHitbox->GetComponentQuat(), FColor::Cyan, false, 5.0f);
-	}*/
+		for (UHitboxComponent* DetailedHitbox : DetailColComponents)
+		{
+			DrawDebugBox(GetWorld(), DetailedHitbox->GetComponentLocation(), DetailedHitbox->GetScaledBoxExtent(), DetailedHitbox->GetComponentQuat(), FColor::Cyan, false, 5.0f);
+		}
+	}
+#endif
 }
 
 void AGameCharacter::CacheHitboxDeltaRelativeTransform()
@@ -1549,12 +1588,6 @@ void AGameCharacter::DeactivateDetailedHitbox()
 		DetailedHitbox->Deactivate();
 		DetailedHitbox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
-
-	//////////////TEMP
-	/*for (UHitboxComponent* DetailedHitbox : DetailColComponents)
-	{
-		DrawDebugBox(GetWorld(), DetailedHitbox->GetComponentLocation(), DetailedHitbox->GetScaledBoxExtent(), DetailedHitbox->GetComponentQuat(), FColor::Red, false, 5.0f);
-	}*/
 }
 
 void AGameCharacter::Server_DropAllItemFromInv(float RandomOffset, bool bDeferred)

@@ -35,7 +35,6 @@ void ATRShop::Initialize()
 
 void ATRShop::OnTriggered()
 {
-	TR_PRINT("ATRShop::OnTriggered()");
 }
 
 void ATRShop::InitializeShop()
@@ -229,7 +228,6 @@ void ATRShop::Server_AutoInitProducts()
 
 int32 ATRShop::Server_AutoSelectMaxProductCount(int32 DungeonDepth) const
 {
-	// TODO FIXME
-	return 16;
+	return TR_MAX_SHOP_ITEM_CNT;
 }
 

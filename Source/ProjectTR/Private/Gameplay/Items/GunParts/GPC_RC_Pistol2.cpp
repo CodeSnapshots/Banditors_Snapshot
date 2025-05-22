@@ -3,6 +3,7 @@
 
 #include "Items/GunParts/GPC_RC_Pistol2.h"
 #include "Core/TRMacros.h"
+#include "Gameplay/Damage/DamageTypeElemental.h"
 
 UGPC_RC_Pistol2::UGPC_RC_Pistol2()
 {
@@ -10,8 +11,10 @@ UGPC_RC_Pistol2::UGPC_RC_Pistol2()
 	USkeletalMesh* Asset = MeshAsset.Object;
 	SetupMeshComp(nullptr, Asset);
 
-	// TEMP TODO FIXME
-	bOverrideGunType = true;
-	GunTypeValue = EWeaponFireType::WFT_HITSCAN;
-	DeltaFireInterval = -0.75f;
+	// TEMP: Tier 1
+	bOverrideDamageType = true;
+	DamageTypeValue = UDamageTypeElemental::StaticClass();
+
+	DeltaMissileSpawnedPerShot = 0;
+	DeltaDmgEnemyDirect = 0.0f;
 }

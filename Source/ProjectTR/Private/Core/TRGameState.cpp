@@ -18,6 +18,7 @@
 #include "UI/TRHUDWidget.h"
 #include "UI/TRGameStateHUD.h"
 #include "UI/DamageNumberWidget.h"
+#include "UI/GameOverWidget.h"
 
 void ATRGameState::BeginPlay()
 {
@@ -140,6 +141,13 @@ const TArray<class AGameCharacter*>& ATRGameState::Local_GetBossCharacters()
 	return BossCharacters;
 }
 
+void ATRGameState::Server_SetGameOverTo(bool bNewGameOver)
+{
+	bGameOver = bNewGameOver;
+	// 서버의 경우 직접 호출해주어야 한다
+	Local_OnGameOverUpdated();
+}
+
 void ATRGameState::OnRep_DungeonTimeLeft()
 {
 	Local_OnDungeonTimeLeftUpdated();
@@ -199,8 +207,6 @@ ALocalDamageNumber* ATRGameState::Local_DisplayDamageNumber(UWorld* World, TSubc
 			UE_LOG(LogTemp, Error, TEXT("Local_DisplayDamageNumber - LocalDamageNumber actor spawn failed!"));
 			return nullptr;
 		}
-
-		TR_PRINT("Local_DisplayDamageNumber -  New instance");
 	}
 	else
 	{
@@ -217,7 +223,6 @@ ALocalDamageNumber* ATRGameState::Local_DisplayDamageNumber(UWorld* World, TSubc
 		}
 
 		ReturnInst->SetActorTransform(Transform);
-		TR_PRINT("Local_DisplayDamageNumber -  Popped from pool");
 	}
 
 	ReturnInst->SetWidgetClassAs(WidgetClass);
@@ -231,6 +236,40 @@ void ATRGameState::Local_OnDoorKeysChanged()
 	// UI 업데이트
 	if (!GameStateHUD) return;
 	GameStateHUD->UpdateRoomKeys();
+}
+
+void ATRGameState::OnRep_GameOver()
+{
+	Local_OnGameOverUpdated();
+}
+
+void ATRGameState::Local_OnGameOverUpdated()
+{
+	if (bGameOver)
+	{
+		GameOverWidgetInst = CreateWidget<UGameOverWidget>(GetWorld(), GameOverWidgetClass);
+		if (!GameOverWidgetInst)
+		{
+			UE_LOG(LogTemp, Error, TEXT("ATRGameState::Local_OnGameOverUpdated - GameOverWidget is not created!"));
+		}
+		else
+		{
+			GameOverWidgetInst->SetTarget(this);
+			GameOverWidgetInst->AddToViewport(WZO_GAMEOVER);
+		}
+	}
+	else
+	{
+		if (GameOverWidgetInst)
+		{
+			GameOverWidgetInst->SetTarget(nullptr);
+			GameOverWidgetInst->RemoveFromParent();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("ATRGameState::Local_OnGameOverUpdated - GameOverWidget should've been created!"));
+		}
+	}
 }
 
 void ATRGameState::OnRep_DungeonDoorKeys()

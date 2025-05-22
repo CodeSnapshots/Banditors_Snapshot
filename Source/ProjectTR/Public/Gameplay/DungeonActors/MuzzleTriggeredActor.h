@@ -24,8 +24,6 @@ protected:
 	// 캐릭터의 시야 방향에 놓여 트리거 되었을 때의 로직
 	virtual void OnMuzzleTriggered(class AGameCharacter* TriggeredBy);
 
-	// TODO: 트리거 범위에 속할 경우 아웃라인 그리기
-
 protected:
 	// 머즐 raycast 트리거 범위 판정을 위해 사용하는 박스
 	UPROPERTY(EditDefaultsOnly)

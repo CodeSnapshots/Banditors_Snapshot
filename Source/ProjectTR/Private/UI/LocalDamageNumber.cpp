@@ -112,13 +112,11 @@ void ALocalDamageNumber::OnUIAnimEnd()
 
 	if (ReturnPool && ALocalDamageNumber::CurrInstCount <= ALocalDamageNumber::MaxInstCount)
 	{
-		TR_PRINT_FSTRING("OnUIAnimEnd -  Enqueued; Q:%d", ALocalDamageNumber::CurrInstCount);
 		ReturnPool->Enqueue(this);
 	}
 	else
 	{
-		TR_PRINT("OnUIAnimEnd -  Destroyed");
-		UE_LOG(LogTemp, Error, TEXT("ALocalDamageNumber::OnUIAnimEnd - Either actor is invalid so it cannot return it back to pool, or the instance count exceeded the limit. Destroying the object."));
+		UE_LOG(LogTemp, Warning, TEXT("ALocalDamageNumber::OnUIAnimEnd - Either actor is invalid so it cannot return it back to pool, or the instance count exceeded the limit. Destroying the object."));
 		Destroy();
 	}
 }

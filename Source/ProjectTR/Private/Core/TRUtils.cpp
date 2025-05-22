@@ -219,3 +219,25 @@ TSet<UPrimitiveComponent*> TRUtils::GetOutlineMeshesFromActor(AActor* Target, bo
     }
     return TargetComps;
 }
+
+int32 TRUtils::GetOutlineStencilValueFromActor(AActor* Target)
+{
+    // 매터리얼 if 노드 숫자 감소를 위해 색상은 두 가지만 사용
+    if (Target->IsA<ABaseItem>())
+    {
+        return STENCIL_WHITE;
+    }
+    else if (Target->IsA<AMuzzleTriggeredActor>())
+    {
+        return STENCIL_WHITE;
+    }
+    else if (Target->IsA<AGameCharacter>())
+    {
+        if (Target->IsA<AFPSCharacter>())
+        {
+            return STENCIL_WHITE;
+        }
+        return STENCIL_RED;
+    }
+    return STENCIL_WHITE;
+}

@@ -88,6 +88,7 @@ protected:
 	// 사망 이후 캐릭터의 Destroy 호출까지 기다리는 시간
 	// NOTE: 이 값은 가급적 큰 값을 사용하는 게 권장된다
 	// 이는 조금 더 래그돌 등장 시간을 늘리기 위해서이기도 하지만, Deferred 로직들이 수행될 시간을 충분히 주기 위함이 가장 크다
+	UPROPERTY(EditDefaultsOnly)
 	float DestructionTimeDefault = 5.0f;
 
 public:
@@ -364,17 +365,38 @@ public:
 	// 이 캐릭터가 성공적으로 공격한 대상에 대해 로직을 처리한다
 	void ProcessMeleeAtk(AGameCharacter* Target, const FHitResult& MeleeHitResult);
 
+	// 이 캐릭터의 밀리 공격 트레이스를 처리한다
+	// 히트 성공 여부를 반환한다
+	bool TraceMelee(FHitResult& out_HitResult, FVector StartLocation, FVector EndLocation, bool bDrawDebug);
+
+public:
+	// 만약 밀리 공격 처리중일 경우(트래이싱 중), 현재 처리중인 히트 타깃(게임 캐릭터로 한정)들의 목록과 관련 정보
+	TMap<class AGameCharacter*, FHitResult> HitTargetsForCurrSequence;
+
+	// 밀리 공격 처리 중일 경우, 이전 밀리 트래이싱 틱에서의 밀리 위치 캐싱
+	FVector PrevMeleeTickLocation;
+	bool bPrevMeleeTickLocationValid = false;
+
 protected:
 	// 기본 맨손 근접 공격 데미지값
-	float BaseMeleeDamage = 5.0f; // TODO TEMP
+	UPROPERTY(EditDefaultsOnly, Category = "Gameplay")
+	float BaseMeleeDamage = 5.0f;
 
 	// 기본 맨손 근접공격 랜덤 Additive 데미지값
-	float AddMeleeDamage = 5.0f; // TODO TEMP
+	UPROPERTY(EditDefaultsOnly, Category = "Gameplay")
+	float AddMeleeDamage = 5.0f;
+
+	// 밀리 판정을 위해 사용되는 스피어의 반지름
+	UPROPERTY(EditDefaultsOnly, Category = "Gameplay")
+	float MeleeSphereRadius = 40.f;
+
+	// 히트 판정을 할 오브젝트 타입 목록
+	UPROPERTY(EditAnywhere, Category = "Gameplay")
+	TArray<TEnumAsByte<EObjectTypeQuery>> HitObjectTypes;
 
 	// 근접 공격 데미지 타입
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Gameplay")
 	TSubclassOf<class UTRDamageType> MeleeDamageType;
-
 
 /* Dungeon */
 public:
@@ -647,7 +669,7 @@ private:
 /* Damage multipliers */
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Detailed Collision")
-	float HeadDmgMult = 2.0f;
+	float HeadDmgMult = 1.5f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Detailed Collision")
 	float TorsoDmgMult = 1.0f;

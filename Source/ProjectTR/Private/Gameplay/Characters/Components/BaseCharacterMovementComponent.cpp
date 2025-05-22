@@ -472,17 +472,14 @@ void UBaseCharacterMovementComponent::UpdateLandingState()
 	if (ZSpeed > HeavyLandingSpeed)
 	{
 		TRLandState = EHumanoidLandState::HEAVY;
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Heavy land!"));
 	}
 	else if (ZSpeed > NormalLandingSpeed)
 	{
 		TRLandState = EHumanoidLandState::NORMAL;
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Normal land!"));
 	}
 	else if (ZSpeed > SoftLandingSpeed)
 	{
 		TRLandState = EHumanoidLandState::SOFT;
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Soft land!"));
 	}
 	else
 	{

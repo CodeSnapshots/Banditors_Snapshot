@@ -19,10 +19,10 @@ EBTNodeResult::Type UBotBTTask_PatrolLocUnreachable::ExecuteTask(UBehaviorTreeCo
 	if (IsValid(AIController))
 	{
 		AIController->ClearPatrolLocation();
+		AIController->IncrementConsecutivePatrolFailure();
 	}
 
 	// 태스크 종료
-	FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 	return EBTNodeResult::Succeeded;
 }
 

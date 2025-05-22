@@ -3,7 +3,9 @@
 
 #include "Characters/TRPlayerState.h"
 #include "Core/ProjectTRGameModeBase.h"
+#include "Core/TRCVar.h"
 #include "Characters/GameCharacter.h"
+#include "Spectation/TRSpectatorPawn.h"
 
 void ATRPlayerState::CopyProperties(APlayerState* PlayerState)
 {
@@ -15,7 +17,7 @@ void ATRPlayerState::CopyProperties(APlayerState* PlayerState)
 		NewPlayerState->bIsOut = bIsOut;
 
 		NewPlayerState->Server_CachedPlayerInstanceData = Server_CachedPlayerInstanceData;
-		NewPlayerState->bServer_IsCachedPlayerInstanceDataValid = bServer_IsCachedPlayerInstanceDataValid;
+		NewPlayerState->bServer_IsCachedDataValid = bServer_IsCachedDataValid;
 	}
 }
 
@@ -38,26 +40,52 @@ void ATRPlayerState::SetIsOut(bool Value)
 
 void ATRPlayerState::Server_CachePlayerInstanceData()
 {
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT_ARGS("Caching player data of id %s", *GetUniqueId().ToString());
+	}
+#endif
+
+	if (!GetPlayerController())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Server_CachePlayerInstanceData - Invalid player controller!"));
+		return;
+	}
+
 	AGameCharacter* GameCharacter = Cast<AGameCharacter>(GetPlayerController()->GetPawn());
 	if (GameCharacter)
 	{
-		TR_PRINT_FSTRING("cached %s", *GetUniqueId().ToString());
+		Server_CachedPlayerInstClass = GameCharacter->GetClass();
+
 		Server_CachedPlayerInstanceData = FGameCharacterInstanceData(); // 반드시 값을 먼저 Clear해주고 새 값을 써야 함
 		Server_CachedPlayerInstanceData = GameCharacter->Server_GetInstanceData();
-		bServer_IsCachedPlayerInstanceDataValid = true;
+		bServer_IsCachedDataValid = true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Server_CachePlayerInstanceData - Invalid possessed pawn!"));
 	}
 }
 
-FGameCharacterInstanceData* ATRPlayerState::Server_GetCachedPlayerInstanceData()
+TPair<TSubclassOf<AFPSCharacter>, FGameCharacterInstanceData*> ATRPlayerState::Server_GetCachedPlayerInstanceData()
 {
-	FGameCharacterInstanceData* Result = nullptr;
-	if (bServer_IsCachedPlayerInstanceDataValid)
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
 	{
-		TR_PRINT_FSTRING("found %s", *GetUniqueId().ToString());
-		Result = &Server_CachedPlayerInstanceData;
+		TR_PRINT_ARGS("Searching cached player data of id %s", *GetUniqueId().ToString());
+	}
+#endif
+
+	TSubclassOf<AFPSCharacter> ClassResult = nullptr;
+	FGameCharacterInstanceData* InstResult = nullptr;
+	if (bServer_IsCachedDataValid)
+	{
+		ClassResult = Server_CachedPlayerInstClass;
+		InstResult = &Server_CachedPlayerInstanceData;
 
 		// 일회성 값이므로 값을 무효화해준다
-		bServer_IsCachedPlayerInstanceDataValid = false;
+		bServer_IsCachedDataValid = false;
 	}
-	return Result;
+	return { ClassResult, InstResult };
 }

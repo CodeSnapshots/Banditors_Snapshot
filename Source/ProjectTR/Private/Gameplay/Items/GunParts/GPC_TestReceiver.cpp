@@ -88,7 +88,7 @@ UGPC_TestReceiver::UGPC_TestReceiver()
 	//DeltaMissileSpawnedPerShot = 10;
 	bOverrideSetAccurateOffsetForFirstMissile = true;
 	bSetAccurateOffsetForFirstMissileValue = true;
-	//DeltaRecoilOffsetRange = 5.0f; // 산탄
+	DeltaRecoilOffsetRange = 2.0f; // 산탄
 
 	////////////
 	//bOverrideExplodeOnHit = true;

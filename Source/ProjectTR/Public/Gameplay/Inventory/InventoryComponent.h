@@ -188,7 +188,6 @@ protected:
 
 	// InvObject들의 좌상단 위치를 기록 (Value)
 	// 필요 시 구조체 안에 데이터 추가 가능
-	// TODO: Should Replicate
 	UPROPERTY(Replicated)
 	TArray<FInvObjData> InvObjectDatas;
 

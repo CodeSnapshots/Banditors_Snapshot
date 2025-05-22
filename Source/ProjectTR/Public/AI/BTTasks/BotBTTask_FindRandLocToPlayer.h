@@ -31,9 +31,14 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = true))
 	float SearchRadius = 1500.0f;
 
-	// 이 값은 최초 서치 원의 중심이 플레이어에게 얼마나 가까운지 결정한다
+	// PlayerAttractionStrength는 최초 서치 원의 중심이 플레이어에게 얼마나 가까운지 결정한다
 	// 값이 1일경우 AI오너에서 SearchRadius만큼 떨어진 지점에 원의 중심이 위치하게 된다
 	// 지나친 플레이어 방향 한쪽으로의 편향을 막기 위해 값은 1 미만으로 하는 게 권장된다
+	// 이 값은 Intensity 값에 의해 Lerping 된다 (DDA)
+	// Intensity와 무관하게 고정값을 주고 싶다면 Min = Max로 두면 된다
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = true))
-	float PlayerAttractionStrength = 0.5;
+	float MinPlayerAttractionStrength = 0.1f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings", meta = (AllowPrivateAccess = true))
+	float MaxPlayerAttractionStrength = 1.0f;
 };

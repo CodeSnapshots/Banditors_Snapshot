@@ -174,7 +174,6 @@ void UStatusEffect::Server_InvalidateSelf()
 
 void UStatusEffect::Server_OnDurationEnd()
 {
-	TR_PRINT_FSTRING("StatusEffect %s duration end", *this->Server_StatusEffectId);
 	Server_InvalidateSelf();
 }
 

@@ -3,6 +3,7 @@
 
 #include "Items/GunParts/GPC_RC_Rifle4.h"
 #include "Core/TRMacros.h"
+#include "Gameplay/Damage/DamageTypeMagical.h"
 
 UGPC_RC_Rifle4::UGPC_RC_Rifle4()
 {
@@ -10,8 +11,10 @@ UGPC_RC_Rifle4::UGPC_RC_Rifle4()
 	USkeletalMesh* Asset = MeshAsset.Object;
 	SetupMeshComp(nullptr, Asset);
 
-	// TEMP TODO FIXME
-	bOverrideGunType = true;
-	GunTypeValue = EWeaponFireType::WFT_HITSCAN;
-	DeltaFireInterval = -0.87f;
+	// TEMP: Tier 1
+	bOverrideDamageType = true;
+	DamageTypeValue = UDamageTypeMagical::StaticClass();
+
+	DeltaMissileSpawnedPerShot = 0;
+	DeltaDmgEnemyDirect = 0.0f;
 }

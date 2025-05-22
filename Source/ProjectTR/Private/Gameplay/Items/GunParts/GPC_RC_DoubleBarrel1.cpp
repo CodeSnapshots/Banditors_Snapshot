@@ -3,6 +3,7 @@
 
 #include "Items/GunParts/GPC_RC_DoubleBarrel1.h"
 #include "Core/TRMacros.h"
+#include "Gameplay/Damage/DamageTypePhysical.h"
 
 UGPC_RC_DoubleBarrel1::UGPC_RC_DoubleBarrel1()
 {
@@ -10,8 +11,11 @@ UGPC_RC_DoubleBarrel1::UGPC_RC_DoubleBarrel1()
 	USkeletalMesh* Asset = MeshAsset.Object;
 	SetupMeshComp(nullptr, Asset);
 
-	// TEMP TODO FIXME
-	bOverrideGunType = true;
-	GunTypeValue = EWeaponFireType::WFT_PROJECTILE;
-	DeltaFireInterval = -0.9f;
+	// TEMP: Tier 1
+	bOverrideDamageType = true;
+	DamageTypeValue = UDamageTypePhysical::StaticClass();
+
+	DeltaMissileSpawnedPerShot = 1;
+	DeltaDmgEnemyDirect = 25.0f;
+	DeltaFireInterval = 0.2f;
 }

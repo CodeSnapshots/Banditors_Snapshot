@@ -10,6 +10,7 @@
 #include "NiagaraFunctionLibrary.h"
 
 #include "Core/TRUtils.h"
+#include "Core/TRCVar.h"
 #include "Characters/GameCharacter.h"
 #include "Characters/FPSCharacter.h"
 #include "Damage/TRDamageType.h"
@@ -128,35 +129,42 @@ void ATRExplosion::Server_Explode()
                     );
                 }
                 PhysComp = Cast<UPrimitiveComponent>(GameCharacter->GetCapsuleComponent());
-                // TODO: 래그돌
 #if WITH_EDITOR
-                //DrawDebugLine(GetWorld(), this->GetActorLocation(), GameCharacter->GetActorLocation(), FColor::Blue, false, 10.0f);
+                if (CVarShowDebugShapes.GetValueOnGameThread())
+                {
+                    DrawDebugLine(GetWorld(), this->GetActorLocation(), GameCharacter->GetActorLocation(), FColor::Blue, false, 10.0f);
+                }
 #endif
             }
             else if (GameItem)
             {
                 PhysComp = GameItem->GetPhysComponent();
-                // TODO: 필요 시 로직 추가
 #if WITH_EDITOR
-                //DrawDebugLine(GetWorld(), this->GetActorLocation(), GameItem->GetActorLocation(), FColor::Green, false, 10.0f);
+                if (CVarShowDebugShapes.GetValueOnGameThread())
+                {
+                    DrawDebugLine(GetWorld(), this->GetActorLocation(), GameItem->GetActorLocation(), FColor::Green, false, 10.0f);
+                }
 #endif
             }
             else
             {
-                // TODO: 현재로는 캐릭터와 아이템에만 폭발 로직을 적용
+                // NOTE: 현재로는 캐릭터와 아이템에만 폭발 로직을 적용
             }
 
             // 공통 물리 로직
             // 적용 대상에게만 사용
             if (PhysComp && ExplosionInfo.bApplyImpactOnExplosion && ExplosionInfo.ExplosionTargetType.Contains(PhysComp->GetCollisionObjectType()))
             {
-                PhysComp->AddRadialImpulse(GetActorLocation(), ExplosionInfo.ExplosionRadius, ExplosionInfo.BaseImpactStrength, static_cast<ERadialImpulseFalloff>(ExplosionInfo.ImpactFalloffType), true /* TODO: 테스트 필요 */);
+                PhysComp->AddRadialImpulse(GetActorLocation(), ExplosionInfo.ExplosionRadius, ExplosionInfo.BaseImpactStrength, static_cast<ERadialImpulseFalloff>(ExplosionInfo.ImpactFalloffType), true);
             }
         }
     }
 
 #if WITH_EDITOR
-    //DrawDebugSphere(GetWorld(), this->GetActorLocation(), ExplosionInfo.ExplosionRadius, 8, FColor::Yellow, false, 10.0f);
+    if (CVarShowDebugShapes.GetValueOnGameThread())
+    {
+        DrawDebugSphere(GetWorld(), this->GetActorLocation(), ExplosionInfo.ExplosionRadius, 8, FColor::Yellow, false, 10.0f);
+    }
 #endif
 
     if (ExplosionInfo.bDestroyAfterExplosion)
@@ -214,8 +222,11 @@ bool ATRExplosion::IsBlocked(FVector StartLocation, FVector TargetLocation)
     if (bHit)
     {
 #if WITH_EDITOR
-        //DrawDebugLine(GetWorld(), StartLocation, TargetLocation, FColor::Red, false, 10.0f);
-        //DrawDebugPoint(GetWorld(), HitRes.Location, 10.0f, FColor::Yellow, false, 10.0f);
+        if (CVarShowDebugShapes.GetValueOnGameThread())
+        {
+            DrawDebugLine(GetWorld(), StartLocation, TargetLocation, FColor::Red, false, 10.0f);
+            DrawDebugPoint(GetWorld(), HitRes.Location, 10.0f, FColor::Yellow, false, 10.0f);
+        }
 #endif
         return true;
     }

@@ -6,13 +6,22 @@
 
 /* Utility */
 #define TR_PRINT(text) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.5, FColor::Green,text)
-#define TR_PRINT_FSTRING(text, fstring) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT(text), fstring))
+#define TR_PRINT_ARGS(text, ...) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT(text), __VA_ARGS__))
+
+/* Control */
+#define TR_FPSCHAR_DEFAULT_INPUTMAPPING_PRIORITY 0
+#define TR_SPECPAWN_DEFAULT_INPUTMAPPING_PRIORITY 1
+
+/* Log */
+#define TR_LOGKEY_DUNGEONSTAT 16
+#define TR_LOGKEY_PLAYERSPEED 18
 
 /* System */
 #define TR_MAX_PLAYER_COUNT 5
 #define TR_PROJ_MOVEMENT_TICKRATE 0.033f
 #define TR_PROJ_MOVEREPL_RATE 20
-#define TR_BOT_MOVECOMP_TICKRATE 0.033f
+#define TR_BOT_MOVECOMP_TICKRATE 0.0167f
+#define TR_DEFAULT_CONTROLLER_PITCH_SYNC_RATE 0.066f
 
 /* Niagara */
 #define TR_NIAGARA_MAX_HIT_VFX_CNT 32
@@ -31,9 +40,7 @@
 #define TR_MIN_MULTIKEY_LOCKED_DOORS_PER_LEVEL 1
 #define TR_MAX_MULTIKEY_LOCKED_DOORS_PER_LEVEL 3
 
-// TODO: 단일 키로만 개방되는 문 추가
-#define TR_MIN_SINGLEKEY_LOCKED_DOORS_PER_LEVEL 1
-#define TR_MAX_SINGLEKEY_LOCKED_DOORS_PER_LEVEL 3
+#define TR_MAX_SHOP_ITEM_CNT 16
 
 /* Collision Channels */
 #define ECC_Projectile ECollisionChannel::ECC_GameTraceChannel1
@@ -50,8 +57,7 @@
 #define ECC_VirtualTarget ECollisionChannel::ECC_GameTraceChannel12
 #define ECC_PlayerPawn ECollisionChannel::ECC_GameTraceChannel13
 #define ECC_BotPawn ECollisionChannel::ECC_GameTraceChannel14
-
-// TODO: 프로젝트 세팅 ECC와 대조 확인
+#define ECC_SearchOuterHitbox ECollisionChannel::ECC_GameTraceChannel15
 
 /******************** Level ********************/
 #define LVL_DUNGEON_ASSET "/Game/Game/Maps/LVL_Dungeon"
@@ -69,11 +75,16 @@
 /* Widget Z-order */
 #define WZO_DEFAULT 0
 #define WZO_HUD 1
-#define WZO_INV 2
-#define WZO_SHOP 4
-#define WZO_GAMEINFO 8
+#define WZO_GAMEINFO 2
+#define WZO_ALERT 4
+#define WZO_INV 8
+#define WZO_SHOP 16
+#define WZO_GAMEOVER 256
 #define WZO_LOADING 512
-#define WZO_ALERT 1024
+
+/* Stencil value */
+#define STENCIL_WHITE 0
+#define STENCIL_RED 2
 
 /* 인벤토리 빈칸 식별 id */
 #define INV_EMPTY 0

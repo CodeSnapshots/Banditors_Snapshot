@@ -6,6 +6,7 @@
 
 #include "Core/TRGameState.h"
 #include "Core/TRMacros.h"
+#include "Core/TRCVar.h"
 #include "DungeonActors/LockedDoorActor.h"
 #include "Characters/FPSCharacter.h"
 
@@ -18,7 +19,12 @@ void ADoorKeyActor::OnMuzzleTriggered(AGameCharacter* TriggeredBy)
 		ATRGameState* TRGS = World->GetGameState<ATRGameState>();
 		if (TRGS)
 		{
-			TR_PRINT_FSTRING("Key obtained: %d", KeyId);
+#if WITH_EDITOR
+			if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+			{
+				TR_PRINT_ARGS("Key obtained: %d", KeyId);
+			}
+#endif
 
 			TRGS->Server_AddDoorKey(KeyId);
 			bCanBeDestroyed = true;

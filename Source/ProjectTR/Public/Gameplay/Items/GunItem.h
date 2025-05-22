@@ -22,13 +22,42 @@
 
 struct GunConst
 {
-	static constexpr int GUN_MIN_MAXAMMO = 1;
+	static constexpr int GUN_MIN_MAXAMMO = 0;
 	static constexpr int GUN_MIN_AMMOPERSHOT = 0;
 	static constexpr int GUN_MIN_MISSILEPERSHOT = 1;
 	static constexpr float GUN_MIN_GAUGE = 0.0f;
 	static constexpr float GUN_MAX_GAUGE = 1.0f;
 	static constexpr float GUN_MAX_FALLOFF_DIST = 2500.0f;
 	static constexpr float GUN_MIN_FALLOFF_DIST = 250.0f;
+	static constexpr float GUN_MIN_FIRE_INTERVAL = 0.05f;
+};
+
+USTRUCT(BlueprintType)
+struct FGunPartsInfo
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY()
+	UGunPartComponent* ReceiverComp = nullptr;
+
+	UPROPERTY()
+	UGunPartComponent* BarrelComp = nullptr;
+
+	UPROPERTY()
+	UGunPartComponent* GripComp = nullptr;
+
+	UPROPERTY()
+	UGunPartComponent* MagazineComp = nullptr;
+
+	UPROPERTY()
+	UGunPartComponent* MuzzleComp = nullptr;
+
+	UPROPERTY()
+	UGunPartComponent* SightComp = nullptr;
+
+	UPROPERTY()
+	UGunPartComponent* StockComp = nullptr;
 };
 
 /**
@@ -53,6 +82,9 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	virtual void OnDeployerStatChanged() override;
+
+	// 최초 Spawn 시 호출되는 로직 (=InvObject 생성 당 한번 호출됨. 리스폰은 해당되지 않음)
+	void OnActorSpawnedFromZero();
 
 	// 총 파츠 초기화 시 로직
 	void Server_InitGunParts();
@@ -79,14 +111,7 @@ public:
 		// GunItem의 경우 피직스 연산을 메쉬가 아닌 박스 콜리전 컴포넌트에서 처리한다
 		DOREPLIFETIME(AGunItem, GunBoxColComponent);
 
-		DOREPLIFETIME(AGunItem, BarrelComp);
-		DOREPLIFETIME(AGunItem, GripComp);
-		DOREPLIFETIME(AGunItem, MagazineComp);
-		DOREPLIFETIME(AGunItem, MuzzleComp);
-		DOREPLIFETIME(AGunItem, ReceiverComp);
-		DOREPLIFETIME(AGunItem, SightComp);
-		DOREPLIFETIME(AGunItem, StockComp);
-		DOREPLIFETIME(AGunItem, GunPartsToReplicateCount);
+		DOREPLIFETIME(AGunItem, GunPartComponents);
 
 		// 클라이언트 사이드 FX 재생에 영향을 줄 수 있는 값들은 레플리케이션한다
 		DOREPLIFETIME(AGunItem, bApplyLightToMuzzleOnFire);
@@ -110,7 +135,6 @@ public:
 		// 싱크가 맞아야 하는 값들을 레플레케이션한다
 		DOREPLIFETIME(AGunItem, CurrAmmo);
 		DOREPLIFETIME(AGunItem, AmmoPerShot);
-		// TODO: 게이지 등
 	}
 #pragma endregion
 
@@ -390,7 +414,7 @@ protected:
 	// 연사 속도
 	// 한 발을 발사하고 다음 발을 발사하기까지의 딜레이 (sec)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	float FireInterval = 1.0f;
+	float FireInterval = 0.0f;
 
 /* 탄 퍼짐 */
 	// 1m 거리에서의 탄퍼짐 범위 (cm)
@@ -400,11 +424,11 @@ protected:
 /* 장탄 */
 	// 최대 보유 탄약량
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	int32 MaxAmmo = 200;
+	int32 MaxAmmo = 0;
 
 	// 매 회 발사 당 소비 탄약량
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, ReplicatedUsing = OnRep_AmmoPerShot)
-	int32 AmmoPerShot = 1;
+	int32 AmmoPerShot = 0;
 
 /* 충격량 배수 */
 	// 적 적중 시 충격량 적용 여부
@@ -563,24 +587,24 @@ public:
 	void Local_ApplyGunStats();
 
 	/* Getters */
-	class UGunPartComponent* GetBarrel() const { return BarrelComp; }
-	class UGunPartComponent* GetGrip() const { return GripComp; }
-	class UGunPartComponent* GetMagazine() const { return MagazineComp; }
-	class UGunPartComponent* GetMuzzle() const { return MuzzleComp; }
-	class UGunPartComponent* GetReceiver() const { return ReceiverComp; }
-	class UGunPartComponent* GetSight() const { return SightComp; }
-	class UGunPartComponent* GetStock() const { return StockComp; }
+	class UGunPartComponent* GetBarrel() const { return GunPartComponents.BarrelComp; }
+	class UGunPartComponent* GetGrip() const { return GunPartComponents.GripComp; }
+	class UGunPartComponent* GetMagazine() const { return GunPartComponents.MagazineComp; }
+	class UGunPartComponent* GetMuzzle() const { return GunPartComponents.MuzzleComp; }
+	class UGunPartComponent* GetReceiver() const { return GunPartComponents.ReceiverComp; }
+	class UGunPartComponent* GetSight() const { return GunPartComponents.SightComp; }
+	class UGunPartComponent* GetStock() const { return GunPartComponents.StockComp; }
 
 	TArray<UGunPartComponent*> GetGunParts();
 
 	/* Setters */
-	void SetBarrel(class UGunPartComponent* Comp) { BarrelComp = Comp; }
-	void SetGrip(class UGunPartComponent* Comp) { GripComp = Comp; }
-	void SetMagazine(class UGunPartComponent* Comp) { MagazineComp = Comp; }
-	void SetMuzzle(class UGunPartComponent* Comp) { MuzzleComp = Comp; }
-	void SetReceiver(class UGunPartComponent* Comp) { ReceiverComp = Comp; }
-	void SetSight(class UGunPartComponent* Comp) { SightComp = Comp; }
-	void SetStock(class UGunPartComponent* Comp) { StockComp = Comp; }
+	void SetBarrel(class UGunPartComponent* Comp) { GunPartComponents.BarrelComp = Comp; }
+	void SetGrip(class UGunPartComponent* Comp) { GunPartComponents.GripComp = Comp; }
+	void SetMagazine(class UGunPartComponent* Comp) { GunPartComponents.MagazineComp = Comp; }
+	void SetMuzzle(class UGunPartComponent* Comp) { GunPartComponents.MuzzleComp = Comp; }
+	void SetReceiver(class UGunPartComponent* Comp) { GunPartComponents.ReceiverComp = Comp; }
+	void SetSight(class UGunPartComponent* Comp) { GunPartComponents.SightComp = Comp; }
+	void SetStock(class UGunPartComponent* Comp) { GunPartComponents.StockComp = Comp; }
 
 protected:
 	// 아이템 메쉬 컴포넌트를 Receiver로 설정한다
@@ -610,38 +634,12 @@ protected:
 
 protected:
 	// 총기 파츠 컴포넌트
-	// GunPartComponent 내의 프로퍼티에 대한 클라이언트 레플리케이션은 가급적 피하는 게 권장되며,
-	// 최대한 Server authoritative한 구조로 데이터를 관리하는 게 권장된다
-	// 이는 만약 클라이언트로 GunPartComponent 내의 어떤 값을 변경한 결과를 전달하려 할 경우,
-	// 클라이언트의 GunItem에서 모든 GunPart가 수신되었음이 보장되어야 값을 변경하는게 가능해지기 때문에 구조가 복잡해지기 때문이다
-	// 만약 꼭 필요한 상황이라면 Register - Process 구조로 작업을 대기시킨 후 bClient_AllPartsReplicated가 true가 될 때 처리하면 된다
+	// GunPartComponent 내의 프로퍼티에 대한 클라이언트 레플리케이션은 가급적 피하는 게 권장된다
 	UPROPERTY(ReplicatedUsing = OnRep_GunPartComp)
-	UGunPartComponent* ReceiverComp = nullptr;
-
-	UPROPERTY(ReplicatedUsing = OnRep_GunPartComp)
-	UGunPartComponent* BarrelComp = nullptr;
-
-	UPROPERTY(ReplicatedUsing = OnRep_GunPartComp)
-	UGunPartComponent* GripComp = nullptr;
-
-	UPROPERTY(ReplicatedUsing = OnRep_GunPartComp)
-	UGunPartComponent* MagazineComp = nullptr;
-
-	UPROPERTY(ReplicatedUsing = OnRep_GunPartComp)
-	UGunPartComponent* MuzzleComp = nullptr;
-
-	UPROPERTY(ReplicatedUsing = OnRep_GunPartComp)
-	UGunPartComponent* SightComp = nullptr;
-
-	UPROPERTY(ReplicatedUsing = OnRep_GunPartComp)
-	UGunPartComponent* StockComp = nullptr;
+	FGunPartsInfo GunPartComponents;
 
 	// 클라이언트 전용; 모든 파츠의 수신이 완료되었을 경우 true로 설정한다
 	bool bClient_AllPartsReplicated = false;
-
-public:
-	UPROPERTY(ReplicatedUsing = OnRep_GunPartComp)
-	int32 GunPartsToReplicateCount = INT32_MAX;
 #pragma endregion
 
 #pragma region /** Generation */

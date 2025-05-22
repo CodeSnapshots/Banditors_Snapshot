@@ -27,17 +27,23 @@ class PROJECTTR_API ATRGameState : public AGameStateBase // Mixing AGameState wi
 		DOREPLIFETIME(ATRGameState, DungeonTimeLeft);
 		DOREPLIFETIME(ATRGameState, DungeonDoorKeys);
 		DOREPLIFETIME(ATRGameState, BossCharacters);
+		DOREPLIFETIME(ATRGameState, bGameOver);
 	}
 #pragma endregion
 
 public:
 	void BeginPlay() override;
 
-/* Gameplay */
+#pragma region /** Gameplay */
 protected:
 	// 현재 던전 입장 후 경과 시간 (초)
 	UPROPERTY(ReplicatedUsing = OnRep_DungeonTimeLeft, BlueprintReadOnly)
 	int32 DungeonTimeLeft;
+
+	// 게임 오버 여부
+	// NOTE: 서버의 경우 GameState에서 이 정보에 접근하기보다는 가급적 GameMode를 사용할 것
+	UPROPERTY(ReplicatedUsing = OnRep_GameOver, BlueprintReadOnly)
+	bool bGameOver = false;
 
 private:
 	// 현재 던전에서 획득한 보유 키들의 목록
@@ -112,6 +118,9 @@ public:
 	// 레퍼런스 Getter
 	const TArray<class AGameCharacter*>& Local_GetBossCharacters();
 
+	// 게임 오버 상태를 수정한다
+	void Server_SetGameOverTo(bool bNewGameOver);
+
 protected:
 	UFUNCTION()
 	void OnRep_DungeonTimeLeft();
@@ -125,7 +134,12 @@ protected:
 	void OnRep_DungeonDoorKeys();
 	void Local_OnDoorKeysChanged();
 
-/* UI */
+	UFUNCTION()
+	void OnRep_GameOver();
+	void Local_OnGameOverUpdated();
+#pragma endregion
+
+#pragma region /** UI */
 public:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UDamageNumberWidget> DefaultDamageNumberWidgetClass = nullptr;
@@ -133,14 +147,18 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UTRGameStateHUD> DefaultGameStateHUDClass = nullptr;
 
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UGameOverWidget> GameOverWidgetClass = nullptr;
+
 protected:
 	// 사용 가능한 풀
 	// TODO: WidgetClass에 따라 다른 풀을 사용하면 조금 더 효율적으로 관리할 수 있음 (현재는 풀링된 것과 위젯이 다를 경우 새로 생성함)
 	TQueue<ALocalDamageNumber*> UsableLocalDamageNumberPool;
 
 public:
-	// GameState에서 관리하는 HUD (TRHUD와 다르게 생성 주체와 관리 주체가 동일하다)
+	// GameState에서 관리하는 위젯들 (생성 주체와 관리 주체가 동일하다)
 	UTRGameStateHUD* GameStateHUD = nullptr;
+	class UGameOverWidget* GameOverWidgetInst = nullptr;
 
 public:
 	// NOTE: 풀
@@ -148,4 +166,5 @@ public:
 
 	// 던전 문 키의 개수 반환
 	int32 Host_GetDoorKeyCount() { return DungeonDoorKeys.Num(); }
+#pragma endregion
 };

@@ -13,6 +13,7 @@
 
 #include "Core/TRMacros.h"
 #include "Core/TRUtils.h"
+#include "Core/TRCVar.h"
 #include "Characters/BotCharacter.h"
 #include "Characters/FPSCharacter.h"
 #include "Characters/TRPlayerState.h"
@@ -112,8 +113,8 @@ void ABaseAIController::BeginPlay()
 
 	if (AIPerception && HasAuthority())
 	{
-		AIPerception->OnPerceptionUpdated.AddDynamic(this, &ABaseAIController::UpdatePerception);
-		AIPerception->OnTargetPerceptionUpdated.AddDynamic(this, &ABaseAIController::UpdateTargetPerception);
+		AIPerception->OnPerceptionUpdated.AddDynamic(this, &ABaseAIController::Server_OnUpdatePerception);
+		AIPerception->OnTargetPerceptionUpdated.AddDynamic(this, &ABaseAIController::Server_OnUpdateTargetPerception);
 	}
 }
 
@@ -130,24 +131,22 @@ void ABaseAIController::OnPossess(APawn* InPawn)
 void ABaseAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result)
 {
 	Super::OnMoveCompleted(RequestID, Result);
-	if (Result.IsFailure())
+	if (Result.IsSuccess())
 	{
-		ConsecutiveMovementFailure++;
+		// 중요:
+		// Patrol이 아니더라도, 무언가 다른 Move에 성공하면 Patrol fail count를 0으로 초기화한다
+		// 이는 Patrol 도중에 노드를 abort하고 다른 노드에 방문할 수 있기 때문
+		ConsecutivePatrolFailure = 0;
 	}
-	else
-	{
-		ConsecutiveMovementFailure = 0;
-	}
-	TR_PRINT_FSTRING("%d", ConsecutiveMovementFailure);
 }
 
-void ABaseAIController::UpdatePerception(const TArray<AActor*>& Actors)
+void ABaseAIController::Server_OnUpdatePerception(const TArray<AActor*>& Actors)
 {
 	if (!IsValid(Blackboard)) return;
 	OnPerceptionUpdate(Actors);
 }
 
-void ABaseAIController::UpdateTargetPerception(AActor* Actor, FAIStimulus Stimulus)
+void ABaseAIController::Server_OnUpdateTargetPerception(AActor* Actor, FAIStimulus Stimulus)
 {
 	if (!IsValid(Blackboard)) return;
 	if (!IsValid(Actor)) return;
@@ -232,7 +231,7 @@ void ABaseAIController::SetTargetAs(AActor* Target)
 
 void ABaseAIController::ClearTarget()
 {
-	Blackboard->SetValueAsObject(TEXT(AI_TARGET), nullptr);
+	Blackboard->ClearValue(TEXT(AI_TARGET));
 	CurrentTarget = nullptr;
 	ClearFocus(EAIFocusPriority::Gameplay);
 }
@@ -251,8 +250,12 @@ void ABaseAIController::SetTargetLastLocationOf(AActor* Target)
 	bool bFound = TRUtils::GetMovablePointNearActor(GetWorld(), Target, TEXT("BotCapsule"), TR_DIST_CLOSE_TO_PLAYER_HEIGHT * 8, TR_DIST_CLOSE_TO_PLAYER_HEIGHT, TargetEstimatedPoint);
 	if (!bFound) return;
 
-	////TESTING
-	DrawDebugSphere(GetWorld(), TargetEstimatedPoint, 100, 10, FColor::Purple, false, 5.0f);
+#if WITH_EDITOR
+	if (CVarShowDebugShapes.GetValueOnGameThread())
+	{
+		DrawDebugSphere(GetWorld(), TargetEstimatedPoint, 100, 10, FColor::Purple, false, 5.0f);
+	}
+#endif
 
 	Blackboard->SetValueAsVector(TEXT(AI_TARGET_LAST_KNOWN_LOCATION), TargetEstimatedPoint);
 	Blackboard->SetValueAsBool(TEXT(AI_IS_TARGET_LAST_KNOWN_LOC_VALID), true);
@@ -260,8 +263,8 @@ void ABaseAIController::SetTargetLastLocationOf(AActor* Target)
 
 void ABaseAIController::ClearTargetLastLocation()
 {
-	Blackboard->SetValueAsVector(TEXT(AI_TARGET_LAST_KNOWN_LOCATION), FVector(0, 0, 0));
-	Blackboard->SetValueAsBool(TEXT(AI_IS_TARGET_LAST_KNOWN_LOC_VALID), false);
+	Blackboard->ClearValue(TEXT(AI_TARGET_LAST_KNOWN_LOCATION));
+	Blackboard->ClearValue(TEXT(AI_IS_TARGET_LAST_KNOWN_LOC_VALID));
 }
 
 void ABaseAIController::SetAttackerLastLocationAs(FVector Location)
@@ -272,8 +275,8 @@ void ABaseAIController::SetAttackerLastLocationAs(FVector Location)
 
 void ABaseAIController::ClearAttackerLastLocation()
 {
-	Blackboard->SetValueAsVector(TEXT(AI_ATTACKER_LAST_KNOWN_LOCATION), FVector(0, 0, 0));
-	Blackboard->SetValueAsBool(TEXT(AI_IS_ATTACKER_LAST_KNOWN_LOC_VALID), false);
+	Blackboard->ClearValue(TEXT(AI_ATTACKER_LAST_KNOWN_LOCATION));
+	Blackboard->ClearValue(TEXT(AI_IS_ATTACKER_LAST_KNOWN_LOC_VALID));
 }
 
 void ABaseAIController::SetPatrolLocationAs(FVector Location)
@@ -283,7 +286,7 @@ void ABaseAIController::SetPatrolLocationAs(FVector Location)
 
 void ABaseAIController::ClearPatrolLocation()
 {
-	Blackboard->SetValueAsVector(TEXT(AI_PATROL_LOCATION), FVector(0, 0, 0));
+	Blackboard->ClearValue(TEXT(AI_PATROL_LOCATION));
 }
 
 bool ABaseAIController::SetTargetWithinSight()
@@ -356,7 +359,7 @@ FAISenseID ABaseAIController::GetSightSenseID()
 void ABaseAIController::ClearControllerData()
 {
 	ClearTarget();
-	ConsecutiveMovementFailure = 0;
+	ConsecutivePatrolFailure = 0;
 }
 
 void ABaseAIController::ClearBlackboardValues()
@@ -375,20 +378,4 @@ void ABaseAIController::ClearBlackboardValues()
 			Blackboard->ClearValue(Entry.EntryName);
 		}
 	}
-}
-
-void ABaseAIController::PrintDebug() const
-{
-	// 필요에 맞게 사용
-	FVector Vec1 = Blackboard->GetValueAsVector(TEXT(AI_PATROL_LOCATION));
-	FVector Vec2 = Blackboard->GetValueAsVector(TEXT(AI_TARGET));
-	FVector Vec3 = Blackboard->GetValueAsVector(TEXT(AI_TARGET_LAST_KNOWN_LOCATION));
-	FVector Vec4 = Blackboard->GetValueAsVector(TEXT(AI_ATTACKER_LAST_KNOWN_LOCATION));
-	bool bBool1 = Blackboard->GetValueAsBool(TEXT(AI_IS_ATTACKER_LAST_KNOWN_LOC_VALID));
-	bool bBool2 = Blackboard->GetValueAsBool(TEXT(AI_IS_TARGET_LAST_KNOWN_LOC_VALID));
-	bool bBool3 = Blackboard->GetValueAsBool(TEXT(AI_IS_MELEE_ANIM_PLAYING));
-	bool bBool4 = Blackboard->GetValueAsBool(TEXT(AI_IS_RANGED_ANIM_PLAYING));
-	UE_LOG(LogTemp, Error, TEXT("id:%s BBaddr:%d BTaddr:%d TargetLocX:%f"),
-		*(GetName()), Blackboard, BrainComponent, Vec2.X
-	);
 }

@@ -15,7 +15,7 @@ UTRProjMovementComponent::UTRProjMovementComponent()
 
 UProjectileMovementComponent::EHandleBlockingHitResult UTRProjMovementComponent::HandleBlockingHit(const FHitResult& Hit, float TimeTick, const FVector& MoveDelta, float& SubTickTimeRemaining)
 {
-    if (bUseDefaultHitHandlers)
+    if (ShouldUseDefaultHitHandlers())
     {
         return Super::HandleBlockingHit(Hit, TimeTick, MoveDelta, SubTickTimeRemaining);
     }
@@ -24,7 +24,7 @@ UProjectileMovementComponent::EHandleBlockingHitResult UTRProjMovementComponent:
 
 void UTRProjMovementComponent::HandleImpact(const FHitResult& Hit, float TimeSlice, const FVector& MoveDelta)
 {
-	if (bUseDefaultHitHandlers)
+	if (ShouldUseDefaultHitHandlers())
 	{
 		return Super::HandleImpact(Hit, TimeSlice, MoveDelta);
 	}

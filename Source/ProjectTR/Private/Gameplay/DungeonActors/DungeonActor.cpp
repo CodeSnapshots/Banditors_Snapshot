@@ -5,6 +5,7 @@
 #include "Room.h"
 
 #include "Core/TRMacros.h"
+#include "Core/TRCVar.h"
 
 ADungeonActor::ADungeonActor()
 {
@@ -112,8 +113,12 @@ void ADungeonActor::AddPairActor(ADungeonActor* Pair)
 
 void ADungeonActor::OnTriggered()
 {
-	// 테스트 코드; 필요 시 상속해 오버라이드 할 것 
-	TR_PRINT_FSTRING("%s", *GetName());
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT_ARGS("DungeonActor %s triggered", *GetName());
+	}
+#endif
 	TriggerPairs();
 	return;
 }

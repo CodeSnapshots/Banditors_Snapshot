@@ -10,7 +10,11 @@ UGPC_BR_SMG9::UGPC_BR_SMG9()
 	USkeletalMesh* Asset = MeshAsset.Object;
 	SetupMeshComp(nullptr, Asset);
 
-	// TEMP TODO FIXME
-	DeltaDmgEnemyDirect = 20.0f;
-	DeltaDmgAllyDirect = -20.0f;
+	// TEMP: Tier 1
+	bOverrideFireMode = true;
+	FireModeValue = EWeaponFireMode::WFM_AUTO;
+	DeltaFireInterval = 0.05f;
+	DeltaMissileSpawnedPerShot = 0;
+	DeltaDmgEnemyDirect = 10.f;
+	DeltaRecoilOffsetRange = 2.0f;
 }

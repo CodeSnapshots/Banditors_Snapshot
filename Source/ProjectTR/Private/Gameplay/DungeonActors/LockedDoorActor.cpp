@@ -3,6 +3,7 @@
 
 #include "DungeonActors/LockedDoorActor.h"
 #include "Core/TRGameState.h"
+#include "Core/TRCVar.h"
 #include "Characters/FPSCharacter.h"
 
 void ALockedDoorActor::OnMuzzleTriggered(AGameCharacter* TriggeredBy)
@@ -29,6 +30,11 @@ void ALockedDoorActor::Unlock()
 {
 	if (!bIsLocked) return;
 
-	TR_PRINT_FSTRING("Door unlocked: %d", DoorId);
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT_ARGS("Door unlocked: %d", DoorId);
+	}
+#endif
 	bIsLocked = false;
 }

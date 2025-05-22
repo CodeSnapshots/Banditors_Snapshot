@@ -10,7 +10,11 @@ UGPC_BR_Rifle10::UGPC_BR_Rifle10()
 	USkeletalMesh* Asset = MeshAsset.Object;
 	SetupMeshComp(nullptr, Asset);
 
-	// TEMP TODO FIXME
-	DeltaDmgEnemyDirect = 40.0f;
-	DeltaDmgAllyDirect = 0.0f;
+	// TEMP: Tier 1
+	bOverrideFireMode = true;
+	FireModeValue = EWeaponFireMode::WFM_AUTO;
+	DeltaFireInterval = 0.07f;
+	DeltaMissileSpawnedPerShot = 0;
+	DeltaDmgEnemyDirect = 9.f;
+	DeltaRecoilOffsetRange = 0.9f;
 }

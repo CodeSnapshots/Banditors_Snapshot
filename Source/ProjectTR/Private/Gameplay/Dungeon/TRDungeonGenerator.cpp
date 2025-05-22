@@ -4,6 +4,7 @@
 #include "Dungeon/TRDungeonGenerator.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/LevelStreamingDynamic.h"
+#include "Blueprint/UserWidget.h"
 #include "DungeonGraph.h"
 
 #include "Room.h"
@@ -66,11 +67,9 @@ void ATRDungeonGenerator::BlockInvalidDoor(const URoomData* Room, const FDoorDef
 		DoorDirection = FVector::RightVector * -1;
 		break;
 	}
-	//DrawDebugSphere(GetWorld(), DoorPos, 60, 2, FColor::Orange, true);
 	FActorSpawnParameters DoorSpawnParam;
 	DoorSpawnParam.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	GetWorld()->SpawnActor<ADungeonActor>(DoorBlocker, FTransform(DoorDirection.Rotation(), DoorPos, FVector(1, 1, 1)), DoorSpawnParam);
-	//TR_PRINT("OnFailedToAddRoomLogic");
 }
 
 void ATRDungeonGenerator::DestroyAllDoorBlockers()
@@ -91,7 +90,6 @@ void ATRDungeonGenerator::Server_SetAllPlayerLocationBackToSpawn()
 {
 	if (!HasAuthority()) return;
 
-	TR_PRINT("Server_SetAllPlayerLocationBackToSpawn");
 	UWorld* World = GetWorld();
 	if (World)
 	{
@@ -209,7 +207,7 @@ void ATRDungeonGenerator::Server_GenerateLockedDoors()
 
 		// 시작점 - 키 까지의 경로 사이에 잠긴 구간이 없어야 한다
 		TArray<const URoom*> OutPath;
-		bool bPathFound = Graph->FindPath(Entrance, KeyRoom, &OutPath, false/* TODO: check */);
+		bool bPathFound = Graph->FindPath(Entrance, KeyRoom, &OutPath, false);
 		if (!bPathFound)
 		{
 			continue;
@@ -257,9 +255,6 @@ void ATRDungeonGenerator::Server_GenerateLockedDoors()
 	{
 		LockedRoom->Lock(false);
 	}
-
-	/////TEMP
-	UE_LOG(LogTemp, Error, TEXT("LockedPairGen: %d"), PairsGenerated);
 }
 
 bool ATRDungeonGenerator::SpawnDoorKeyMultiInstancePair(URoom* DoorRoom, URoom* KeyRoom, ADoor* LockDoor)
@@ -275,10 +270,6 @@ bool ATRDungeonGenerator::SpawnDoorKeyMultiInstancePair(URoom* DoorRoom, URoom* 
 		UE_LOG(LogTemp, Error, TEXT("SpawnDoorKeyMultiInstancePair - Invalid argument(s)!"));
 		return false;
 	}
-
-	/*DrawDebugSphere(World, KeyRoom->GetBoundsCenter(), 100.0f, 16, FColor::Green, true, -1.0f, 0, 8.0f);
-	DrawDebugSphere(World, LockDoor->GetActorLocation(), 100.0f, 16, FColor::Orange, true, -1.0f, 0, 8.0f);
-	DrawDebugLine(World, KeyRoom->GetBoundsCenter(), DoorRoom->GetBoundsCenter(), FColor::White, true, -1.0f, 0, 8.0f);*/
 
 	// 아이디
 	int32 PairId = NewDoorKeyMultiId;

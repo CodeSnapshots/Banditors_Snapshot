@@ -88,7 +88,7 @@ void ATRChest::Server_TurnIntoMimic()
 	AProjectTRGameModeBase* TRGM = Cast<AProjectTRGameModeBase>(GetWorld()->GetAuthGameMode());
 	if (TRGM && TRGM->AIPool)
 	{
-		AMimicBot* Mimic = Cast<AMimicBot>(TRGM->SpawnBot(MimicClass, World, GetActorLocation()/*TODO*/, GetActorRotation()/*TODO*/, FActorSpawnParameters()));
+		AMimicBot* Mimic = Cast<AMimicBot>(TRGM->SpawnBot(MimicClass, World, GetActorLocation(), GetActorRotation(), FActorSpawnParameters()));
 		if (Mimic)
 		{
 			// 미믹은 상자와 같은 아이템들을 처치보상으로 제공
@@ -155,7 +155,6 @@ void ATRChest::Server_AutoInitRewards()
 
 int32 ATRChest::Server_AutoSelectMaxRewardCount(int32 DungeonDepth) const
 {
-	// TEMP TODO DEBUG
 	// TODO: 벨런스 조정
 	return 3;
 }

@@ -36,13 +36,11 @@ EBTNodeResult::Type UBotBTTask_FollowPlayerZero::ExecuteTask(UBehaviorTreeCompon
 			{
 				PlayerZeroLocation = PlayerPawn->GetActorLocation();
 				AIController->GetBlackboardComponent()->SetValueAsVector(BlackboardKey.SelectedKeyName, PlayerZeroLocation);
-				//DrawDebugSphere(World, PlayerZeroLocation, 10, 10, FColor::Green, false, 0.5f);
 			}
 		}
 	}
 
 	// 태스크 종료
-	FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 	return EBTNodeResult::Succeeded;
 }
 

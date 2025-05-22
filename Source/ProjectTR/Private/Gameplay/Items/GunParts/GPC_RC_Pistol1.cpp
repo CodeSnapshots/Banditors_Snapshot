@@ -3,6 +3,7 @@
 
 #include "Items/GunParts/GPC_RC_Pistol1.h"
 #include "Core/TRMacros.h"
+#include "Gameplay/Damage/DamageTypeMagical.h"
 
 UGPC_RC_Pistol1::UGPC_RC_Pistol1()
 {
@@ -10,8 +11,10 @@ UGPC_RC_Pistol1::UGPC_RC_Pistol1()
 	USkeletalMesh* Asset = MeshAsset.Object;
 	SetupMeshComp(nullptr, Asset);
 
-	// TEMP TODO FIXME
-	bOverrideGunType = true;
-	GunTypeValue = EWeaponFireType::WFT_PROJECTILE;
-	DeltaFireInterval = -0.33f;
+	// TEMP: Tier 1
+	bOverrideDamageType = true;
+	DamageTypeValue = UDamageTypeMagical::StaticClass();
+
+	DeltaMissileSpawnedPerShot = 0;
+	DeltaDmgEnemyDirect = 5.0f;
 }

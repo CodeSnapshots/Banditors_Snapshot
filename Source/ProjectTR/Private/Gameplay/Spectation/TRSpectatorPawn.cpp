@@ -9,6 +9,7 @@
 
 #include "Core/ProjectTRGameModeBase.h"
 #include "Core/TRPlayerController.h"
+#include "Core/TRCVar.h"
 #include "Characters/GameCharacter.h"
 #include "Characters/FPSCharacter.h"
 #include "Characters/TRPlayerState.h"
@@ -18,7 +19,7 @@ ATRSpectatorPawn::ATRSpectatorPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bHighPriority = false;
-	SetActorEnableCollision(false);
+	SetActorEnableCollision(true);
 }
 
 void ATRSpectatorPawn::Tick(float DeltaTime)
@@ -31,16 +32,6 @@ FBox ATRSpectatorPawn::GetComponentsBoundingBox(bool bNonColliding, bool bInclud
 	// 관전 폰의 바운딩 박스는 NonColliding 플래그가 true여야 함;
 	// 관전 폰 자체가 콜리전을 처리하지 않을 수 있기 때문에 이렇게 하지 않을 경우 룸 컬링이 제대로 처리되지 않을 수 있음
 	return Super::GetComponentsBoundingBox(true, false);
-}
-
-void ATRSpectatorPawn::Server_SetOriginalCharacterData(AGameCharacter* Character)
-{
-	AFPSCharacter* PlayerCharacter = Cast<AFPSCharacter>(Character);
-	if (PlayerCharacter)
-	{
-		this->RespawnPlayerClass = PlayerCharacter->GetClass(); // 클래스 정보
-		this->RespawnPlayerInstanceData = PlayerCharacter->Server_GetInstanceData(); // 인스턴스 정보
-	}
 }
 
 void ATRSpectatorPawn::Server_ChangeSpecTargetRPC_Implementation(bool Direction)
@@ -63,7 +54,7 @@ void ATRSpectatorPawn::Server_ChangeSpecTargetRPC_Implementation(bool Direction)
 			TArray<ATRPlayerController*> PlayersConnected = GameMode->GetPlayersConnected();
 			if (PlayersConnected.IsEmpty())
 			{
-				SetSpectatingTarget(nullptr);
+				Server_SetSpectatingTarget(nullptr);
 				return;
 			}
 			for (int Index = 0; Index < PlayersConnected.Num(); ++Index)
@@ -75,8 +66,8 @@ void ATRSpectatorPawn::Server_ChangeSpecTargetRPC_Implementation(bool Direction)
 				if (!IsValid(TRPlayerState) || TRPlayerState->GetIsOut()) continue;
 
 				// 관전 폰은 무시하고, 조작 중인 폰을 가져온다
-				AGameCharacter* TargetCharacter = Cast<AGameCharacter>(PlayerController->GetCharacter());
-				if (IsValid(TargetCharacter))
+				ACharacter* TargetCharacter = PlayerController->GetCharacter();
+				if (Server_IsTargetSpectatable(TargetCharacter))
 				{
 					// 헤드, 테일 추적
 					if (!FirstValidTarget) FirstValidTarget = TargetCharacter;
@@ -100,7 +91,8 @@ void ATRSpectatorPawn::Server_ChangeSpecTargetRPC_Implementation(bool Direction)
 
 	if (OriginTargetIdx < 0)
 	{
-		SetSpectatingTarget(FirstValidTarget);
+		// NOTE: 관전 가능 대상이 없을 경우 여기서 nullptr가 전달됨
+		Server_SetSpectatingTarget(FirstValidTarget);
 	}
 	else
 	{
@@ -108,22 +100,22 @@ void ATRSpectatorPawn::Server_ChangeSpecTargetRPC_Implementation(bool Direction)
 		{
 			if (TargetNextOrigin)
 			{
-				SetSpectatingTarget(TargetNextOrigin);
+				Server_SetSpectatingTarget(TargetNextOrigin);
 			}
 			else
 			{
-				SetSpectatingTarget(FirstValidTarget);
+				Server_SetSpectatingTarget(FirstValidTarget);
 			}
 		}
 		else
 		{
 			if (TargetPrevOrigin)
 			{
-				SetSpectatingTarget(TargetPrevOrigin);
+				Server_SetSpectatingTarget(TargetPrevOrigin);
 			}
 			else
 			{
-				SetSpectatingTarget(LastValidTarget);
+				Server_SetSpectatingTarget(LastValidTarget);
 			}
 		}
 	}
@@ -133,20 +125,23 @@ void ATRSpectatorPawn::Server_ChangeSpecTargetRPC_Implementation(bool Direction)
 
 void ATRSpectatorPawn::OnRep_SpecTargetChange()
 {
-	// NOTE: OnRep는 서버에선 호출되지 않음
-	OnSpecTargetChange();
+	Local_OnSpecTargetChange();
 }
 
 void ATRSpectatorPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
+	// Super 호출 불필요
 	// 인풋 맵핑 등록
-	AddLocalPlayerInputMappingContext(InputMapping, 1/*TODO: Enum화*/, true);
+	AddLocalPlayerInputMappingContext(DefaultInputMapping, TR_SPECPAWN_DEFAULT_INPUTMAPPING_PRIORITY, true);
 
 	// 인풋 액션 바인딩
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
+		EnhancedInputComponent->BindAction(InputConfig->MoveInputAction, ETriggerEvent::Triggered, this, &ATRSpectatorPawn::Move);
+		EnhancedInputComponent->BindAction(InputConfig->LookInputAction, ETriggerEvent::Triggered, this, &ATRSpectatorPawn::Look);
+		EnhancedInputComponent->BindAction(InputConfig->DescendAction, ETriggerEvent::Triggered, this, &ATRSpectatorPawn::Fall);
+		EnhancedInputComponent->BindAction(InputConfig->AscendAction, ETriggerEvent::Triggered, this, &ATRSpectatorPawn::Float);
+
 		EnhancedInputComponent->BindAction(InputConfig->AttackAction, ETriggerEvent::Triggered, this, &ATRSpectatorPawn::SpecChangeNext);
 		EnhancedInputComponent->BindAction(InputConfig->Attack2Action, ETriggerEvent::Triggered, this, &ATRSpectatorPawn::SpecChangePrev);
 	}
@@ -169,6 +164,65 @@ void ATRSpectatorPawn::AddLocalPlayerInputMappingContext(const UInputMappingCont
 	return;
 }
 
+void ATRSpectatorPawn::Move(const FInputActionValue& Value)
+{
+	if (!bLocal_EnableMoveInput) return;
+	if (Controller != nullptr)
+	{
+		const FVector2D MoveValue = Value.Get<FVector2D>();
+		const FRotator MovementRotation(0, Controller->GetControlRotation().Yaw, 0);
+
+		if (MoveValue.Y != 0.f)
+		{
+			const FVector Direction = MovementRotation.RotateVector(FVector::ForwardVector);
+			AddMovementInput(Direction, MoveValue.Y);
+		}
+
+		if (MoveValue.X != 0.f)
+		{
+			const FVector Direction = MovementRotation.RotateVector(FVector::RightVector);
+			AddMovementInput(Direction, MoveValue.X);
+		}
+	}
+}
+
+void ATRSpectatorPawn::Look(const FInputActionValue& Value)
+{
+	if (!bLocal_EnableLookInput) return;
+	if (Controller != nullptr)
+	{
+		const FVector2D LookValue = Value.Get<FVector2D>() * RotationSensitivity;
+
+		if (LookValue.X != 0.f)
+		{
+			AddControllerYawInput(LookValue.X);
+		}
+
+		if (LookValue.Y != 0.f)
+		{
+			AddControllerPitchInput(LookValue.Y * -1.0f);
+		}
+	}
+}
+
+void ATRSpectatorPawn::Float(const FInputActionValue& Value)
+{
+	if (!bLocal_EnableMoveInput) return;
+	if (Value.Get<bool>())
+	{
+		AddMovementInput(FVector::UpVector, FloatingSpeed);
+	}
+}
+
+void ATRSpectatorPawn::Fall(const FInputActionValue& Value)
+{
+	if (!bLocal_EnableMoveInput) return;
+	if (Value.Get<bool>())
+	{
+		AddMovementInput(FVector::DownVector, FallSpeed);
+	}
+}
+
 void ATRSpectatorPawn::SpecChangeNext(const FInputActionValue& Value)
 {
 	Server_ChangeSpecTargetRPC(true);
@@ -176,107 +230,104 @@ void ATRSpectatorPawn::SpecChangeNext(const FInputActionValue& Value)
 
 void ATRSpectatorPawn::SpecChangePrev(const FInputActionValue& Value)
 {
-	//Server_ChangeSpecTargetRPC(false);
-	// TESTING TEMP
-	Server_RespawnPlayerRPC();
+#if WITH_EDITOR
+	if (CVarEnableDebugFeatures.GetValueOnGameThread())
+	{
+		Server_RespawnPlayerForDebugRPC();
+		return;
+	}
+#endif
+	Server_ChangeSpecTargetRPC(false);
 }
 
-void ATRSpectatorPawn::Server_RespawnPlayerRPC_Implementation()
+void ATRSpectatorPawn::Server_RespawnPlayerForDebugRPC_Implementation()
 {
 	if (!HasAuthority()) return;
 	UWorld* World = GetWorld();
 	if (!World)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Server_RespawnPlayerRPC() - Invalid world!"));
+		UE_LOG(LogTemp, Error, TEXT("Server_RespawnPlayerForDebugRPC - Invalid world!"));
 		return;
 	}
 	AProjectTRGameModeBase* GameMode = Cast<AProjectTRGameModeBase>(World->GetAuthGameMode());
 	if (!GameMode)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Server_RespawnPlayerRPC() - Invalid game mode!"));
+		UE_LOG(LogTemp, Error, TEXT("Server_RespawnPlayerForDebugRPC - Invalid game mode!"));
+		return;
+	}
+	ATRPlayerState* TRPS = GetPlayerState<ATRPlayerState>();
+	if (!TRPS)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Server_RespawnPlayerForDebugRPC - Invalid player state!"));
 		return;
 	}
 
-	GameMode->RespawnPlayer(Cast<ATRPlayerController>(GetController()), GetTransform()/*TODO: FIXME*/, RespawnPlayerClass, RespawnPlayerInstanceData, true);
+	TPair<TSubclassOf<AFPSCharacter>, FGameCharacterInstanceData*> CachedInstData = TRPS->Server_GetCachedPlayerInstanceData();
+	GameMode->RespawnPlayer(Cast<ATRPlayerController>(GetController()), GetTransform()/* 폰 위치에 생성 */, CachedInstData.Get<0>(), *CachedInstData.Get<1>(), true);
 	return;
 }
 
-void ATRSpectatorPawn::SetSpectatingTarget(ACharacter* NewTarget)
+void ATRSpectatorPawn::Server_SetSpectatingTarget(ACharacter* NewTarget)
 {
-	if (NewTarget != nullptr && NewTarget == SpectatingTarget) return;
-	else
+	if (!Server_IsTargetSpectatable(NewTarget))
 	{
 		PrevSpectatingTarget = SpectatingTarget;
-		SpectatingTarget = NewTarget;
-		OnSpecTargetChange();
-	}
-}
-
-void ATRSpectatorPawn::OnSpecTargetChange()
-{
-	if (!HasAuthority())
-	{
-		if (IsValid(SpectatingTarget)) return Client_OnNewSpecTargetSet();
-		return Client_OnNoSpecTargetExist();
+		SpectatingTarget = nullptr;
 	}
 	else
 	{
-		if (IsValid(SpectatingTarget)) return Server_OnNewSpecTargetSet();
-		return Server_OnNoSpecTargetExist();
+		// 타깃도 동일하고, 관전 가능 여부에도 변함이 없으면 아무 것도 수행하지 않음
+		if (SpectatingTarget == NewTarget) return;
+
+		PrevSpectatingTarget = SpectatingTarget;
+		SpectatingTarget = NewTarget;
 	}
+
+	// 서버의 경우 수동 호출
+	Local_OnSpecTargetChange();
 }
 
-void ATRSpectatorPawn::Server_OnNewSpecTargetSet()
+void ATRSpectatorPawn::Local_OnSpecTargetChange()
 {
 	APlayerController* SpecController = Cast<APlayerController>(GetController());
 	if (!SpecController)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Server unable to get a valid player controller of the spectator pawn!"));
+		UE_LOG(LogTemp, Error, TEXT("Local_OnSpecTargetChange - Invalid controller!"));
 		return;
 	}
 	if (!IsValid(SpectatingTarget))
 	{
-		Server_OnNoSpecTargetExist();
-		return;
+		SpecController->SetViewTargetWithBlend(this);
+
+		bLocal_EnableMoveInput = true;
+		bLocal_EnableLookInput = true;
 	}
-
-	SpecController->SetViewTargetWithBlend(SpectatingTarget);
-	Local_OnViewTargetSet();
-
-	// TODO: 추가 로직
-	UE_LOG(LogTemp, Warning, TEXT("Server_OnNewSpecTargetSet()"));
-}
-
-void ATRSpectatorPawn::Client_OnNewSpecTargetSet()
-{
-	// 클라이언트의 경우 접근이 가능한 자기 자신의 컨트롤러, 즉 로컬 ViewTarget만 변경한다
-	APlayerController* SpecController = Cast<APlayerController>(GetController());
-	if (SpecController)
+	else
 	{
 		SpecController->SetViewTargetWithBlend(SpectatingTarget);
-		Local_OnViewTargetSet();
+
+		bLocal_EnableMoveInput = false;
+		bLocal_EnableLookInput = false;
 	}
-	
-	// TODO: 추가 로직
-	UE_LOG(LogTemp, Warning, TEXT("Client_OnNewSpecTargetSet()"));
-}
-
-void ATRSpectatorPawn::Server_OnNoSpecTargetExist()
-{
-	// TODO: 추가 로직
-	UE_LOG(LogTemp, Warning, TEXT("Server_OnNoSpecTargetExist()"));
-}
-
-void ATRSpectatorPawn::Client_OnNoSpecTargetExist()
-{
-	// TODO: 추가 로직
-	UE_LOG(LogTemp, Warning, TEXT("Client_OnNoSpecTargetExist()"));
+	Local_OnViewTargetSet();
 }
 
 void ATRSpectatorPawn::Local_OnViewTargetSet()
 {
 	AFPSCharacter* PrevFPSChar = Cast<AFPSCharacter>(PrevSpectatingTarget);
 	AFPSCharacter* CurrFPSChar = Cast<AFPSCharacter>(SpectatingTarget);
-	
-	// TODO: 필요 시 추가 로직 작성
+
+	if (PrevFPSChar) PrevFPSChar->Local_OnSpectationStateChanged(false);
+	if (CurrFPSChar) CurrFPSChar->Local_OnSpectationStateChanged(true);
+}
+
+bool ATRSpectatorPawn::Server_IsTargetSpectatable(TWeakObjectPtr<ACharacter> Target)
+{
+	if (!Target.IsValid()) return false;
+	AFPSCharacter* FPSTarget = Cast<AFPSCharacter>(Target);
+	if (!IsValid(FPSTarget) || FPSTarget->GetHasDied())
+	{
+		return false;
+	}
+	return true;
 }

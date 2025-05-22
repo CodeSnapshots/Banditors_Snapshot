@@ -10,7 +10,12 @@ UGPC_MG_Curved1::UGPC_MG_Curved1()
 	UStaticMesh* Asset = MeshAsset.Object;
 	SetupMeshComp(Asset, nullptr);
 
-	// TEMP TODO FIXME
-	bOverrideFireMode = true;
-	FireModeValue = EWeaponFireMode::WFM_AUTO;
+	// TEMP: Tier 1
+	DeltaMaxAmmo = 1000;
+	DeltaRecoilOffsetRange = 0.0f;
+	DeltaAmmoPerShot = 1;
+	DeltaFireInterval = 0.0f;
+	
+	bOverrideExplodeOnHit = false;
+	// ...
 }

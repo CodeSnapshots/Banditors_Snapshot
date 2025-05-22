@@ -70,7 +70,6 @@ ABaseAIController* UAIControllerPool::Animate(ABotCharacter* Bot, bool bForceNew
 	{
 		NewController->Possess(Bot);
 		NewController->StartAILogic();
-		//NewController->PrintDebug();
 		return NewController;
 	}
 	UE_LOG(LogTemp, Error, TEXT("UAIControllerPool::Animate - Something went wrong!"));

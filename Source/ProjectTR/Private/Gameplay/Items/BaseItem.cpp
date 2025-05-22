@@ -126,11 +126,6 @@ void ABaseItem::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void ABaseItem::ThrowInDirection(const FVector& Direction)
-{
-    // TODO
-}
-
 void ABaseItem::SetRootToMeshComponent()
 {
 
@@ -211,7 +206,7 @@ void ABaseItem::InitReachComp(UPrimitiveComponent* Component)
 
 void ABaseItem::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
 {
-    // TODO
+    // 필요 시 추가
 }
 
 void ABaseItem::DisableItemCollision()
@@ -392,8 +387,7 @@ bool ABaseItem::OnItemEquip(UEquipSystem* EquSys, int32 SlotIdx)
 {
     // ABaseItem은 장착이 불가능
     // NOTE: 게임플레이 시스템 상 장착은 불가하지만 소켓에 물리적으로 부착하는 것은 지원함
-    FString DebugString = FString::Printf(TEXT("Item %s is not a AWieldItem. You cannot Equip it."), *this->GetName());
-    GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, DebugString);
+    UE_LOG(LogTemp, Error, TEXT("Item %s is not a AWieldItem. You cannot Equip it."), *this->GetName());
     return false;
 }
 
@@ -417,13 +411,6 @@ void ABaseItem::SetItemVisibility(bool bVisibility)
         GetMeshComponent()->SetVisibility(bVisibility, true);
     }
     bItemVisibility = bVisibility;
-}
-
-void ABaseItem::PrintItemDataTestValue()
-{
-    FString DebugString = FString::Printf(TEXT("ItemData TestVal: %f"), ItemData->TestVal);
-    GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::White, DebugString);
-    ItemData->TestVal += 10;
 }
 
 bool ABaseItem::OnItemPickup(UInventoryComponent* InvComp)

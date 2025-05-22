@@ -85,6 +85,13 @@ void ATRPlayerController::Local_OnPawnPossessionChange(APawn* OldPosPawn, APawn*
 	}
 }
 
+void ATRPlayerController::Client_CancelAllDragAndDropRPC_Implementation()
+{
+	// 로컬 드래그 드랍 취소
+	UTRGameInstance* TRGI = GetGameInstance<UTRGameInstance>();
+	if (TRGI) TRGI->Local_CancelAllDragDrops();
+}
+
 void ATRPlayerController::Server_ReqHostsLvlTransPrep()
 {
 	UWorld* World = GetWorld();
@@ -197,7 +204,7 @@ void ATRPlayerController::Server_OnHostLvlTransPrepDone_Implementation()
 	UE_LOG(LogTemp, Error, TEXT("ServerReadytravel %d/%d, ConfirmedTargetAuth:%d"), TRGM->PreparedHostCount, TRGM->TotalHostCountCached, this->GetLocalRole() == ROLE_Authority);
 }
 
-void ATRPlayerController::Local_DrawGlobalPingRPC_Implementation(UPrimitiveComponent* TargetComp, float Duration, bool bIsServerRequest)
+void ATRPlayerController::Local_DrawGlobalPingRPC_Implementation(UPrimitiveComponent* TargetComp, float Duration, int32 StencilValue, bool bIsServerRequest)
 {
 	if (!TargetComp) return;
 	if (!bIsServerRequest)
@@ -207,7 +214,7 @@ void ATRPlayerController::Local_DrawGlobalPingRPC_Implementation(UPrimitiveCompo
 	}
 	if (Local_ServerManagedOutlines.Contains(TargetComp)) return;
 
-	Local_DrawOutline(TargetComp, bIsServerRequest);
+	Local_DrawOutline(TargetComp, bIsServerRequest, StencilValue);
 
 	if (Duration < 0) Duration = 1.0f;
 	FTimerHandle NewPingTimer;
@@ -219,8 +226,14 @@ void ATRPlayerController::Local_DrawGlobalPingRPC_Implementation(UPrimitiveCompo
 	);
 }
 
-void ATRPlayerController::Local_DrawOutline(UPrimitiveComponent* TargetComp, bool bIsServerRequest)
+void ATRPlayerController::Local_DrawOutline(UPrimitiveComponent* TargetComp, bool bIsServerRequest, int32 StencilValue)
 {
+	if (StencilValue < 0 || StencilValue > 255)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Local_DrawOutline - Invalid stencil value. Using default instead."));
+		StencilValue = STENCIL_WHITE;
+	}
+
 	// 이 호스트가 조작중인 폰이 핑잉 대상인 경우 무시한다
 	// 자기 캐릭터에 갑자기 외곽선이 생기는 경우 부자연스럽기 때문
 	// 이는 서버 요청이더라도 마찬가지
@@ -233,6 +246,7 @@ void ATRPlayerController::Local_DrawOutline(UPrimitiveComponent* TargetComp, boo
 		Local_ServerManagedOutlines.Add(TargetComp);
 	}
 	TargetComp->SetRenderCustomDepth(true);
+	TargetComp->SetCustomDepthStencilValue(StencilValue);
 }
 
 void ATRPlayerController::Local_EraseOutline(UPrimitiveComponent* TargetComp, bool bIsServerRequest)
@@ -442,7 +456,7 @@ void ATRPlayerController::Local_AlertTextRPC_Implementation(const FString& Text,
 	{
 		// 인터랙션 비활성화
 		TextAlertWidget->SetIsFocusable(false);
-		TextAlertWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+		TextAlertWidget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		Local_DisplayWidget(TextAlertWidget, WZO_ALERT);
 		// 알림 위젯의 경우 포커싱은 필요하지 않음
 		

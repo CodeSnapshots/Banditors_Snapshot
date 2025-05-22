@@ -8,6 +8,7 @@
 
 #include "Core/TRMacros.h"
 #include "Core/ProjectTRGameModeBase.h"
+#include "Core/TRCVar.h"
 #include "Characters/FPSCharacter.h"
 
 UBotBTTask_FindRandLocToPlayer::UBotBTTask_FindRandLocToPlayer()
@@ -37,7 +38,7 @@ EBTNodeResult::Type UBotBTTask_FindRandLocToPlayer::ExecuteTask(UBehaviorTreeCom
 	{
 		return FindRandomLocation(OwnerComp, NodeMemory);
 	}
-	FVector ToPlayerVector = (Target->GetActorLocation() - PawnLocation).GetSafeNormal() * (SearchRadius * PlayerAttractionStrength);
+	FVector ToPlayerVector = (Target->GetActorLocation() - PawnLocation).GetSafeNormal() * (SearchRadius * FMath::Lerp(MinPlayerAttractionStrength, MaxPlayerAttractionStrength, TRGM->GetIntensity()));
 	ToPlayerVector.Z = 0;
 
 	const UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
@@ -45,10 +46,14 @@ EBTNodeResult::Type UBotBTTask_FindRandLocToPlayer::ExecuteTask(UBehaviorTreeCom
 	{
 		AIController->GetBlackboardComponent()->SetValueAsVector(BlackboardKey.SelectedKeyName, Location.Location);
 
-		TR_PRINT("ToPlayerFound!");
-		DrawDebugSphere(GetWorld(), PawnLocation + ToPlayerVector, 10, 10, FColor::Yellow, false, 3.0f);
-		DrawDebugLine(GetWorld(), PawnLocation + ToPlayerVector, Location.Location, FColor::Yellow, false, 3.0f);
-		DrawDebugSphere(GetWorld(), Location.Location, 10, 10, FColor::White, false, 3.0f);
+#if WITH_EDITOR
+		if (CVarShowDebugShapes.GetValueOnGameThread())
+		{
+			DrawDebugSphere(GetWorld(), PawnLocation + ToPlayerVector, 10, 10, FColor::Yellow, false, 3.0f);
+			DrawDebugLine(GetWorld(), PawnLocation + ToPlayerVector, Location.Location, FColor::Yellow, false, 3.0f);
+			DrawDebugSphere(GetWorld(), Location.Location, 10, 10, FColor::White, false, 3.0f);
+		}
+#endif
 	}
 	else
 	{
@@ -56,7 +61,6 @@ EBTNodeResult::Type UBotBTTask_FindRandLocToPlayer::ExecuteTask(UBehaviorTreeCom
 	}
 
 	// 태스크 종료
-	FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 	return EBTNodeResult::Succeeded;
 }
 
@@ -74,12 +78,15 @@ EBTNodeResult::Type UBotBTTask_FindRandLocToPlayer::FindRandomLocation(UBehavior
 	{
 		AIController->GetBlackboardComponent()->SetValueAsVector(BlackboardKey.SelectedKeyName, Location.Location);
 
-		TR_PRINT("RandFound!");
-		DrawDebugSphere(GetWorld(), Location.Location, 10, 10, FColor::Red, false, 0.5f);
+#if WITH_EDITOR
+		if (CVarShowDebugShapes.GetValueOnGameThread())
+		{
+			DrawDebugSphere(GetWorld(), Location.Location, 10, 10, FColor::Red, false, 0.5f);
+		}
+#endif
 	}
 
 	// 태스크 종료
-	FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 	return EBTNodeResult::Succeeded;
 }
 

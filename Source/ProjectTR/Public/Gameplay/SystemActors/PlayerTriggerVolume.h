@@ -23,11 +23,11 @@ public:
 
 	// 오버랩 시 처리 로직
 	UFUNCTION()
-	void Server_OnOverlapBegin(class AActor* OverlappedActor, class AActor* OtherActor);
+	void Server_OverlapEntered(class AActor* OverlappedActor, class AActor* OtherActor);
 
 	// 오버랩 해제 시 처리 로직
 	UFUNCTION()
-	void Server_OnOverlapEnd(class AActor* OverlappedActor, class AActor* OtherActor);
+	void Server_OverlapLeft(class AActor* OverlappedActor, class AActor* OtherActor);
 
 	// 현재 이 볼륨에 모든 플레이어들이 오버랩 된 상태인지 여부
 	UFUNCTION()

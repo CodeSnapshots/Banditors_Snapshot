@@ -88,6 +88,11 @@ FRotator ABaseProjectile::GetHitRotationForVFX(const FHitResult& Hit) const
     return VFXRotationVector.Rotation();
 }
 
+void ABaseProjectile::InitVelocity()
+{
+    ProjectileMovementComponent->Velocity = GetActorRotation().Vector().GetSafeNormal() * ProjectileMovementComponent->InitialSpeed;
+}
+
 void ABaseProjectile::BeginPlay()
 {
 	Super::BeginPlay();
@@ -101,18 +106,18 @@ void ABaseProjectile::BeginPlay()
 
     InitialLocation = GetActorLocation();
 
-    // 클라이언트 로직
     if (!HasAuthority())
     {
-        // 충돌 연산 해제
-        ProjectileMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-        // 무브먼트 연산 해제
-        ProjectileMovementComponent->Deactivate();
+        if (!bClient_ProjPredictInfoValid)
+        {
+            // 초기 정보 수신 전까지 prediction 중지
+            ProjectileMovementComponent->bSimulationEnabled = false;
+        }
     }
     else
     {
-        ProjectileMeshComponent->OnComponentHit.AddDynamic(this, &ABaseProjectile::OnHit);
+        // 콜리전 로직은 서버에서만 처리
+        ProjectileMeshComponent->OnComponentHit.AddDynamic(this, &ABaseProjectile::OnProjectileHit);
     }
 }
 
@@ -158,11 +163,34 @@ void ABaseProjectile::Server_DestoryProjectile()
     Destroy();
 }
 
+void ABaseProjectile::OnRep_ProjPredictInfo()
+{
+    bClient_ProjPredictInfoValid = true;
+
+    ProjectileMovementComponent->InitialSpeed = Client_ProjPredictInfo.Client_InitialSpeed;
+    ProjectileMovementComponent->MaxSpeed = Client_ProjPredictInfo.Client_MaxSpeed;
+    ProjectileMovementComponent->ProjectileGravityScale = Client_ProjPredictInfo.Client_ProjectileGravityScale;
+    ProjectileMovementComponent->bShouldBounce = Client_ProjPredictInfo.bClient_ShouldBounce;
+    ProjectileMovementComponent->Bounciness = Client_ProjPredictInfo.Client_Bounciness;
+    ProjectileMovementComponent->Velocity = Client_ProjPredictInfo.Client_Velocity;
+
+    ProjectileMovementComponent->bSimulationEnabled = true;
+}
+
+void ABaseProjectile::Server_SetProjPredictInfo()
+{
+    if (!HasAuthority()) return;
+    Client_ProjPredictInfo.Client_InitialSpeed = ProjectileMovementComponent->InitialSpeed;
+    Client_ProjPredictInfo.Client_MaxSpeed = ProjectileMovementComponent->MaxSpeed;
+    Client_ProjPredictInfo.Client_ProjectileGravityScale = ProjectileMovementComponent->ProjectileGravityScale;
+    Client_ProjPredictInfo.bClient_ShouldBounce = ProjectileMovementComponent->bShouldBounce;
+    Client_ProjPredictInfo.Client_Bounciness = ProjectileMovementComponent->Bounciness;
+    Client_ProjPredictInfo.Client_Velocity = ProjectileMovementComponent->Velocity;
+}
+
 void ABaseProjectile::InitProjectileMovement(UTRProjMovementComponent* Component)
 {
     check(Component != nullptr);
-    Component->bUseDefaultHitHandlers = false; // 커스텀 핸들러를 사용해 관통 등의 로직을 처리
-
     Component->InitialSpeed = 3000.0f;
     Component->MaxSpeed = 3000.0f;
     Component->bRotationFollowsVelocity = true;
@@ -187,12 +215,12 @@ void ABaseProjectile::InitProjectileMesh(UStaticMeshComponent* Component)
     Component->SetWalkableSlopeOverride(Walkable);
 }
 
-void ABaseProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
+void ABaseProjectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit)
 {
     if (!HasAuthority()) return;
     if (!ProjectileMovementComponent)
     {
-        UE_LOG(LogTemp, Error, TEXT("ABaseProjectile::OnHit - Invalid ProjMoveComp!"));
+        UE_LOG(LogTemp, Error, TEXT("ABaseProjectile::OnProjectileHit - Invalid ProjMoveComp!"));
         return;
     }
 

@@ -30,8 +30,8 @@ void ASpikeTrap::BeginPlay()
 	}
 	else if (CollisionBox)
 	{
-		CollisionBox->OnComponentBeginOverlap.AddDynamic(this, &ASpikeTrap::OnOverlapBegin);
-		CollisionBox->OnComponentEndOverlap.AddDynamic(this, &ASpikeTrap::OnOverlapEnd);
+		CollisionBox->OnComponentBeginOverlap.AddDynamic(this, &ASpikeTrap::Server_OverlapEntered);
+		CollisionBox->OnComponentEndOverlap.AddDynamic(this, &ASpikeTrap::Server_OverlapLeft);
 	}
 }
 
@@ -41,7 +41,7 @@ void ASpikeTrap::OnTriggered()
 	bTrapTriggered = true;
 }
 
-void ASpikeTrap::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ASpikeTrap::Server_OverlapEntered(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OverlappedComp && OverlappedComp == CollisionBox)
 	{
@@ -49,7 +49,7 @@ void ASpikeTrap::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* Oth
 	}
 }
 
-void ASpikeTrap::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void ASpikeTrap::Server_OverlapLeft(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	// 필요 시 추가
 }

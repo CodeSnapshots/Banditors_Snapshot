@@ -5,8 +5,10 @@
 #include "Components/BoxComponent.h"
 
 #include "Core/TRMacros.h"
+#include "Core/TRCVar.h"
 #include "Core/ProjectTRGameModeBase.h"
 #include "Core/TRPlayerController.h"
+#include "Characters/TRPlayerState.h"
 #include "Items/TRToken.h"
 #include "Items/TRSoul.h"
 #include "Items/BaseItem.h"
@@ -38,11 +40,11 @@ void ATRAltar::BeginPlay()
     // 서버의 경우만 함수 바인딩
     if (HasAuthority())
     {
-        DetectionComponent->OnComponentBeginOverlap.AddDynamic(this, &ATRAltar::Server_OnOverlapBegin);
+        DetectionComponent->OnComponentBeginOverlap.AddDynamic(this, &ATRAltar::Server_OnAltarOverlap);
     }
 }
 
-void ATRAltar::Server_OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ATRAltar::Server_OnAltarOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
     if (!HasAuthority()) return;
     if (bAltarDestroyed) return;
@@ -58,9 +60,13 @@ void ATRAltar::Server_OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor
                 Server_PostAltarUsage();
             }
 
-            ///////TESTING
-            FString ItemName = CollidedItem->GetName();
-            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Item Dropped: %s"), *ItemName));
+#if WITH_EDITOR
+            if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+            {
+                FString ItemName = CollidedItem->GetName();
+                TR_PRINT_ARGS("Item Dropped: %s", *ItemName);
+            }
+#endif
         }
     }
 }
@@ -106,7 +112,12 @@ bool ATRAltar::Server_OnTokenDetection(ATRToken* Token)
     AProjectTRGameModeBase* GameMode = Cast<AProjectTRGameModeBase>(GetWorld()->GetAuthGameMode());
     if (GameMode)
     {
-        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT("Token tier: %d"), Token->GetTier()));
+#if WITH_EDITOR
+        if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+        {
+            TR_PRINT_ARGS("Token tier: %d", Token->GetTier());
+        }
+#endif
         GameMode->SpawnRandomizedGunItem(GetWorld(), GetSpawnLocation(), GetSpawnRotation(), FActorSpawnParameters(), Token->GetTier());
         Token->Destroy();
         return true;
@@ -131,20 +142,27 @@ bool ATRAltar::Server_OnSoulDetection(ATRSoul* Soul)
     if (!HasAuthority()) return false;
 
     AProjectTRGameModeBase* GameMode = Cast<AProjectTRGameModeBase>(GetWorld()->GetAuthGameMode());
-    if (GameMode)
-    {
-        if (Soul->IsReadyToRespawnPlayer())
-        {
-            GameMode->RespawnPlayer(Soul->Server_GetController(), FTransform(GetSpawnRotation(), GetSpawnLocation(), FVector(1, 1, 1)), Soul->Server_GetCharacterClass(), Soul->Server_GetInstanceData(), true/*체력 회복*/);
-            Soul->Destroy();
-            return true;
-        }
-    }
-    else
+    if (!GameMode)
     {
         UE_LOG(LogTemp, Error, TEXT("Server_OnSoulDetection - Invalid game mode!"));
+        return false;
     }
-    return false;
+    if (!Soul->IsReadyToRespawnPlayer() || !Soul->Server_GetController())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Server_OnSoulDetection - Invalid soul item!"));
+        return false;
+    }
+    ATRPlayerState* TRPS = Soul->Server_GetController()->GetPlayerState<ATRPlayerState>();
+    if (!TRPS)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Server_OnSoulDetection - Invalid player state!"));
+        return false;
+    }
+
+    TPair<TSubclassOf<AFPSCharacter>, FGameCharacterInstanceData*> CachedInstData = TRPS->Server_GetCachedPlayerInstanceData();
+    GameMode->RespawnPlayer(Soul->Server_GetController(), FTransform(GetSpawnRotation(), GetSpawnLocation(), FVector(1, 1, 1)), CachedInstData.Get<0>(), *CachedInstData.Get<1>(), true/*체력 회복*/);
+    Soul->Destroy();
+    return true;
 }
 
 FVector ATRAltar::GetSpawnLocation()

@@ -138,7 +138,6 @@ void ATRShrine::OnShrineTriggered(AGameCharacter* TriggeredBy)
 			}
 		}
 	}
-	TR_PRINT("ATRShrine::OnShrineTriggered");
 }
 
 void ATRShrine::ShrineLogic_Implementation(AGameCharacter* TriggeredBy)

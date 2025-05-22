@@ -24,11 +24,6 @@ bool USoulItemData::CacheItem(const ABaseItem* Item)
 		return false;
 	}
 
-	if (SoulItem->Server_GetCharacterClass())
-	{
-		CacheCharacterClass(SoulItem->Server_GetCharacterClass());
-		CacheController(SoulItem->Server_GetController());
-		CacheInstanceData(SoulItem->Server_GetInstanceData());
-	}
+	CacheController(SoulItem->Server_GetController());
 	return true;
 }

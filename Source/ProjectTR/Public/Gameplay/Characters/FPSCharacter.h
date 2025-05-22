@@ -6,6 +6,7 @@
 #include "Net/UnrealNetwork.h"
 #include "InputActionValue.h"
 
+#include "Core/TRStructs.h"
 #include "DataAssets/CamShakeConfig.h"
 #include "Characters/GameCharacter.h"
 #include "Characters/Components/FPSCameraComponent.h"
@@ -30,6 +31,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult) override;
 
 	// 플레이어 데미지 딜링 성공 시 해당 호스트의 로컬 로직 처리
 	// 데미지 넘버, 크로스헤어 효과, 히트사운드 등 FX를 처리한다
@@ -67,8 +69,8 @@ protected:
 	// 앉기
 	void Duck(const FInputActionValue& Value);
 
-	// 슬라이딩
-	void Slide(const FInputActionValue& Value);
+	// 디버그 액션
+	void DebugAction(const FInputActionValue& Value);
 
 	// 도발
 	void Taunt(const FInputActionValue& Value);
@@ -108,6 +110,7 @@ protected:
 		Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 		DOREPLIFETIME(AFPSCharacter, ExpComp);
+		DOREPLIFETIME_CONDITION(AFPSCharacter, LastSyncedLocalData, COND_SkipOwner);
 	}
 
 public:
@@ -131,6 +134,23 @@ public:
 
 	// 카메라 시야 시작점과 방향을 기준으로 조준 정보를 반환한다
 	virtual TPair<FVector, FRotator> GetMuzzleInfo() override;
+
+	UFUNCTION(BlueprintCallable)
+	float GetAuthControllerPitch() const;
+
+protected:
+	// 컨트롤러 pitch 등 동기화가 필요한 값을 서버로 보내 동기화한다
+	UFUNCTION(Server, Unreliable)
+	void Server_SyncLocalData(FLocalSyncData Data);
+
+public:
+	UPROPERTY(BlueprintReadOnly, Replicated)
+	FLocalSyncData LastSyncedLocalData;
+
+private:
+	UPROPERTY(EditDefaultsOnly)
+	float Local_LocalDataSyncInterval = TR_DEFAULT_CONTROLLER_PITCH_SYNC_RATE;
+	float Local_TimeSinceLastSync = 0.0f;
 #pragma endregion
 
 #pragma region /** Camera */
@@ -145,6 +165,16 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Camera")
 	TObjectPtr<class USpringArmComponent> TPSSpringArm = nullptr;
+
+	// 관전 카메라
+	// NOTE: TPSCamera를 겸용으로 쓰지 않는 이유는 캡슐에 어태치할 경우 jitter가 발생하기 때문
+	// 그렇다고 디태치하게 되면, 리슨서버에서 슈팅 연산을 처리할 때 오차 발생
+	// 따라서 불가피하게 별도의 컴포넌트를 사용
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Camera")
+	TObjectPtr<class UFPSCameraComponent> SpecCamera = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Camera")
+	TObjectPtr<class USpringArmComponent> SpecSpringArm = nullptr;
 
 protected:
 	// 카메라 셰이크 에셋
@@ -169,6 +199,9 @@ public:
 	void Multicast_SetCameraViewPerspective(bool bIsThirdPerson);
 
 	void Local_SetCameraViewPerspective(bool bIsThirdPerson);
+
+	// 관전 시 로컬 단위에서만 관전 카메라를 활성화한다
+	void Local_OnSpectationStateChanged(bool bLocal_Spectating);
 #pragma endregion
 
 #pragma region /** Input */
@@ -181,7 +214,7 @@ public:
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enhanced Input")
-	TObjectPtr<UInputMappingContext> InputMapping = nullptr;
+	TObjectPtr<UInputMappingContext> DefaultInputMapping = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enhanced Input")
 	TObjectPtr<class UInputConfig> InputConfig = nullptr;
@@ -369,11 +402,5 @@ public:
 
 public:
 	virtual void Local_SetSlideFx(bool bValue) override;
-#pragma endregion
-
-#pragma region /** Debug */
-public:
-	// 디버깅용 변수를 관리하기 쉽게 모아둡니다.
-	// 추후 삭제할 함수 및 변수는 주석으로 TEMP 라고 표기합니다.
 #pragma endregion
 };

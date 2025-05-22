@@ -10,6 +10,32 @@
 #include "StatusEffect/StatusEffect.h"
 #include "BaseProjectile.generated.h"
 
+
+USTRUCT(BlueprintType)
+struct FClientProjPredictionInfo
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Client_InitialSpeed = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Client_MaxSpeed = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Client_ProjectileGravityScale = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float bClient_ShouldBounce = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Client_Bounciness = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector Client_Velocity = FVector::ZeroVector;
+};
+
 UCLASS()
 class PROJECTTR_API ABaseProjectile : public AActor
 {
@@ -21,6 +47,8 @@ public:
 	// bUseHitNormalForVFX 값에 따라 충돌 VFX 재생에 사용할 적절한 Rotation 값을 반환한다
 	// bUseHitNormalForVFX가 true일 경우 충돌 지점의 Normal값을, false 일 경우 함수 호출 시점의 투사체의 진행방향의 반대 방향을 반환한다
 	FRotator GetHitRotationForVFX(const FHitResult& Hit) const;
+
+	void InitVelocity();
 
 protected:
 	virtual void BeginPlay() override;
@@ -35,11 +63,25 @@ protected:
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override
 	{
 		Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+		DOREPLIFETIME(ABaseProjectile, Client_ProjPredictInfo);
 	}
 #pragma endregion
 
 #pragma region /** Client movement prediction */
+public:
+	void Server_SetProjPredictInfo();
+
+protected:
+	UFUNCTION()
+	void OnRep_ProjPredictInfo();
+
+protected:
+	UPROPERTY(ReplicatedUsing = OnRep_ProjPredictInfo)
+	FClientProjPredictionInfo Client_ProjPredictInfo;
+
 private:
+	bool bClient_ProjPredictInfoValid = false;
 	FVector Client_ProjLerpTargetLocation;
 	FRotator Client_ProjLerpTargetRotation;
 #pragma endregion
@@ -67,7 +109,7 @@ protected:
 #pragma region /** Collision */
 protected:
 	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
+	void OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
 #pragma endregion
 
 #pragma region /** Gameplay */

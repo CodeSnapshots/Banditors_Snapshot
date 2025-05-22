@@ -13,6 +13,7 @@
 #include "Core/TRGameInstance.h"
 #include "Core/TRPlayerController.h"
 #include "Core/TRGameState.h"
+#include "Core/TRCVar.h"
 #include "Characters/GameCharacter.h"
 #include "Characters/FPSCharacter.h"
 #include "Characters/BotCharacter.h"
@@ -164,23 +165,44 @@ void AProjectTRGameModeBase::PostAllHostWorldLoaded()
 	const TArray<ATRPlayerController*>& TRPCs = GetPlayersConnected();
 	for (ATRPlayerController* TRPC : TRPCs)
 	{
-		if (IsValid(TRPC))
+		if (!IsValid(TRPC))
 		{
-			ATRPlayerState* TRGS = TRPC->GetPlayerState<ATRPlayerState>();
-			AGameCharacter* TRPawn = Cast<AGameCharacter>(TRPC->GetPawn());
-			if (TRGS && TRPawn)
+			UE_LOG(LogTemp, Error, TEXT("PostAllHostWorldLoaded - Invalid player controller!"));
+			continue;
+		}
+		ATRPlayerState* TRPS = TRPC->GetPlayerState<ATRPlayerState>();
+		if (!TRPS)
+		{
+			UE_LOG(LogTemp, Error, TEXT("PostAllHostWorldLoaded - Invalid player state!"));
+			continue;
+		}
+
+		AFPSCharacter* TRPawn = Cast<AFPSCharacter>(TRPC->GetPawn());
+		ATRSpectatorPawn* TRSpecPawn = Cast<ATRSpectatorPawn>(TRPC->GetPawnOrSpectator());
+		if (TRPawn)
+		{
+			// 캐싱된 데이터를 기반으로 플레이어 정보를 복구한다
+			// 만약 캐싱된 데이터가 없을 경우 아무 것도 처리하지 않는다 (바닐라 상태로 시작)
+			TPair<TSubclassOf<AFPSCharacter>, FGameCharacterInstanceData*> CachedData = TRPS->Server_GetCachedPlayerInstanceData();
+			if (CachedData.Get<1>())
 			{
-				// 캐싱된 데이터를 기반으로 플레이어 정보를 복구한다
-				// 만약 캐싱된 데이터가 없을 경우 아무 것도 처리하지 않는다
-				FGameCharacterInstanceData* CachedData = TRGS->Server_GetCachedPlayerInstanceData();
-				if (CachedData)
+				if (!TRPawn->Server_RestoreFromInstanceData(*CachedData.Get<1>()))
 				{
-					if (!TRPawn->Server_RestoreFromInstanceData(*CachedData))
-					{
-						UE_LOG(LogTemp, Error, TEXT("PostAllHostWorldLoaded - Character instance restoration failed for %s!"), *(TRPawn->GetName()));
-					}
+					UE_LOG(LogTemp, Error, TEXT("PostAllHostWorldLoaded - Character instance restoration failed for %s!"), *(TRPawn->GetName()));
 				}
 			}
+		}
+		else if (TRSpecPawn)
+		{
+			// 캐싱된 데이터는 그대로 PlayerState에 저장해둔다
+			// 이후 부활 시 꺼내 사용한다
+			
+			// 최초 1회 관전 대상 이동 처리
+			TRSpecPawn->Server_ChangeSpecTargetRPC(true);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("PostAllHostWorldLoaded - Invalid pawn instance type!"));
 		}
 	}
 }
@@ -201,6 +223,18 @@ void AProjectTRGameModeBase::UpdatePlayerNames()
 		if (PlayerPawn && PlayerController->PlayerState)
 		{
 			PlayerPawn->Multicast_SetNameTagText(PlayerController->PlayerState->GetPlayerName());
+		}
+	}
+}
+
+void AProjectTRGameModeBase::RefreshAllSpectators()
+{
+	for (TActorIterator<ATRSpectatorPawn> It(GetWorld()); It; ++It)
+	{
+		ATRSpectatorPawn* SpecPawn = (*It);
+		if (SpecPawn)
+		{
+			SpecPawn->Server_ChangeSpecTargetRPC(true);
 		}
 	}
 }
@@ -231,7 +265,7 @@ ABaseItem* AProjectTRGameModeBase::SpawnDecorativeItem(UInvObject* InvObj, UWorl
 		// 클라이언트 레플리케이션을 위해 PostInit 단계에서 처리한다
 		SpawnedItem->bShouldInitializeIcon = false;
 
-		// TODO: 기타 무효화 로직 필요 시 추가
+		// 기타 무효화 로직 필요 시 추가
 	}
 
 	SpawnedItem = Cast<ABaseItem>(UGameplayStatics::FinishSpawningActor(SpawnedItem, SpawnTransform));
@@ -280,11 +314,11 @@ AGunItem* AProjectTRGameModeBase::SpawnRandomizedGunItem(UWorld* World, FVector 
 	UGunPartComponent* StockComp = nullptr;
 
 	// 파츠 선택 및 오브젝트 생성
-	//const FGunPartTierData& TierData = RandomizePartsTier(TokenTier);
-	//RandomizeGunParts(TierData, GunItem, &ReceiverComp, &BarrelComp, &GripComp, &MagazineComp, &MuzzleComp, &SightComp, &StockComp);
+	const FGunPartTierData& TierData = RandomizePartsTier(TokenTier);
+	RandomizeGunParts(TierData, GunItem, &ReceiverComp, &BarrelComp, &GripComp, &MagazineComp, &MuzzleComp, &SightComp, &StockComp);
 	///////////////TESTING
-	ReceiverComp = NewObject<UGPC_TestReceiver>(GunItem);
-	BarrelComp = NewObject<UGPC_TestBarrel>(GunItem);
+	//ReceiverComp = NewObject<UGPC_TestReceiver>(GunItem);
+	//BarrelComp = NewObject<UGPC_TestBarrel>(GunItem);
 
 	// 파츠 부착
 	GunItem->SetReceiver(ReceiverComp);
@@ -296,6 +330,9 @@ AGunItem* AProjectTRGameModeBase::SpawnRandomizedGunItem(UWorld* World, FVector 
 	GunItem->SetStock(StockComp);
 
 	GunItem = Cast<AGunItem>(UGameplayStatics::FinishSpawningActor(GunItem, SpawnTransform));
+
+	// 최초 스폰 시에만 초기화 (리스폰 시에는 호출X)
+	GunItem->OnActorSpawnedFromZero();
 	return GunItem;
 }
 
@@ -445,7 +482,8 @@ void AProjectTRGameModeBase::InitPartsList()
 	// 그립
 	AddPartToList<UGPC_GR_Pistol1>();
 	AddPartToList<UGPC_GR_Pistol2>();
-	AddPartToList<UGPC_GR_Revolver1>();
+	// TESTING
+	/*AddPartToList<UGPC_GR_Revolver1>();
 	AddPartToList<UGPC_GR_Revolver2>();
 	AddPartToList<UGPC_GR_Revolver3>();
 	AddPartToList<UGPC_GR_Rifle1>();
@@ -473,7 +511,7 @@ void AProjectTRGameModeBase::InitPartsList()
 	AddPartToList<UGPC_GR_Sniper1>();
 	AddPartToList<UGPC_GR_Sniper2>();
 	AddPartToList<UGPC_GR_Sniper3>();
-	AddPartToList<UGPC_GR_Sniper4>();
+	AddPartToList<UGPC_GR_Sniper4>();*/
 
 	// 스톡
 	AddPartToList<UGPC_ST_DoubleBarrel1>();
@@ -506,7 +544,8 @@ void AProjectTRGameModeBase::InitPartsList()
 
 	// 매거진
 	AddPartToList<UGPC_MG_Curved1>();
-	AddPartToList<UGPC_MG_Curved2>();
+	// TESTING
+	/*AddPartToList<UGPC_MG_Curved2>();
 	AddPartToList<UGPC_MG_CurvedStack1>();
 	AddPartToList<UGPC_MG_CurvedStack2>();
 	AddPartToList<UGPC_MG_Pistol1>();
@@ -532,7 +571,7 @@ void AProjectTRGameModeBase::InitPartsList()
 	AddPartToList<UGPC_MG_Sniper3>();
 	AddPartToList<UGPC_MG_Sniper4>();
 	AddPartToList<UGPC_MG_Sniper5>();
-	AddPartToList<UGPC_MG_Sniper6>();
+	AddPartToList<UGPC_MG_Sniper6>();*/
 	
 	// 머즐
 	AddPartToList<UGPC_MZ_Any1>();
@@ -790,7 +829,12 @@ void AProjectTRGameModeBase::ChangeGameLevel(FString LevelURL, int32 NewDepth)
 	UTRGameInstance* TRInst = GetTRGameInstance();
 	if (CurrentWorld && TRInst)
 	{
-		TR_PRINT("Changing Game Level!");
+#if WITH_EDITOR
+		if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+		{
+			TR_PRINT("Changing Game Level!");
+		}
+#endif
 
 		// 서버 호스트 로직
 		APlayerController* const ServerPC = TRInst->GetFirstLocalPlayerController();
@@ -937,6 +981,27 @@ FString AProjectTRGameModeBase::GetLevelNameOfDepth(int32 TargetDepth)
 	return TEXT(LVL_DUNGEON_ASSET);
 }
 
+UClass* AProjectTRGameModeBase::GetDefaultPawnClassForController_Implementation(AController* InController)
+{
+	APlayerController* PC = Cast<APlayerController>(InController);
+	if (IsValid(PC))
+	{
+		ATRPlayerState* TRPS = PC->GetPlayerState<ATRPlayerState>();
+		if (TRPS)
+		{
+			if (TRPS->GetIsOut())
+			{
+				return SpectatorClass;
+			}
+			
+			return (TRPS->Server_SafeGetCachedPlayerInstClass() != nullptr) ? TRPS->Server_SafeGetCachedPlayerInstClass() : DefaultPawnClass;
+		}
+	}
+	// 적절한 폰 클래스를 찾지 못했을 경우 기본 폰 사용
+	UE_LOG(LogTemp, Error, TEXT("GetDefaultPawnClassForController_Implementation - Unable to determine a pawn class for the given controller! Using default gamemode pawn class."));
+	return DefaultPawnClass;
+}
+
 TArray<ATRPlayerController*> AProjectTRGameModeBase::GetPlayersConnected()
 {
 	TArray<ATRPlayerController*> PlayerControllers;
@@ -982,19 +1047,23 @@ void AProjectTRGameModeBase::RespawnPlayer(ATRPlayerController* Controller, FTra
 {
 	if (!IsValid(Controller))
 	{
-		UE_LOG(LogTemp, Error, TEXT("RespawnPlayer() - Invalid argument(s)!"));
+		UE_LOG(LogTemp, Error, TEXT("RespawnPlayer - Invalid controller!"));
 		return;
 	}
 	UWorld* World = GetWorld();
 	if (!IsValid(World))
 	{
-		UE_LOG(LogTemp, Error, TEXT("RespawnPlayer() - Invalid world!"));
+		UE_LOG(LogTemp, Error, TEXT("RespawnPlayer - Invalid world!"));
 		return;
 	}
 
 	// 커스텀 폰 스폰 및 Possess
 	TSubclassOf<APawn> CharClassToSpawn = CharacterClass;
-	if (!IsValid(CharClassToSpawn)) CharClassToSpawn = DefaultPawnClass;
+	if (!IsValid(CharClassToSpawn))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("RespawnPlayer - Invalid character class! Using gamemode default pawn class."));
+		CharClassToSpawn = DefaultPawnClass;
+	}
 
 	AFPSCharacter* SpawnPawn = Cast<AFPSCharacter>(UGameplayStatics::BeginDeferredActorSpawnFromClass(World, CharClassToSpawn, RespawnTransform, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn));
 	if (!IsValid(SpawnPawn)) return;
@@ -1068,34 +1137,50 @@ void AProjectTRGameModeBase::UpdateGameOverStatus()
 	ATRGameState* CurrGameState = GetGameState<ATRGameState>();
 	if (!CurrGameState)
 	{
-		UE_LOG(LogTemp, Error, TEXT("IsGameOver() - Wrong game state!"));
+		UE_LOG(LogTemp, Error, TEXT("UpdateGameOverStatus - Invalid state!"));
 		return;
 	}
 
+	bool bGameOverStateChanged = false;
+	bool bHasAlivePlayer = false;
 	for (APlayerState* PlayerState : CurrGameState->PlayerArray)
 	{
 		ATRPlayerState* CurrPlayerState = Cast<ATRPlayerState>(PlayerState);
 		if (CurrPlayerState && !CurrPlayerState->GetIsOut())
 		{
+			if (bIsGameOver) bGameOverStateChanged = true;
 			bIsGameOver = false;
-			return;
+			bHasAlivePlayer = true;
 		}
 	}
-	bIsGameOver = true;
 
-	if (bIsGameOver) OnGameOver();
+	if (!bHasAlivePlayer)
+	{
+		if (!bIsGameOver) bGameOverStateChanged = true;
+		bIsGameOver = true;
+	}
+
+	if (bGameOverStateChanged)
+	{
+		OnGameOverStateChanged();
+	}
 	return;
 }
 
-void AProjectTRGameModeBase::OnGameOver()
+void AProjectTRGameModeBase::OnGameOverStateChanged()
 {
-	if (!bIsGameOver)
+	ATRGameState* TRGS = GetGameState<ATRGameState>();
+	if (TRGS)
 	{
-		UE_LOG(LogTemp, Error, TEXT("OnGameOver() - should not be called when the game is not over!"));
-		return;
+		TRGS->Server_SetGameOverTo(bIsGameOver);
 	}
-	// TODO
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Game Over!"));
+
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Game Over!");
+	}
+#endif
 }
 
 void AProjectTRGameModeBase::UpdateGameClearStatus()
@@ -1110,8 +1195,12 @@ void AProjectTRGameModeBase::OnGameClear()
 		UE_LOG(LogTemp, Error, TEXT("OnGameClear() - should not be called when the game is not cleared!"));
 		return;
 	}
-	// TODO
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Game Cleared!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Game Cleared!");
+	}
+#endif
 }
 
 void AProjectTRGameModeBase::UpdateDungeonTime(float DeltaTime)
@@ -1140,14 +1229,13 @@ void AProjectTRGameModeBase::OnTimeOver()
 	// 레드모드 진입
 	EnterRedMode();
 
-	// TEMP
 	// 전체 알림
 	TArray<ATRPlayerController*> TRPlayers = GetPlayersConnected();
 	for (ATRPlayerController* TRPlayer : TRPlayers)
 	{
 		if (IsValid(TRPlayer))
 		{
-			FString AlertText = FString::Printf(TEXT("The dungeon has awakened to your presence. Escape while you still can!"));
+			FString AlertText = FString::Printf(TEXT("The dungeon has awakened — EXP gain blocked until you escape!"));
 			TRPlayer->Local_AlertTextRPC(AlertText, 5.0f);
 		}
 	}
@@ -1169,8 +1257,6 @@ void AProjectTRGameModeBase::OnEnterRedMode()
 	{
 		TRGS->Server_ProcessRedModeEnter();
 	}
-
-	// TODO: 필요 시 추가 로직 작성
 }
 
 void AProjectTRGameModeBase::ChangeEnemyGeneration(float IntensityGoal, float ReachTime)
@@ -1215,8 +1301,6 @@ void AProjectTRGameModeBase::OnBotInvalidated(ACharacter* RemoveCharacter)
 		UE_LOG(LogTemp, Error, TEXT("OnBotInvalidated - Invalid character."));
 		return;
 	}
-
-	TR_PRINT("OnBotInvalidated Delegate called!");
 }
 
 void AProjectTRGameModeBase::SetIntensity(float Value)
@@ -1274,6 +1358,13 @@ void AProjectTRGameModeBase::DungeonTick(float DeltaTime)
 		ChangeToNextState();
 	}
 	ManageEnemies(DeltaTime);
+
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(TR_LOGKEY_DUNGEONSTAT, 5.f, FColor::Green, FString::Printf(TEXT("SpawnedBots: %d / Intensity: %f / State: %d"), SpawnedBots.Num(), Intensity, GetCurrentEnemyGenState()));
+	}
+#endif
 }
 
 void AProjectTRGameModeBase::UpdateIntensity(float DeltaTime)
@@ -1452,7 +1543,6 @@ void AProjectTRGameModeBase::SpawnWave(const TSet<URoom*>& SpawnRooms)
 	ABotCharacter* SpawnedBot = SpawnBot(SpawnBotClass, GetWorld(), SpawnLoc + SpawnOffset, FRotator(0, 0, 0), FActorSpawnParameters());
 	if (SpawnedBot)
 	{
-		TR_PRINT("SPAWN!");
 		CurrSpawnedCount++;
 		SpawnedBots.Add(SpawnedBot);
 		SpawnedBot->Server_OnDeathDelegate.AddDynamic(this, &AProjectTRGameModeBase::OnBotInvalidated);
@@ -1484,7 +1574,6 @@ void AProjectTRGameModeBase::DespawnWave(const TSet<URoom*>& ValidRooms)
 
 		if (!bIsBotValid && DespawnedCount <= MaxDespawnedBotPerCycle)
 		{
-			TR_PRINT("DESPAWN!");
 			AIPool->Inanimate(SpawnedBot);
 			OnBotInvalidated(SpawnedBot);
 			DespawnBot(SpawnedBot);
@@ -1617,7 +1706,7 @@ void AProjectTRGameModeBase::UpdateBossfightState(float DeltaTime)
 	{
 		ClearBossfight();
 	}
-	// TODO: 추가 클리어 조건 추가 (e.g. 맵의 특정 지역에 도착 등)
+	// 필요 시 추가 클리어 조건 추가 (e.g. 맵의 특정 지역에 도착 등)
 }
 
 bool AProjectTRGameModeBase::HasClearedBossfight() const
@@ -1692,8 +1781,6 @@ void AProjectTRGameModeBase::ManageBosses(float DeltaTime)
 		ABotCharacter* SpawnedBoss = SpawnBot(SpawnBossClass, GetWorld(), SpawnLoc + SpawnOffset, FRotator(0, 0, 0), FActorSpawnParameters());
 		if (SpawnedBoss)
 		{
-			TR_PRINT("BOSS SPAWN!");
-
 			SpawnedBosses.Add(SpawnedBoss);
 			TRGS->Server_AddBossCharacter(SpawnedBoss);
 
@@ -1732,8 +1819,6 @@ void AProjectTRGameModeBase::OnSpawnedBossDeath(ACharacter* DeadCharacter)
 	ABotCharacter* Removed = Cast<ABotCharacter>(DeadCharacter);
 	if (Removed)
 	{
-		TR_PRINT("BOSS SLAIN!");
-
 		SpawnedBosses.Remove(Removed);
 		TRGS->Server_RemoveBossCharacter(Removed);
 	}
@@ -1748,13 +1833,22 @@ void AProjectTRGameModeBase::OnSpawnedBossDeath(ACharacter* DeadCharacter)
 		bBossSlain = true;
 	}
 
-	////TESTING
-	TR_PRINT("OnSpawnedBossDeath Delegate called!");
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("OnSpawnedBossDeath Delegate called!");
+	}
+#endif
 }
 
 void AProjectTRGameModeBase::OnBossfightCleared()
 {
-	TR_PRINT("Bossfight Cleared!");
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Bossfight Cleared!");
+	}
+#endif
 
 	ABossDungeonGenerator* BossDG = Cast<ABossDungeonGenerator>(DungeonGenerator);
 	if (BossDG)
@@ -1774,7 +1868,7 @@ void AProjectTRGameModeBase::ClearBossfight()
 	OnBossfightCleared();
 }
 
-void AProjectTRGameModeBase::PingTargetOnAllHosts(UPrimitiveComponent* TargetComp, float Duration)
+void AProjectTRGameModeBase::PingTargetOnAllHosts(UPrimitiveComponent* TargetComp, float Duration, int32 StencilValue)
 {
 	// 전체 핑잉
 	TArray<ATRPlayerController*> TRPlayers = GetPlayersConnected();
@@ -1782,7 +1876,7 @@ void AProjectTRGameModeBase::PingTargetOnAllHosts(UPrimitiveComponent* TargetCom
 	{
 		if (IsValid(TRPlayer))
 		{
-			TRPlayer->Local_DrawGlobalPingRPC(TargetComp, Duration, true);
+			TRPlayer->Local_DrawGlobalPingRPC(TargetComp, Duration, StencilValue, true);
 		}
 	}
 }

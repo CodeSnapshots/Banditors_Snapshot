@@ -22,18 +22,12 @@ public:
 	virtual void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation) override;
 
 protected:
-	// 소켓 위 기준 히트 반경
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float SocketHitRadius = 40.0f;
+	void TrackMeleeTargets(USkeletalMeshComponent* MeshComp);
 
-	// 히트 판정을 할 오브젝트 타입 목록
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<TEnumAsByte<EObjectTypeQuery>> HitObjectTypes;
-
+protected:
 	// 근접 공격 방향
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsRightHandMelee = true;
 
-	// 이번 노티파이 시퀀스에서 처리중인 히트 타깃(게임 캐릭터로 한정)들의 목록과 관련 정보
-	TMap<class AGameCharacter*, FHitResult> HitTargetsForCurrSequence;
+	// NOTE: ANS는 인스턴스가 에셋 단위로 공유될 수 있기 때문에, Stateless하게 유지하는 것이 강력하게 권장됨
 };

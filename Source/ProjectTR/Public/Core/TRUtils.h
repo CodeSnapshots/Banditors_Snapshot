@@ -101,4 +101,8 @@ public:
 
     // 주어진 액터의 타입에 따라 아웃라인을 그려야 하는 모든 메시들을 찾아 반환한다
     static TSet<UPrimitiveComponent*> GetOutlineMeshesFromActor(AActor* Target, bool bIgnoreCharacters);
+
+    // 주어진 액터에 대응되는 Stencil 값을 반환한다
+    // 적절한 값을 찾지 못한 경우 기본값을 반환한다
+    static int32 GetOutlineStencilValueFromActor(AActor* Target);
 };

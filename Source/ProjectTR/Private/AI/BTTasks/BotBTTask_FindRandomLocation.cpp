@@ -7,6 +7,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 
 #include "Core/TRMacros.h"
+#include "Core/TRCVar.h"
 
 UBotBTTask_FindRandomLocation::UBotBTTask_FindRandomLocation()
 {
@@ -34,11 +35,15 @@ EBTNodeResult::Type UBotBTTask_FindRandomLocation::ExecuteTask(UBehaviorTreeComp
 	{
 		AIController->GetBlackboardComponent()->SetValueAsVector(BlackboardKey.SelectedKeyName, Location.Location);
 		
-		DrawDebugSphere(GetWorld(), Location.Location, 10, 10, FColor::Red, false, 0.5f);
+#if WITH_EDITOR
+		if (CVarShowDebugShapes.GetValueOnGameThread())
+		{
+			DrawDebugSphere(GetWorld(), Location.Location, 10, 10, FColor::Red, false, 0.5f);
+		}
+#endif
 	}
 
 	// 태스크 종료
-	FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 	return EBTNodeResult::Succeeded;
 }
 

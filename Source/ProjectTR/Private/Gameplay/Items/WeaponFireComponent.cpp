@@ -9,6 +9,7 @@
 #include "Core/TRGameInstance.h"
 #include "Core/TRMacros.h"
 #include "Core/TRUtils.h"
+#include "Core/TRCVar.h"
 #include "DataAssets/FxConfig.h"
 #include "DataAssets/CamShakeConfig.h"
 #include "Damage/TRDamageType.h"
@@ -54,14 +55,16 @@ void UWeaponFireComponent::SetupVirtualTargetDistance(const FVector& StartPos, c
 	TraceParams.AddIgnoredActor(FireActor);
 
 	// 가상타깃 설정 전에 발사 궤적에 외곽 히트박스가 있다면 활성화한다
-	// NOTE: 성능을 위해 재귀는 처리하지 않는다
-	FHitResult HitboxHitRes;
-	if (GetWorld()->LineTraceSingleByProfile(HitboxHitRes, StartPos, EndPos, TEXT("HitscanProfile"), TraceParams))
+	TArray<FHitResult> HitboxHitResults;
+	if (GetWorld()->LineTraceMultiByProfile(HitboxHitResults, StartPos, EndPos, TEXT("SearchOuterHitbox"), TraceParams))
 	{
-		UOuterHitboxComponent* OuterHitboxComp = Cast<UOuterHitboxComponent>(HitboxHitRes.Component);
-		if (OuterHitboxComp)
+		for (const FHitResult& HitRes : HitboxHitResults)
 		{
-			OuterHitboxComp->OnOuterHitboxCollision(0.0f/*1틱*/);
+			UOuterHitboxComponent* OuterHitboxComp = Cast<UOuterHitboxComponent>(HitRes.Component);
+			if (OuterHitboxComp)
+			{
+				OuterHitboxComp->OnOuterHitboxCollision(0.0f/*1틱*/);
+			}
 		}
 	}
 
@@ -70,6 +73,13 @@ void UWeaponFireComponent::SetupVirtualTargetDistance(const FVector& StartPos, c
 	if (bHit)
 	{
 		CurrVirtualTargetDistance = FVector::Dist(StartPos, HitResult.ImpactPoint);
+
+#if WITH_EDITOR
+		if (CVarShowDebugShapes.GetValueOnGameThread())
+		{
+			DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, 5.0f, 8, FColor::Green, false, 10.0f);
+		}
+#endif
 	}
 	else
 	{
@@ -377,7 +387,6 @@ void UWeaponFireComponent::Local_Fx()
 				GunOwner->Local_PlayGunshotSFX(GunOwner->Host_GetCurrAmmo() <= 0, FMath::FRandRange(0.5f, 0.6f), FMath::FRandRange(0.85f, 1.15f));
 			}
 
-			// TODO: 나머지 FX들 및 사운드 등
 			break;
 		}
 		case EWeaponFireType::WFT_HITSCAN:
@@ -429,8 +438,6 @@ void UWeaponFireComponent::Local_Fx()
 			UE_LOG(LogTemp, Warning, TEXT("UWeaponFireComponent::Local_Fx - Unknown fire type!"));
 		}
 	}
-
-	// TODO: SFX
 }
 
 void UWeaponFireComponent::Host_SetupFireFromMuzzle(AGameCharacter* FireActor)
@@ -889,7 +896,9 @@ void UWeaponFireComponent::FireHitscan()
 	for (int32 FireCnt = 1; FireCnt <= FireMissilePerShot; ++FireCnt)
 	{
 		// 탄퍼짐 계산
-		CurrMeshMuzzleRotation = FixedRecoil(CurrCamMuzzleRotation.Vector(), CurrRecoilOffsetRange, FireCnt).Rotation();
+		// NOTE: 이 시점에 CurrMeshMuzzleRotation는 이미 가상타깃을 향해 있음에 유의
+		// 따라서 CamMuzzle이 아닌 MeshMuzzle에 Recoil을 더해야 함
+		CurrMeshMuzzleRotation = FixedRecoil(CurrMeshMuzzleRotation.Vector(), CurrRecoilOffsetRange, FireCnt).Rotation();
 
 		// 히트스캔 LineTrace는 메쉬 머즐을 시작점으로 처리한다
 		FVector FireDirection = CurrMeshMuzzleRotation.Vector();
@@ -901,8 +910,13 @@ void UWeaponFireComponent::FireHitscan()
 			Multicast_SpawnBulletTracerVFX(FireDirection, Cast<APlayerController>(CurrFireActor->GetController()));
 		}
 
-		/*if (FireCnt == 1) DrawDebugLine(GetWorld(), CurrMeshMuzzleLocation, LineTraceEndLocation, FColor::Red, false, 10.0f);
-		else DrawDebugLine(GetWorld(), CurrMeshMuzzleLocation, LineTraceEndLocation, FColor::Blue, false, 3.0f);*/
+#if WITH_EDITOR
+		if (CVarShowDebugShapes.GetValueOnGameThread())
+		{
+			if (FireCnt == 1) DrawDebugLine(GetWorld(), CurrMeshMuzzleLocation, LineTraceEndLocation, FColor::Red, false, 10.0f);
+			else DrawDebugLine(GetWorld(), CurrMeshMuzzleLocation, LineTraceEndLocation, FColor::Blue, false, 3.0f);
+		}
+#endif
 
 		FHitResult FirstValidHitResult;
 		TArray<UPrimitiveComponent*> IgnoredComps;
@@ -965,7 +979,9 @@ void UWeaponFireComponent::FireProjectile()
 	for (int32 FireCnt = 1; FireCnt <= FireMissilePerShot; ++FireCnt)
 	{
 		// 탄퍼짐 계산
-		CurrMeshMuzzleRotation = FixedRecoil(CurrCamMuzzleRotation.Vector(), CurrRecoilOffsetRange, FireCnt).Rotation();
+		// NOTE: 이 시점에 CurrMeshMuzzleRotation는 이미 가상타깃을 향해 있음에 유의
+		// 따라서 CamMuzzle이 아닌 MeshMuzzle에 Recoil을 더해야 함
+		CurrMeshMuzzleRotation = FixedRecoil(CurrMeshMuzzleRotation.Vector(), CurrRecoilOffsetRange, FireCnt).Rotation();
 
 		// 투사체 발사
 		FActorSpawnParameters SpawnParams;
@@ -1027,12 +1043,8 @@ void UWeaponFireComponent::FireProjectile()
 					SpawnProjectile->ProjectileMovementComponent->Bounciness = GunOwner->GetStat_ProjBounciness(CurrFireActor);
 					SpawnProjectile->ProjectileMovementComponent->ProjectileGravityScale = GunOwner->GetStat_ProjGravityScale(CurrFireActor);
 
-					// 중요: 간소화된 TR용 투사체 파이프라인만으로는 바운스를 처리할 수 없다
-					// 따라서 이 경우 기존 핸들러를 반드시 사용해야 한다
-					if (SpawnProjectile->ProjectileMovementComponent->bShouldBounce)
-					{
-						SpawnProjectile->ProjectileMovementComponent->bUseDefaultHitHandlers = true;
-					}
+					SpawnProjectile->InitVelocity();
+					SpawnProjectile->Server_SetProjPredictInfo();
 				}
 			}
 		}

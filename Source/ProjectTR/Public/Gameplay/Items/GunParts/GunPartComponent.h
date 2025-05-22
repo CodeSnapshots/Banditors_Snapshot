@@ -464,6 +464,7 @@ protected:
 	ENiagaraReference ShellEjectVFXEnum = ENiagaraReference::ENR_NULL;
 
 /* 카메라 셰이크 */
+// LEGACY: 카메라 셰이크는 현재 사용되지 않음
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bSetCameraShakeFromEnum = false;
 

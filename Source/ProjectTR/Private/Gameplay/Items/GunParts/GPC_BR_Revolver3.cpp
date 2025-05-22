@@ -10,7 +10,11 @@ UGPC_BR_Revolver3::UGPC_BR_Revolver3()
 	USkeletalMesh* Asset = MeshAsset.Object;
 	SetupMeshComp(nullptr, Asset);
 
-	// TEMP TODO FIXME
-	DeltaDmgEnemyDirect = 20.0f;
-	DeltaDmgAllyDirect = 20.0f;
+	// TEMP: Tier 1
+	bOverrideFireMode = true;
+	FireModeValue = EWeaponFireMode::WFM_AUTO;
+	DeltaFireInterval = 0.35f;
+	DeltaMissileSpawnedPerShot = 1;
+	DeltaDmgEnemyDirect = 17.f;
+	DeltaRecoilOffsetRange = 1.9f;
 }

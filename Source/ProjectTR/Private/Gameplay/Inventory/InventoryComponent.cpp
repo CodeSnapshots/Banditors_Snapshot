@@ -45,48 +45,6 @@ void UInventoryComponent::Initialize()
 void UInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-
-	////// DEBUG
-	/*FColor c = FColor::Blue;
-	if (GetOwner()->HasAuthority()) c = FColor::Red;
-	FString s1 = FString::Printf(TEXT("%s"), *(GetOwner()->GetName()));
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, c, s1);
-	FString s2;
-	for (int i = 0; i < 4; ++i)
-	{
-		TTuple<int32, int32> tt = ConvertArrayIndexToXY(i);
-		UInvObject* io = GetInvObjAtXY(tt.Get<0>(), tt.Get<1>());
-		if (!io)
-		{
-			s2 += FString::Printf(TEXT("nullptr "));
-		}
-		else
-		{
-			s2 += FString::Printf(TEXT("%s "), *io->GetName());
-		}
-	}
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, c, s2);
-	FString s3;
-	for (int i = 0; i < 4; ++i)
-	{
-		s3 += FString::Printf(TEXT("%d "), Grid[i]);
-	}
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, c, s3);
-	FString s4;
-	for (const int32& k : InvObjectKeys)
-	{
-		s4 += FString::Printf(TEXT("%d "), k);
-	}
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, c, s4);
-	FString s5 = FString::Printf(TEXT("InvObjValuesNum: %d"), InvObjectValues.Num());
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, c, s5);
-	FString s6;
-	for (const FInvObjData& d : InvObjectDatas)
-	{
-		s6 += FString::Printf(TEXT("XY:%d %d "), d.GridX, d.GridY);
-	}
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, c, s6);*/
 }
 
 void UInventoryComponent::Server_ExportInventoryInfo(TArray<class UInvObject*>* OutValues, TArray<FInvObjData>* OutDatas, UObject* PersistentOuter)

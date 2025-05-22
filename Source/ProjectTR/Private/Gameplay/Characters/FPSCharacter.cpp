@@ -30,6 +30,7 @@
 #include "Core/TRGameState.h"
 #include "Core/ProjectTRGameModeBase.h"
 #include "Core/TRMacros.h"
+#include "Core/TRCVar.h"
 #include "Core/TRCameraShake.h"
 #include "Core/TRPlayerController.h"
 #include "Characters/TRPlayerState.h"
@@ -85,7 +86,7 @@ AFPSCharacter::AFPSCharacter(const FObjectInitializer& ObjectInitializer)
 	FPSCamera = CreateDefaultSubobject<UFPSCameraComponent>(TEXT("FPSCamera"));
 	check(FPSCamera != nullptr);
 	FPSCamera->SetupAttachment(SkeletalMesh, TEXT("head")); // BeginPlay에서 다시 소켓에 재부착함; 여기서는 BP 뷰포트에서의 편집을 위해 임시로 부착함
-	FPSCamera->bUsePawnControlRotation = true;
+	FPSCamera->bUsePawnControlRotation = false; // 메시 기반 회전 사용
 
 	// 삼인칭 카메라와 스프링암
 	TPSCamera = CreateDefaultSubobject<UFPSCameraComponent>(TEXT("TPSCamera"));
@@ -100,6 +101,24 @@ AFPSCharacter::AFPSCharacter(const FObjectInitializer& ObjectInitializer)
 
 	// 시야 설정
 	Local_SetCameraViewPerspective(false); // 1인칭으로 시작
+
+	// 관전 카메라
+	SpecCamera = CreateDefaultSubobject<UFPSCameraComponent>(TEXT("SpecCamera"));
+	check(SpecCamera != nullptr);
+
+	SpecSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpecSpringArm"));
+	check(SpecSpringArm != nullptr);
+
+	SpecSpringArm->SetupAttachment(GetMesh()); // NOTE: Mesh에 어태치 해야 클라가 관전 시에도 client auth하게 동작해 끊김이 최소화됨
+	SpecCamera->SetupAttachment(SpecSpringArm);
+	SpecSpringArm->bUsePawnControlRotation = true;
+	SpecSpringArm->bEnableCameraLag = true; // 관전 카메라의 경우 smoothing 사용
+	SpecSpringArm->CameraLagSpeed = 30.f;
+	SpecSpringArm->bEnableCameraRotationLag = true;
+	SpecSpringArm->CameraRotationLagSpeed = 20.f;
+	
+	SpecCamera->SetActive(false); // 기본적으로 비활성화
+	SpecSpringArm->SetActive(false);
 
 	// 경험치
 	ExpComp = CreateDefaultSubobject<UExpComponent>(TEXT("ExpComponent"));
@@ -131,9 +150,6 @@ AFPSCharacter::AFPSCharacter(const FObjectInitializer& ObjectInitializer)
 
 	// 사망 시 플레이어 액터는 조금 더 오랜 시간 남는다
 	DestructionTimeDefault = 120.0f;
-#pragma endregion
-
-#pragma region /** Debug */
 #pragma endregion
 }
 
@@ -184,6 +200,31 @@ void AFPSCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 			PC->Local_DerefPawnBoundedWidgets(this);
 		}
 	}
+}
+
+void AFPSCharacter::CalcCamera(float DeltaTime, FMinimalViewInfo& OutResult)
+{
+	// 관전 시 사용할 실제 카메라를 제어
+	if (IsLocallyControlled())
+	{
+		UCameraComponent* Camera = Host_GetCurrViewCamera();
+		if (Camera && Camera->IsActive())
+		{
+			return Camera->GetCameraView(DeltaTime, OutResult);
+		}
+	}
+	else
+	{
+		if (!IsLocallyViewed())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("CalcCamera - Called but the actor is not locally viewed."));
+		}
+		if (SpecCamera && SpecCamera->IsActive())
+		{
+			return SpecCamera->GetCameraView(DeltaTime, OutResult);
+		}
+	}
+	return GetActorEyesViewPoint(OutResult.Location, OutResult.Rotation);
 }
 
 void AFPSCharacter::Local_OnPlayerDamageInflictedToTarget_Implementation(AGameCharacter* Target, FVector DamageLocation, int32 Damage, bool bIsKillshot, bool bIsCrit)
@@ -243,13 +284,23 @@ void AFPSCharacter::Move(const FInputActionValue& Value)
 
 void AFPSCharacter::StartSprint(const FInputActionValue& Value)
 {
-	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Sprinting!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Sprinting!");
+	}
+#endif
 	GetTRCharacterMovementComponent()->OnInput_SprintStart();
 }
 
 void AFPSCharacter::StopSprint(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Stop sprinting!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Stop sprinting!");
+	}
+#endif
 	GetTRCharacterMovementComponent()->OnInput_SprintStop();
 }
 
@@ -257,7 +308,6 @@ void AFPSCharacter::Look(const FInputActionValue& Value)
 {
 	if (Controller != nullptr)
 	{
-		// TODO: 마우스 감도 설정
 		const FVector2D LookValue = Value.Get<FVector2D>() * RotationSensitivity;
 		
 		// 애니메이션 회전 속도는 마우스 회전 속도와 일치
@@ -279,19 +329,34 @@ void AFPSCharacter::ApplyJump(const FInputActionValue& Value)
 {
 	if (Value.Get<bool>())
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Jumped!"));
+#if WITH_EDITOR
+		if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+		{
+			TR_PRINT("Jumped!");
+		}
+#endif
 		Jump();
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Stop Jumping!"));
+#if WITH_EDITOR
+		if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+		{
+			TR_PRINT("Stop Jumping!");
+		}
+#endif
 		StopJumping();
 	}
 }
 
 void AFPSCharacter::Attack(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Attacked!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Attacked!");
+	}
+#endif
 	if (Host_CanPerformFire(true))
 	{
 		Host_RegisterFire(true);
@@ -300,65 +365,12 @@ void AFPSCharacter::Attack(const FInputActionValue& Value)
 
 void AFPSCharacter::Attack2(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Attacked! (2)"));
-
-	//////////////////////
-	/////TESTING
-	ATRPlayerController* TRController = Cast<ATRPlayerController>(GetController());
-	if (TRController)
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
 	{
-		TRController->Local_AlertTextRPC(TEXT("ATTACK2 Widget test"), 10.0f);
+		TR_PRINT("Attacked! (2)");
 	}
-
-	//////TESTING 2
-	if (HasAuthority())
-	{
-		AProjectTRGameModeBase* TRGM = Cast<AProjectTRGameModeBase>(GetWorld()->GetAuthGameMode());
-		if (TRGM)
-		{
-			if (TRGM->DungeonGenerator)
-			{
-				TSet<URoom*> Rooms = TRGM->DungeonGenerator->Server_GetRoomsOfOcculusionDepth(TRGM->DungeonGenerator->Local_GetOcculusionDepth());
-				for (auto r : Rooms)
-				{
-					TR_PRINT_FSTRING("%s", *(r->GetName()));
-				}
-			}
-
-			///////TESTING 3
-			TRGM->ChangeEnemyGeneration(1.0f, 5.0f);
-
-			///////TESTING 8
-			TRGM->AsyncChangeGameLevel("LVL_Dungeon?listen");
-		}
-	}
-
-	////////////////////TESTING 4
-	if (HasAuthority())
-	{
-		UE_LOG(LogTemp, Error, TEXT("RESISTANCE: %f, %f, %f"), GetStat_PhysicalResistance(), GetStat_ElementalResistance(), GetStat_MagicalResistance(), HasAuthority());
-	}
-
-	//////////////TESTING5
-	const TArray<UStatusEffect*>& TEMP = GetAppliedStatEffects();
-	UE_LOG(LogTemp, Error, TEXT("STATEFFCOUNT: %d, AUTH %d"), TEMP.Num(), HasAuthority());
-	///////////////////
-
-	////////////////TESTING7
-	if (HasAuthority())
-	{
-		for (TActorIterator<ATRChest> ActorItr(GetWorld()); ActorItr; ++ActorItr)
-		{
-			if (*ActorItr)
-			{
-				TR_PRINT("TESTING: Chest activation");
-				(*ActorItr)->Server_TryOpenChest();
-			}
-		}
-	}
-	///////////////////////
-
-
+#endif
 	if (Host_CanPerformFire(false))
 	{
 		Host_RegisterFire(false);
@@ -368,14 +380,24 @@ void AFPSCharacter::Attack2(const FInputActionValue& Value)
 
 void AFPSCharacter::AttackStop(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Attack stopped!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Attack stopped!");
+	}
+#endif
 	Server_RegisterStopFireRPC(true);
 	Local_StopItemFx(true);
 }
 
 void AFPSCharacter::Attack2Stop(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Attack stopped! (2)"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Attack stopped! (2)");
+	}
+#endif
 	Server_RegisterStopFireRPC(false);
 	Local_StopItemFx(false);
 }
@@ -384,22 +406,29 @@ void AFPSCharacter::Duck(const FInputActionValue& Value)
 {
 	if (Value.Get<bool>())
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Ducking!"));
-
+#if WITH_EDITOR
+		if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+		{
+			TR_PRINT("Ducking!");
+		}
+#endif
 		GetTRCharacterMovementComponent()->OnInput_CrouchStart();
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Un-Ducking!"));
-
+#if WITH_EDITOR
+		if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+		{
+			TR_PRINT("Un-Ducking!");
+		}
+#endif
 		GetTRCharacterMovementComponent()->OnInput_CrouchStop();
 	}
 }
 
-void AFPSCharacter::Slide(const FInputActionValue& Value)
+void AFPSCharacter::DebugAction(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Sliding!"));
-	// TESTING TODO FIXME
+#if WITH_EDITOR
 	if (HasAuthority())
 	{
 		AProjectTRGameModeBase* GameMode = GetWorld()->GetAuthGameMode<AProjectTRGameModeBase>();
@@ -408,11 +437,17 @@ void AFPSCharacter::Slide(const FInputActionValue& Value)
 			GameMode->SpawnRandomizedGunItem(GetWorld(), GetHandPointInfo().Get<0>(), FRotator(), FActorSpawnParameters(), 0);
 		}
 	}
+#endif
 }
 
 void AFPSCharacter::Taunt(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Taunting!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Taunting!");
+	}
+#endif
 	UBaseCharacterMovementComponent* MoveComp = GetTRCharacterMovementComponent();
 
 	// TODO
@@ -420,7 +455,12 @@ void AFPSCharacter::Taunt(const FInputActionValue& Value)
 
 void AFPSCharacter::Roll(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Rolling!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Rolling!");
+	}
+#endif
 	UBaseCharacterMovementComponent* MoveComp = GetTRCharacterMovementComponent();
 
 	// 클라이언트의 로컬 인풋 방향을 전달
@@ -429,7 +469,12 @@ void AFPSCharacter::Roll(const FInputActionValue& Value)
 
 void AFPSCharacter::Interact(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Interact!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Interact!");
+	}
+#endif
 	Server_InteractRPC();
 }
 
@@ -462,7 +507,12 @@ void AFPSCharacter::AccessInventory(const FInputActionValue& Value)
 void AFPSCharacter::CheckGameInfo(const FInputActionValue& Value)
 {
 	if (!IsLocallyControlled()) return; // 로컬 액션
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Checking game info!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Checking game info!");
+	}
+#endif
 
 	// 외곽선 처리
 	if (GetWorld())
@@ -509,7 +559,12 @@ void AFPSCharacter::CheckGameInfo(const FInputActionValue& Value)
 void AFPSCharacter::StopCheckGameInfo(const FInputActionValue& Value)
 {
 	if (!IsLocallyControlled()) return; // 로컬 액션
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Stop checking game info!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Stop checking game info!");
+	}
+#endif
 
 	// 외곽선 처리
 	if (GetWorld())
@@ -537,37 +592,67 @@ void AFPSCharacter::StopCheckGameInfo(const FInputActionValue& Value)
 
 void AFPSCharacter::SwitchTo0(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Switch input 0!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Switch input 0!");
+	}
+#endif
 	SwitchWeaponSlotTo(0);
 }
 
 void AFPSCharacter::SwitchTo1(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Switch input 1!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Switch input 1!");
+	}
+#endif
 	SwitchWeaponSlotTo(1);
 }
 
 void AFPSCharacter::SwitchTo2(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Switch input 2!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Switch input 2!");
+	}
+#endif
 	SwitchWeaponSlotTo(2);
 }
 
 void AFPSCharacter::SwitchTo3(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Switch input 3!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Switch input 3!");
+	}
+#endif
 	SwitchWeaponSlotTo(3);
 }
 
 void AFPSCharacter::ToggleViewPerspective(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Changing perspective!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Changing perspective!");
+	}
+#endif
 	Server_ToggleCameraViewPerspective();
 }
 
 void AFPSCharacter::PingAtAim(const FInputActionValue& Value)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Pinged!"));
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		TR_PRINT("Pinged!");
+	}
+#endif
 	Server_PingAtAim();
 }
 
@@ -624,9 +709,41 @@ TPair<FVector, FRotator> AFPSCharacter::GetMuzzleInfo()
 	return TPair<FVector, FRotator>(Location, Rotation);
 }
 
+float AFPSCharacter::GetAuthControllerPitch() const
+{
+	if (IsLocallyControlled()) return GetControlRotation().Pitch;
+	return LastSyncedLocalData.LocalViewPitch;
+}
+
+void AFPSCharacter::Server_SyncLocalData_Implementation(FLocalSyncData Data)
+{
+	LastSyncedLocalData = Data;
+}
+
 void AFPSCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+#if WITH_EDITOR
+	if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+	{
+		if (IsLocallyControlled())
+		{
+			if (GEngine) GEngine->AddOnScreenDebugMessage(TR_LOGKEY_PLAYERSPEED, 5.f, FColor::Green, FString::Printf(TEXT("Speed: %f"), GetVelocity().Size()));
+		}
+	}
+#endif
+
+	if (IsLocallyControlled())
+	{
+		Local_TimeSinceLastSync += DeltaTime;
+		if (Local_TimeSinceLastSync >= Local_LocalDataSyncInterval)
+		{
+			Local_TimeSinceLastSync -= Local_LocalDataSyncInterval;
+			FLocalSyncData NewData(GetControlRotation().Pitch);
+			Server_SyncLocalData(NewData);
+		}
+	}
 }
 
 FGameCharacterInstanceData AFPSCharacter::Server_GetInstanceData()
@@ -744,13 +861,19 @@ void AFPSCharacter::Local_SetCameraViewPerspective(bool bIsThirdPerson)
 	}
 }
 
+void AFPSCharacter::Local_OnSpectationStateChanged(bool bLocal_Spectating)
+{
+	SpecCamera->SetActive(bLocal_Spectating);
+	SpecSpringArm->SetActive(bLocal_Spectating);
+}
+
 // Called to bind functionality to input
 void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	// 인풋 맵핑 등록
-	AddLocalPlayerInputMappingContext(InputMapping, 0/*TODO: Enum화*/, true);
+	AddLocalPlayerInputMappingContext(DefaultInputMapping, TR_FPSCHAR_DEFAULT_INPUTMAPPING_PRIORITY, true);
 
 	// 인풋 액션 바인딩
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
@@ -769,7 +892,6 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(InputConfig->CheckGameInfoAction, ETriggerEvent::Triggered, this, &AFPSCharacter::CheckGameInfo);
 		EnhancedInputComponent->BindAction(InputConfig->StopCheckGameInfoAction, ETriggerEvent::Triggered, this, &AFPSCharacter::StopCheckGameInfo);
 		EnhancedInputComponent->BindAction(InputConfig->DuckAction, ETriggerEvent::Triggered, this, &AFPSCharacter::Duck);
-		EnhancedInputComponent->BindAction(InputConfig->SlideAction, ETriggerEvent::Triggered, this, &AFPSCharacter::Slide);
 		EnhancedInputComponent->BindAction(InputConfig->TauntAction, ETriggerEvent::Triggered, this, &AFPSCharacter::Taunt);
 		EnhancedInputComponent->BindAction(InputConfig->RollAction, ETriggerEvent::Triggered, this, &AFPSCharacter::Roll);
 		EnhancedInputComponent->BindAction(InputConfig->SwitchTo0Action, ETriggerEvent::Triggered, this, &AFPSCharacter::SwitchTo0);
@@ -778,6 +900,8 @@ void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(InputConfig->SwitchTo3Action, ETriggerEvent::Triggered, this, &AFPSCharacter::SwitchTo3);
 		EnhancedInputComponent->BindAction(InputConfig->ToggleViewPerspectiveAction, ETriggerEvent::Triggered, this, &AFPSCharacter::ToggleViewPerspective);
 		EnhancedInputComponent->BindAction(InputConfig->PingAction, ETriggerEvent::Triggered, this, &AFPSCharacter::PingAtAim);
+
+		EnhancedInputComponent->BindAction(InputConfig->DebugAction, ETriggerEvent::Triggered, this, &AFPSCharacter::DebugAction);
 	}
 }
 
@@ -822,20 +946,6 @@ TArray<FHitResult> AFPSCharacter::Reach()
 		TArray<FHitResult> InteractiveHits;
 		if (World->LineTraceMultiByObjectType(InteractiveHits, StartLocation, EndLocation, ObjColParam, CollisionParams))
 		{
-			//DrawDebugLine(GetWorld(), StartLocation, EndLocation, FColor::Red, false, 2.0f, 0, 2.0f);
-
-			////////TESTING
-			for (const FHitResult& Res : InteractiveHits)
-			{
-				if (Res.GetActor())
-				{
-					TR_PRINT_FSTRING("%s", *((Res.GetActor())->GetName()));
-				}
-			}
-
-
-
-
 			return InteractiveHits;
 		}
 	}
@@ -868,6 +978,17 @@ void AFPSCharacter::Server_ProcessDeath()
 
 	Server_SpawnSoulAt(GetActorLocation(), GetActorRotation());
 	Server_StartSpectating();
+	
+	// 이 캐릭터는 더이상 관전 불가하므로 모든 관전자 폰 상태를 갱신한다
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		AProjectTRGameModeBase* GameMode = Cast<AProjectTRGameModeBase>(GetWorld()->GetAuthGameMode());
+		if (GameMode)
+		{
+			GameMode->RefreshAllSpectators();
+		}
+	}
 }
 
 void AFPSCharacter::Multicast_ProcessDeath()
@@ -887,10 +1008,6 @@ void AFPSCharacter::Multicast_ProcessDeath()
 			PC->Local_DerefPawnBoundedWidgets(this);
 		}
 	}
-
-	// 사망 시 모든 드래그 드랍 취소
-	UTRGameInstance* TRGI = GetGameInstance<UTRGameInstance>();
-	if (TRGI) TRGI->Local_CancelAllDragDrops();
 }
 
 void AFPSCharacter::Server_SpawnSoulAt(FVector Location, FRotator Rotation)
@@ -911,13 +1028,11 @@ void AFPSCharacter::Server_SpawnSoulAt(FVector Location, FRotator Rotation)
 
 			// 데이터가 하나라도 문제가 있으면 영혼 소환 실패
 			TSubclassOf<ABaseItem> SoulClass = DropSoulItemClass;
-			TSubclassOf<AFPSCharacter> CharClass = GetClass();
 			ATRPlayerController* TRController = Cast<ATRPlayerController>(this->GetController());
-			FGameCharacterInstanceData CharData = Server_GetInstanceData();
 
-			if (!SoulClass || !CharClass || !TRController)
+			if (!SoulClass || !TRController)
 			{
-				UE_LOG(LogTemp, Error, TEXT("Server_SpawnSoulAt - Player Character Data is not valid! %d %d %d, Aborting."), (SoulClass != nullptr), (CharClass != nullptr), (TRController != nullptr));
+				UE_LOG(LogTemp, Error, TEXT("Server_SpawnSoulAt - Player Character Data is not valid! %d %d, Aborting."), (SoulClass != nullptr), (TRController != nullptr));
 				return;
 			}
 
@@ -928,9 +1043,7 @@ void AFPSCharacter::Server_SpawnSoulAt(FVector Location, FRotator Rotation)
 				return;
 			}
 
-			Soul->Server_SetCharacterClass(CharClass);
 			Soul->Server_SetController(TRController);
-			Soul->Server_SetInstanceData(CharData);
 		}
 	}
 }
@@ -956,7 +1069,8 @@ void AFPSCharacter::Local_OnDamageTaken_Implementation(float Damage, FVector Dam
 	{
 		if (this->IsLocallyViewed())
 		{
-			Local_PlayCameraShake(CamShakeConfig->OnDamageCamShake, 6.0f/* TODO: 수치에 비례하게 */);
+			float DmgPercentToMaxHealth = Damage / (float)GetStat_MaxHealth();
+			Local_PlayCameraShake(CamShakeConfig->OnDamageCamShake, FMath::Lerp(5.5f, 9.0f, DmgPercentToMaxHealth));
 		}
 
 		APlayerController* PlayerController = Cast<APlayerController>(GetController());
@@ -1111,15 +1225,9 @@ void AFPSCharacter::Local_UpdateAimedTargetUI()
 	if (!World) return;
 
 	// 라인 트레이싱
-	FHitResult AimedUIHit;
-	FVector StartLocation;
-	FRotator Rotation;
-	GetActorEyesViewPoint(StartLocation, Rotation);
-	FVector EndLocation = StartLocation + (Rotation.Vector() * ReachDistance);
+	TArray<FHitResult> AimedUIHits = Reach();
 
-	bool bHit = World->LineTraceSingleByObjectType(AimedUIHit, StartLocation, EndLocation, AimedTargetUIObjQueryParams, AimedTargetUICollisionParams);
-
-	AActor* CurrActor = AimedUIHit.GetActor();
+	AActor* CurrActor = !AimedUIHits.IsEmpty() ? AimedUIHits[AimedUIHits.Num() - 1].GetActor() : nullptr;
 	AActor* PrevActor = PrevAimedActor.Get();
 	if (CurrActor == PrevActor)
 	{
@@ -1148,12 +1256,13 @@ void AFPSCharacter::Local_HighlightTarget(AActor* Target, bool bVisibility, bool
 	if (TRPC)
 	{
 		TSet<UPrimitiveComponent*> TargetComps = TRUtils::GetOutlineMeshesFromActor(Target, bIgnoreCharacters);
+		int32 TargetStencil = TRUtils::GetOutlineStencilValueFromActor(Target);
 		if (TargetComps.IsEmpty()) return;
 		for (UPrimitiveComponent* TargetComp : TargetComps)
 		{
 			if (bVisibility)
 			{
-				TRPC->Local_DrawOutline(TargetComp, false);
+				TRPC->Local_DrawOutline(TargetComp, false, TargetStencil);
 			}
 			else
 			{
@@ -1162,7 +1271,7 @@ void AFPSCharacter::Local_HighlightTarget(AActor* Target, bool bVisibility, bool
 		}
 	}
 
-	// TODO: 필요 시 기타 로직 추가
+	// 필요 시 기타 로직 추가
 }
 
 void AFPSCharacter::Server_PingAtAim_Implementation()
@@ -1186,12 +1295,13 @@ void AFPSCharacter::Server_PingAtAim_Implementation()
 		if (!Target) return;
 		
 		TSet<UPrimitiveComponent*> TargetComps = TRUtils::GetOutlineMeshesFromActor(Target, false);
+		int32 TargetStencil = TRUtils::GetOutlineStencilValueFromActor(Target);
 		AProjectTRGameModeBase* TRGM = World->GetAuthGameMode<AProjectTRGameModeBase>();
 		if (TRGM)
 		{
 			for (UPrimitiveComponent* TargetComp : TargetComps)
 			{
-				TRGM->PingTargetOnAllHosts(TargetComp, 3.0f);
+				TRGM->PingTargetOnAllHosts(TargetComp, 3.0f, TargetStencil);
 			}
 		}
 	}
@@ -1247,7 +1357,6 @@ void AFPSCharacter::Server_StartSpectating()
 	ATRSpectatorPawn* SpecPawn = GameMode->SpawnSpectator(World, GetActorLocation(), GetActorRotation(), SpawnParams);
 
 	GetController()->Possess(SpecPawn); // 내부적으로 UnPossess 호출하니 별도 호출 필요 X
-	SpecPawn->Server_SetOriginalCharacterData(this);
 	SpecPawn->Server_ChangeSpecTargetRPC(true);
 }
 
