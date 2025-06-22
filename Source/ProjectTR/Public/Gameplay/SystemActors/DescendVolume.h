@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SystemActors/PlayerTriggerVolume.h"
+#include "SystemActors/CharacterTriggerVolume.h"
 #include "DescendVolume.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PROJECTTR_API ADescendVolume : public APlayerTriggerVolume
+class PROJECTTR_API ADescendVolume : public ACharacterTriggerVolume
 {
 	GENERATED_BODY()
 	

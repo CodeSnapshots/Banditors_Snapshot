@@ -241,3 +241,83 @@ int32 TRUtils::GetOutlineStencilValueFromActor(AActor* Target)
     }
     return STENCIL_WHITE;
 }
+
+FVector TRUtils::GetDefaultDropLocation(AActor* Dropper)
+{
+    FVector DropLocation = FVector::ZeroVector;
+    if (Dropper)
+    {
+        AGameCharacter* DropperChar = Cast<AGameCharacter>(Dropper);
+        if (DropperChar)
+        {
+            DropLocation = DropperChar->GetHandPointInfo().Get<0>();
+        }
+        else
+        {
+            Dropper->GetActorLocation();
+        }
+    }
+    return DropLocation;
+}
+
+FRotator TRUtils::GetDefaultDropRotation(AActor* Dropper)
+{
+    FRotator DropRotation = FRotator::ZeroRotator;
+    if (Dropper)
+    {
+        APawn* DropperPawn = Cast<APawn>(Dropper);
+        if (DropperPawn)
+        {
+            DropRotation = DropperPawn->GetControlRotation();
+        }
+        else
+        {
+            DropRotation = Dropper->GetActorRotation();
+        }
+    }
+    return DropRotation;
+}
+
+ETierNiagaraReference TRUtils::GetNiagaraRefFromTier(EItemTier Tier, bool bLoop)
+{
+    switch (Tier)
+    {
+        case EItemTier::IT_TIER_UNSPECIFIED:
+        {
+            return ETierNiagaraReference::ENR_NULL;
+        }
+        case EItemTier::IT_TIER_NONE:
+        {
+            return ETierNiagaraReference::ENR_NULL;
+        }
+        case EItemTier::IT_TIER_T1:
+        {
+            return bLoop ? ETierNiagaraReference::ENR_TIER_1_LOOP : ETierNiagaraReference::ENR_TIER_1_SPAWN;
+        }
+        case EItemTier::IT_TIER_T2:
+        {
+            return bLoop ? ETierNiagaraReference::ENR_TIER_2_LOOP : ETierNiagaraReference::ENR_TIER_2_SPAWN;
+        }
+        case EItemTier::IT_TIER_T3:
+        {
+            return bLoop ? ETierNiagaraReference::ENR_TIER_3_LOOP : ETierNiagaraReference::ENR_TIER_3_SPAWN;
+        }
+        case EItemTier::IT_TIER_T4:
+        {
+            return bLoop ? ETierNiagaraReference::ENR_TIER_4_LOOP : ETierNiagaraReference::ENR_TIER_4_SPAWN;
+        }
+        case EItemTier::IT_TIER_T5:
+        {
+            return bLoop ? ETierNiagaraReference::ENR_TIER_5_LOOP : ETierNiagaraReference::ENR_TIER_5_SPAWN;
+        }
+        case EItemTier::IT_OBJECTIVE:
+        {
+            return bLoop ? ETierNiagaraReference::ENR_OBJECTIVE_LOOP : ETierNiagaraReference::ENR_OBJECTIVE_SPAWN;
+        }
+        default:
+        {
+            return ETierNiagaraReference::ENR_NULL;
+        }
+    }
+    return ETierNiagaraReference::ENR_NULL;
+}

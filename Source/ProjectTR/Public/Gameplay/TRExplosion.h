@@ -8,7 +8,7 @@
 #include "Chaos/ChaosEngineInterface.h"
 
 #include "Core/TRMacros.h"
-#include "DataAssets/FxConfig.h"
+#include "DataAssets/GunFxConfig.h"
 #include "Damage/TRDamageType.h"
 #include "Damage/DamageTypeNeutral.h"
 #include "TRExplosion.generated.h"
@@ -59,22 +59,21 @@ public:
 	float DmgMultOnExplInstigator = 0.0f;
 
 	// 폭발 시 물리 충격 적용 여부
-	// TODO: 액터 타입별로 충격량 적용을 다르게 처리; 로켓점프 등
 	UPROPERTY(EditDefaultsOnly)
-	bool bApplyImpactOnExplosion = false;
+	bool bApplyImpactOnExplosion = true;
 
 	// 중심점에서의 물리 충격량
 	UPROPERTY(EditDefaultsOnly)
 	float BaseImpactStrength = 0.0f;
 
+	// 폭발 Instigator 대상 충격량 배율
+	// 로켓점프 등을 더 쉽게 처리하기 위해 조정이 가능하다
+	UPROPERTY(EditDefaultsOnly)
+	float InstigatorImpactMult = 1.0f;
+
 	// 폭발 데미지 타입 (기본값 Neutral)
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UTRDamageType> ExplosionDamageType = UDamageTypeNeutral::StaticClass();
-
-	// 충격량 증감폭
-	// NOTE: ERadialImpulseFalloff를 직접 프로퍼티로 노출시킬 수 없음
-	UPROPERTY(EditDefaultsOnly)
-	ERadialImpulseFalloffWrapper ImpactFalloffType = ERadialImpulseFalloffWrapper::RIFW_Linear;
 
 	// 폭발 효과를 막을 수 있는 액터 콜리전 타입
 	UPROPERTY(EditDefaultsOnly)
@@ -86,7 +85,7 @@ public:
 
 	// VFX
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	ENiagaraReference ExplosionVFXEnum = ENiagaraReference::ENR_NULL;
+	EGunNiagaraReference ExplosionVFXEnum = EGunNiagaraReference::ENR_NULL;
 
 	// 폭발 VFX는 폭발 액터의 크기 및 폭발 반경에 비례한다; 
 	// 이때 VFX의 크기가 실제 폭발 크기와 유사하도록 조정하기 위해 곱해지는 상수값임
@@ -155,7 +154,7 @@ protected:
 	float BlockCheckDeltaSize = 24.0f;
 
 	UPROPERTY(EditDefaultsOnly)
-	class UFxConfig* FxConfig = nullptr;
+	class UGunFxConfig* GunFxConfig = nullptr;
 	
 	// 폭발에 사용할 VFX; 런타임에 ExplosionInfo 기반으로 바인딩된다
 	UPROPERTY(Replicated)

@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SystemActors/PlayerTriggerVolume.h"
+#include "SystemActors/CharacterTriggerVolume.h"
 #include "TouchActivationTrap.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class PROJECTTR_API ATouchActivationTrap : public APlayerTriggerVolume
+class PROJECTTR_API ATouchActivationTrap : public ACharacterTriggerVolume
 {
 	GENERATED_BODY()
 	

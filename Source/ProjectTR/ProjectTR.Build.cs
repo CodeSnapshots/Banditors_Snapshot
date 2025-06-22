@@ -13,7 +13,7 @@ public class ProjectTR : ModuleRules
         PublicIncludePaths.AddRange(new string[] { Path.Combine(ModuleDirectory, "Public"), Path.Combine(ModuleDirectory, "Public/Gameplay") });
 
         // Core dependencies
-        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Niagara", "NetCore", "Slate", "SlateCore" });
+        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Niagara", "NetCore", "Slate", "SlateCore", "Chaos", "ChaosSolverEngine", "GeometryCollectionEngine" });
 
 		// AI dependencies
 		PrivateDependencyModuleNames.AddRange(new string[] { "AIModule", "NavigationSystem" });

@@ -58,13 +58,7 @@ protected:
 	// 장착 가능 여부
 	bool bCanEquip = true;
 
-	// 양손 파지를 해야 하는지 여부; 애니메이션 모션을 결정짓는 데 사용된다
-	bool bShouldHoldWithBothArms = false;
-
 public:
-	// 장착 시 로직
-	virtual bool OnItemEquip(class UEquipSystem* EquSys, int32 SlotIdx) override;
-
 	// 디플로이 해제 시 로직 (무기를 바꾸는 경우)
 	// 장착 해제와는 별도의 로직
 	void OnItemRetrieve(class UEquipSystem* EquSys);
@@ -74,9 +68,9 @@ public:
 	virtual bool OnItemTriggerProcessed(UActItemComponent* ActComp);
 
 	// Getters
-	AGameCharacter* GetItemDeployer();
-	const bool CanEquip() { return bCanEquip; }
-	const bool ShouldHoldWithBothArms() { return bShouldHoldWithBothArms; }
+	AGameCharacter* GetItemDeployer() const;
+	bool CanEquip() const { return bCanEquip; }
+	virtual bool ShouldHoldWithBothArms() const;
 #pragma endregion
 
 #pragma region /** Recoil */

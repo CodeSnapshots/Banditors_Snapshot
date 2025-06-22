@@ -175,6 +175,9 @@ void AGameCharacter::BeginPlay()
 	{
 		DetailedHitbox->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 	}
+
+	// 히트 머터리얼 생성
+	InitHitEffectMaterial();
 }
 
 void AGameCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -255,7 +258,7 @@ FGameCharacterInstanceData AGameCharacter::Server_GetInstanceData()
 		AWieldItem* DeployedItem = EquipSystem->GetCurrWeaponActor();
 		if (DeployedItem)
 		{
-			DeployedItem->CacheBeforeDestruction(nullptr /* 아우터 정보는 변경하지 않는다 */);
+			DeployedItem->CacheToItemData();
 		}
 
 		EquipSystem->Server_ExportInventoryInfo(&NewData.EquObjectValues, &NewData.EquObjectDatas, GetGameInstance());
@@ -485,7 +488,7 @@ void AGameCharacter::Server_ExecuteDropForDeferredItem(int32 MaxCount)
 		if (InvObj)
 		{
 			// 이미 인벤토리에서는 제거되었다고 가정하므로 별도의 추가 로직 없음
-			InvComponent->Server_SpawnItemFromInvObjectRPC(InvObj, DropLoc);
+			InvObj->GenerateAndSpawnItem(GetWorld(), DropLoc, TRUtils::GetDefaultDropRotation(this), FActorSpawnParameters(), true, true);
 		}
 	}
 }
@@ -509,7 +512,7 @@ void AGameCharacter::Server_ExecuteSpawnForDeferredItem(int32 MaxCount)
 
 		if (SpawnClass)
 		{
-			ABaseItem* DroppedItem = TRGM->SpawnItem(SpawnClass, World, SpawnLoc, FRotator(), FActorSpawnParameters());
+			ABaseItem* DroppedItem = TRGM->SpawnItem(SpawnClass, World, SpawnLoc, FRotator(), FActorSpawnParameters(), true);
 		}
 	}
 }
@@ -554,7 +557,7 @@ void AGameCharacter::Server_RefillAllAmmo()
 				UGunItemData* GunData = Cast<UGunItemData>(EquObj->GetItemData());
 				if (GunData)
 				{
-					GunData->CacheCurrAmmo(-1 /* 탄약을 최대치로 채운다 */);
+					GunData->CacheCurrAmmo(TR_AMMO_FULL /* 탄약을 최대치로 채운다 */);
 				}
 
 				// 액터가 생성되어 있는 경우 아이템에도 즉각 변경사항을 적용한다 (Deploy중인 경우)
@@ -570,6 +573,9 @@ void AGameCharacter::Server_RefillAllAmmo()
 
 void AGameCharacter::AttachItem(ABaseItem* AttachItem)
 {
+	// 어태치 위치 조정
+	AttachItem->Local_PrepareAttachment();
+
 	FName SocketName = GetSockNameOfPart(AttachItem->GetCharacterAttachPartName());
 	FVector RelativeLocation = AttachItem->GetAttachRelativeLocation();
 	FRotator RelativeRotation = AttachItem->GetAttachRelativeRotation();
@@ -1130,11 +1136,11 @@ void AGameCharacter::Client_SimulateFire(bool bIsPrimary)
 			// 서버로부터 격발 처리 완료 요청이 돌아오기 전까지 이 값은 false를 유지한다
 			if (bIsPrimary && IsValid(CurrWeaponActor->PrimaryActComponent))
 			{
-				CurrWeaponActor->PrimaryActComponent->Local_OnClientSimulation(this);
+				CurrWeaponActor->PrimaryActComponent->Client_TriggerSimulate(this);
 			}
 			else if (!bIsPrimary && IsValid(CurrWeaponActor->SecondaryActComponent))
 			{
-				CurrWeaponActor->SecondaryActComponent->Local_OnClientSimulation(this);
+				CurrWeaponActor->SecondaryActComponent->Client_TriggerSimulate(this);
 			}
 		}
 	}
@@ -1334,11 +1340,6 @@ ARoomLevel* AGameCharacter::GetLastEnteredRoomLevel() const
 	if (!RoomObserverComp || !RoomObserverComp->IsActive()) return nullptr;
 	if (!IsValid(LastEnteredRoomLevel)) return nullptr;
 	return LastEnteredRoomLevel;
-}
-
-void AGameCharacter::Multicast_Roll_Implementation(float Forward, float Right)
-{
-	// 필요 시 추가
 }
 
 UAnimMontage* AGameCharacter::GetDeployAnimMontage(EHumanoidWeaponState WeaponState)
@@ -1709,6 +1710,105 @@ void AGameCharacter::Local_InitRecoil(const FRecoilAnimData Data, const float Ra
 	}
 }
 
+void AGameCharacter::Local_ActivateHitEffectMaterial(float Duration, float Strength, FVector Color)
+{
+	if (!GetWorld()) return;
+	if (DynamicHitMaterial)
+	{
+		DynamicHitMaterial->SetScalarParameterValue(FName(TR_MAT_HIT_EFFECT_START_TIME), GetWorld()->GetTimeSeconds());
+
+		DynamicHitMaterial->SetScalarParameterValue(FName(TR_MAT_HIT_EFFECT_STRENGTH), Strength);
+		DynamicHitMaterial->SetScalarParameterValue(FName(TR_MAT_HIT_EFFECT_PLAY_DURATION), Duration);
+		DynamicHitMaterial->SetVectorParameterValue(FName(TR_MAT_HIT_EFFECT_PLAY_DURATION), Color);
+	}
+}
+
+void AGameCharacter::InitHitEffectMaterial()
+{
+	// 다이나믹 매터리얼 생성
+	USkeletalMeshComponent* CharMeshComp = GetMesh();
+	if (CharMeshComp)
+	{
+		UMaterialInterface* CharMeshMat = CharMeshComp->GetMaterial(HitEffectMaterialIndex);
+		if (CharMeshMat)
+		{
+			UMaterialInstanceDynamic* MID = UMaterialInstanceDynamic::Create(CharMeshMat, this);
+			if (MID)
+			{
+				CharMeshComp->SetMaterial(HitEffectMaterialIndex, MID);
+				DynamicHitMaterial = MID;
+
+#if WITH_EDITOR
+				// 성능을 위해 에디터 환경에서만 머터리얼을 검증한다
+				if (!IsValidHitEffectMaterial(DynamicHitMaterial))
+				{
+					UE_LOG(LogTemp, Error, TEXT("AGameCharacter::InitHitEffectMaterial - material was created, but is lacking certain parameter(s)! Character: %s"), *(GetName()));
+				}
+#endif
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("AGameCharacter::InitHitEffectMaterial - failed to create dynamic material!"));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("AGameCharacter::InitHitEffectMaterial - Mesh has invalid base material!"));
+		}
+	}
+}
+
+bool AGameCharacter::IsValidHitEffectMaterial(UMaterialInstanceDynamic* DynMat) const
+{
+	if (IsValid(DynMat))
+	{
+		TSet<FName> ScalarParams = { 
+			FName(TR_MAT_HIT_EFFECT_STRENGTH),
+			FName(TR_MAT_HIT_EFFECT_START_TIME),
+			FName(TR_MAT_HIT_EFFECT_PLAY_DURATION)
+		};
+
+		TSet<FName> VectorParams = {
+			FName(TR_MAT_HIT_EFFECT_COLOR)
+		};
+
+		TArray<FMaterialParameterInfo> ParamInfos;
+		TArray<FGuid> ParamGuids;
+		UMaterialInstance* MI = Cast<UMaterialInstance>(DynamicHitMaterial);
+		if (MI)
+		{
+			MI->GetAllScalarParameterInfo(ParamInfos, ParamGuids);
+			for (const FMaterialParameterInfo& Info : ParamInfos)
+			{
+				ScalarParams.Remove(Info.Name);
+			}
+
+			ParamInfos.Empty();
+			ParamGuids.Empty();
+			MI->GetAllVectorParameterInfo(ParamInfos, ParamGuids);
+			for (const FMaterialParameterInfo& Info : ParamInfos)
+			{
+				VectorParams.Remove(Info.Name);
+			}
+
+			if (ScalarParams.IsEmpty() && VectorParams.IsEmpty())
+			{
+				return true;
+			}
+
+			for (const FName& MissingParam : ScalarParams)
+			{
+				UE_LOG(LogTemp, Error, TEXT("IsValidHitEffectMaterial - Missing scalar param: %s"), *(MissingParam.ToString()));
+			}
+			for (const FName& MissingParam : VectorParams)
+			{
+				UE_LOG(LogTemp, Error, TEXT("IsValidHitEffectMaterial - Missing vector param: %s"), *(MissingParam.ToString()));
+			}
+		}
+	}
+	return false;
+}
+
 void AGameCharacter::Multicast_SetSlideFxRPC_Implementation(bool bValue)
 {
 	if (IsLocallyControlled()) return; // 로컬 폰일 경우 prediction 사용
@@ -1740,6 +1840,13 @@ void AGameCharacter::BindBossState(UBossStateWidget* BossState)
 void AGameCharacter::UnbindBossState()
 {
 	this->Local_BossStateWidget = nullptr;
+}
+
+FVector AGameCharacter::GetDamageNumberSpawnLocation(float ZOffset) const
+{
+	// 캡슐의 상단부 위치 사용
+	if (GetCapsuleComponent()) return GetCapsuleComponent()->GetComponentLocation() + ((GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + ZOffset) * GetCapsuleComponent()->GetUpVector());
+	return GetActorLocation() + (GetActorUpVector() * ZOffset);
 }
 
 void AGameCharacter::Multicast_StopItemFxRPC_Implementation(bool bIsPrimary, APlayerController* InvokeHost)

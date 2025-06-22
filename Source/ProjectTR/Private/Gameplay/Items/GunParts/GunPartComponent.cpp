@@ -76,10 +76,6 @@ void UGunPartComponent::SetupMeshComp(UStaticMesh* Static, USkeletalMesh* Skelet
 			SkeletalMeshComp->SetSkeletalMesh(Skeletal);
 		}
 	}
-	// 중요:
-	// Mesh component의 아우터를 이 컴포넌트가 아닌 이 컴포넌트의 액터로 설정한다
-	// Mesh component의 경우 Gun generation 과정에서 아이템의 루트가 될 수 있기 때문에 outer가 이 컴포넌트가 아닌 이 컴포넌트의 Outer(액터)가 되어야 한다
-	MeshComponent->Rename(nullptr, GetOuter());
 
 	// 중요:
 	// Mesh component의 경우 NewObject로 동적으로 생성할 경우 RegisterComponent()를 수동으로 호출해주어야 RenderState가 생성되어 렌더링이 처리됨
@@ -87,7 +83,7 @@ void UGunPartComponent::SetupMeshComp(UStaticMesh* Static, USkeletalMesh* Skelet
 	return;
 }
 
-UMeshComponent* UGunPartComponent::GetMeshComp()
+UMeshComponent* UGunPartComponent::GetMeshComp() const
 {
 	return MeshComponent;
 }
@@ -180,9 +176,9 @@ void UGunPartComponent::StatPass3(AGunItem* Gun)
 	}
 
 	/* 머즐 플래시 VFX */
-	if (bSetMuzzleFlashVFXFromEnum && Gun->FxConfig)
+	if (bSetMuzzleFlashVFXFromEnum && Gun->GunFxConfig)
 	{
-		Gun->MuzzleFlashVFX = Gun->FxConfig->SearchNiagaraFromEnum(MuzzleFlashVFXEnum);
+		Gun->MuzzleFlashVFX = Gun->GunFxConfig->SearchNiagaraFromEnum(MuzzleFlashVFXEnum);
 	}
 
 	/* 머즐 라이팅 VFX */
@@ -200,9 +196,9 @@ void UGunPartComponent::StatPass3(AGunItem* Gun)
 	}
 	
 	/* 탄피 배출 VFX */
-	if (bSetShellEjectVFXFromEnum && Gun->FxConfig)
+	if (bSetShellEjectVFXFromEnum && Gun->GunFxConfig)
 	{
-		Gun->ShellEjectVFX = Gun->FxConfig->SearchNiagaraFromEnum(ShellEjectVFXEnum);
+		Gun->ShellEjectVFX = Gun->GunFxConfig->SearchNiagaraFromEnum(ShellEjectVFXEnum);
 	}
 
 	/* 카메라 셰이크 */

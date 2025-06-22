@@ -76,12 +76,15 @@ protected:
 	UFUNCTION()
 	void OnRep_ProjPredictInfo();
 
+	// 현재 Prediction에 문제가 있어 값을 서버 값으로 보정해야되는지 여부
+	bool Client_ShouldFixPrediction();
+
 protected:
 	UPROPERTY(ReplicatedUsing = OnRep_ProjPredictInfo)
 	FClientProjPredictionInfo Client_ProjPredictInfo;
 
 private:
-	bool bClient_ProjPredictInfoValid = false;
+	bool bClient_HasReceivedInitProjInfo = false;
 	FVector Client_ProjLerpTargetLocation;
 	FRotator Client_ProjLerpTargetRotation;
 #pragma endregion
@@ -93,6 +96,7 @@ public:
 	TObjectPtr<class UTRProjMovementComponent> ProjectileMovementComponent = nullptr;
 
 	// 발사체 메쉬
+	// 콜리전은 구를 사용하는 게 강력하게 권장됨
 	UPROPERTY(EditDefaultsOnly, Category = "Projectile")
 	TObjectPtr<class UStaticMeshComponent> ProjectileMeshComponent = nullptr;
 #pragma endregion
@@ -239,9 +243,9 @@ protected:
 public:
 	// FX 리소스
 	UPROPERTY(EditDefaultsOnly)
-	class UFxConfig* FxConfig = nullptr;
+	class UGunFxConfig* GunFxConfig = nullptr;
 
-	// FxConfig 기반으로 런타임에서 바인딩해줄 수도 있고, 원하면 투사체에 따라 직접 바인딩 할 수 있다
+	// GunFxConfig 기반으로 런타임에서 바인딩해줄 수도 있고, 원하면 투사체에 따라 직접 바인딩 할 수 있다
 	// 투사체 이펙트
 	UPROPERTY(EditDefaultsOnly)
 	class UNiagaraSystem* ProjectileVFX = nullptr;

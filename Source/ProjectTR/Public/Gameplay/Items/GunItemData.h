@@ -22,15 +22,15 @@ public:
 	virtual void ChangeOuterRecursive(UObject* NewOuter, bool bAddToRootSet) override;
 
 	/* Getters */
-	TSubclassOf<class UGunPartComponent> GetCachedBarrelClass() { return CachedBarrelClass; }
-	TSubclassOf<class UGunPartComponent> GetCachedGripClass() { return CachedGripClass; }
-	TSubclassOf<class UGunPartComponent> GetCachedMagazineClass() { return CachedMagazineClass; }
-	TSubclassOf<class UGunPartComponent> GetCachedMuzzleClass() { return CachedMuzzleClass; }
-	TSubclassOf<class UGunPartComponent> GetCachedReceiverClass() { return CachedReceiverClass; }
-	TSubclassOf<class UGunPartComponent> GetCachedSightClass() { return CachedSightClass; }
-	TSubclassOf<class UGunPartComponent> GetCachedStockClass() { return CachedStockClass; }
+	TSubclassOf<class UGunPartComponent> GetCachedBarrelClass() const { return CachedBarrelClass; }
+	TSubclassOf<class UGunPartComponent> GetCachedGripClass() const { return CachedGripClass; }
+	TSubclassOf<class UGunPartComponent> GetCachedMagazineClass() const { return CachedMagazineClass; }
+	TSubclassOf<class UGunPartComponent> GetCachedMuzzleClass() const { return CachedMuzzleClass; }
+	TSubclassOf<class UGunPartComponent> GetCachedReceiverClass() const { return CachedReceiverClass; }
+	TSubclassOf<class UGunPartComponent> GetCachedSightClass() const { return CachedSightClass; }
+	TSubclassOf<class UGunPartComponent> GetCachedStockClass() const { return CachedStockClass; }
 
-	int32 GetCachedCurrAmmo() { return CachedCurrAmmo; }
+	int32 GetCachedCurrAmmo() const { return CachedCurrAmmo; }
 
 	/* Setters */
 	void CacheBarrelClass(TSubclassOf<class UGunPartComponent> Class) { CachedBarrelClass = Class; }

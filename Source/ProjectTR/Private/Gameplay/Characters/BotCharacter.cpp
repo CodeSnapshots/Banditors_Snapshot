@@ -96,6 +96,10 @@ ABotCharacter::ABotCharacter(const FObjectInitializer& ObjectInitializer)
 		MoveComp->MaxSimulationIterations = 1; // min 1; 작을수록 성능 상승
 
 		MoveComp->PrimaryComponentTick.TickInterval = TR_BOT_MOVECOMP_TICKRATE;
+
+		// 캡슐에 비례한 값으로 반경을 설정한다
+		// 반경이 클 수록 AI가 서로 더 퍼지는 현상을 주기 때문에, 더 적은 수의 봇으로 더 꽉 찬 느낌을 줄 수 있다
+		MoveComp->NavAgentProps.AgentRadius = GetCapsuleComponent()->GetScaledCapsuleRadius() * TR_BOT_MOVECOMP_NAVAGENTRADIUS_RATIO_TO_CAPSULE;
 	}
 	
 	if (!DropTokenClass)

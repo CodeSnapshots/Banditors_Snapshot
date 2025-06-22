@@ -103,31 +103,13 @@ void AWieldItem::BeginPlay()
 	}
 }
 
-bool AWieldItem::OnItemEquip(UEquipSystem* EquSys, int32 SlotIdx)
-{
-	if (IsValid(EquSys))
-	{
-		if (EquSys->TryAddInvObjToSlot(this->InvObject, SlotIdx))
-		{
-			if (HasAuthority())
-			{
-				CacheBeforeDestruction(EquSys->GetOwner());
-				Destroy();
-			}
-			return true;
-		}
-	}
-	return false;
-}
-
 void AWieldItem::OnItemRetrieve(UEquipSystem* EquSys)
 {
 	if (IsValid(EquSys))
 	{
 		if (HasAuthority())
 		{
-			// 이미 인벤토리에 InvObject가 저장되어있는 상태이므로 캐싱 후 액터만 Destroy한다
-			CacheBeforeDestruction(EquSys->GetOwner());
+			CacheToItemData();
 			Destroy();
 		}
 		return;
@@ -146,7 +128,7 @@ bool AWieldItem::OnItemTriggerProcessed(UActItemComponent* ActComp)
 	return true;
 }
 
-AGameCharacter* AWieldItem::GetItemDeployer()
+AGameCharacter* AWieldItem::GetItemDeployer() const
 {
 	if (!InvObject)
 	{
@@ -155,10 +137,16 @@ AGameCharacter* AWieldItem::GetItemDeployer()
 	}
 
 	// 클라에서 호출 시 레플리케이션 상태에 따라 결과가 늦을 수 있다
-	AGameCharacter* ItemOwner = Cast<AGameCharacter>(InvObject->GetOuter());
+	AGameCharacter* ItemOwner = GetItemOwner();
 	if (ItemOwner && ItemOwner->EquipSystem && ItemOwner->EquipSystem->GetCurrWeaponActor() == this)
 	{
 		return ItemOwner;
 	}
 	return nullptr;
+}
+
+bool AWieldItem::ShouldHoldWithBothArms() const
+{
+	// 필요 시 오버라이드
+	return false;
 }

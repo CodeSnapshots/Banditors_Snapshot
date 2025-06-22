@@ -2,6 +2,7 @@
 
 
 #include "DungeonActors/TriggerOpenDoor.h"
+#include "Core/ProjectTRGameModeBase.h"
 
 ATriggerOpenDoor::ATriggerOpenDoor()
 {
@@ -44,6 +45,16 @@ void ATriggerOpenDoor::OnTriggered()
 	if (HasAuthority() && !bServer_Opened)
 	{
 		bServer_Opened = true;
+
+		if (GetWorld() && bActivateDungeonTimerIfOpened)
+		{
+			AProjectTRGameModeBase* TRGM = GetWorld()->GetAuthGameMode<AProjectTRGameModeBase>();
+			if (TRGM)
+			{
+				TRGM->SetDungeonTimerState(true);
+			}
+		}
+
 		Multicast_OpenDoor();
 
 		// NOTE: 현재는 닫기 로직은 없음

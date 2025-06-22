@@ -12,6 +12,7 @@
 #include "Kismet/GameplayStatics.h"
 
 #include "Core/TRUtils.h"
+#include "Core/TRCVar.h"
 #include "Items/ItemData.h"
 #include "Items/GunItemData.h"
 #include "Items/GunParts/GunPartComponent.h"
@@ -29,16 +30,16 @@
 AGunItem::AGunItem()
 {
 	// 기본 VFX 컨픽 바인딩
-	if (!FxConfig)
+	if (!GunFxConfig)
 	{
-		static ConstructorHelpers::FObjectFinder<UFxConfig> FXFinder(TEXT(ASSET_DEFAULT_FX));
-		if (FXFinder.Succeeded())
+		static ConstructorHelpers::FObjectFinder<UGunFxConfig> GunFXFinder(TEXT(ASSET_DEFAULT_GUN_FX));
+		if (GunFXFinder.Succeeded())
 		{
-			FxConfig = FXFinder.Object;
+			GunFxConfig = GunFXFinder.Object;
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("AGunItem - Unable to find default FX config asset!"));
+			UE_LOG(LogTemp, Error, TEXT("AGunItem - Unable to find default Gun FX config asset!"));
 		}
 	}
 
@@ -167,7 +168,7 @@ AGunItem::AGunItem()
 
 	// 루트 교체
 	USceneComponent* OriginRoot = GetRootComponent();
-	SetRootComponent(GunBoxColComponent);
+	RootComponent = GunBoxColComponent;
 	InitRootComp(GunBoxColComponent);
 	OriginRoot->SetupAttachment(GunBoxColComponent);
 
@@ -208,6 +209,15 @@ void AGunItem::OnPostInitializeComponents()
 	if (HasAuthority())
 	{
 		Server_InitGunParts();
+	}
+}
+
+void AGunItem::OnPostInvObjectGeneration()
+{
+	if (HasAuthority())
+	{
+		// 공통 InvObj 초기화 로직 수행
+		Server_RefreshInvObjValues();
 	}
 }
 
@@ -255,7 +265,7 @@ void AGunItem::Server_InitGunParts()
 	// 총기 설명 추가
 	GenerateWeaponAttr();
 
-	// 공통 초기화 로직 수행
+	// 공통 파츠 초기화 로직 수행
 	Host_InitGunParts();
 }
 
@@ -263,7 +273,8 @@ void AGunItem::Client_InitGunParts()
 {
 	if (HasAuthority()) return;
 
-	// 메쉬 트리 빌드
+	// 메쉬 변경 및 메쉬 트리 빌드
+	SetMeshToReceiver();
 	ConstructMeshTree();
 
 	// 렌더링 결과 적용
@@ -272,7 +283,7 @@ void AGunItem::Client_InitGunParts()
 		SetItemVisibility(bItemVisibility);
 	}
 
-	// 공통 초기화 로직 수행
+	// 공통 파츠 초기화 로직 수행
 	Host_InitGunParts();
 }
 
@@ -284,14 +295,9 @@ void AGunItem::Host_InitGunParts()
 	// 파츠 메쉬 설정 초기화
 	InitializeGunPartMesh();
 
-	// 총기 크기에 맞게 콜리전 조정
-	GunBoxColComponent->SetBoxExtent(GetEstimatedItemSize());
-
-	// 총기 크기에 따라 동적으로 파지 자세 결정
-	SetShouldHoldWithBothArmsBySize();
-
-	// 파지 자세에 맞게 어태치 위치 조정
-	SetRelativeAttachTransform();
+	// 아이템 크기 설정 및 연관 컴포넌트 수정
+	RefreshItemSizeAndOffset();
+	AdjustComponentsToMatchItemSize();
 
 	// 총구 라이트 초기 설정
 	InitMuzzleLightComp();
@@ -306,18 +312,18 @@ void AGunItem::Host_InitGunParts()
 	RefreshRecoilAnim();
 }
 
-bool AGunItem::RestoreFromItemData(UItemData* Data)
+bool AGunItem::Server_RestoreItem_PreSpawn(const UInvObject* SrcInvObject)
 {
-	if (!Super::RestoreFromItemData(Data)) return false;
-	UGunItemData* GunData = Cast<UGunItemData>(Data);
+	if (!Super::Server_RestoreItem_PreSpawn(SrcInvObject)) return false;
+	const UGunItemData* GunData = Cast<UGunItemData>(SrcInvObject->GetItemData());
 	if (!IsValid(GunData))
 	{
-		UE_LOG(LogTemp, Error, TEXT("Tried to restore a gun item from a non-GunItemData %s."), *(Data->GetName()));
+		UE_LOG(LogTemp, Error, TEXT("Server_RestoreItem_PreSpawn - Tried to restore a gun item from a non-GunItemData InvObj %s."), *(SrcInvObject->GetName()));
 		return false;
 	}
 	if (!IsValid(GunData->GetCachedReceiverClass()))
 	{
-		UE_LOG(LogTemp, Error, TEXT("%s has no receiver class cached! Aborting restore process."), *(Data->GetName()));
+		UE_LOG(LogTemp, Error, TEXT("Server_RestoreItem_PreSpawn - %s has no receiver class cached! Aborting restore process."), *(SrcInvObject->GetName()));
 		return false;
 	}
 
@@ -351,14 +357,27 @@ bool AGunItem::RestoreFromItemData(UItemData* Data)
 		SetStock(NewObject<UGunPartComponent>(this, GunData->GetCachedStockClass()));
 	}
 
-	// 기타 데이터 복구
-	int32 DesiredAmmo = GunData->GetCachedCurrAmmo();
-	if (DesiredAmmo < 0)
+	return true;
+}
+
+bool AGunItem::Server_RestoreItem_PostSpawn(const UInvObject* SrcInvObject)
+{
+	if (!Super::Server_RestoreItem_PostSpawn(SrcInvObject)) return false;
+
+	const UGunItemData* GunData = Cast<UGunItemData>(SrcInvObject->GetItemData());
+	if (!IsValid(GunData))
 	{
-		DesiredAmmo = GetStat_MaxAmmo(nullptr); // TODO: 캐릭터 레퍼런스가 전달되지 않으므로 스테이터스로 인한 효과가 제대로 반영되지 않음
+		UE_LOG(LogTemp, Error, TEXT("Server_RestoreItem_PostSpawn - Tried to restore a gun item from a non-GunItemData InvObj %s."), *(SrcInvObject->GetName()));
+		return false;
+	}
+
+	// 탄약 데이터 복구
+	int32 DesiredAmmo = GunData->GetCachedCurrAmmo();
+	if (DesiredAmmo == TR_AMMO_FULL)
+	{
+		DesiredAmmo = FMath::Max(DesiredAmmo, GetStat_MaxAmmo(SrcInvObject->GetInvObjectOwner()));
 	}
 	Server_SetCurrAmmo(DesiredAmmo);
-
 	return true;
 }
 
@@ -384,7 +403,7 @@ void AGunItem::InitGunBoxColComponent()
 	GunBoxColComponent->bReplicatePhysicsToAutonomousProxy = true;
 
 	GunBoxColComponent->SetCollisionProfileName(TEXT("GunBoxCol"));
-	GunBoxColComponent->SetGenerateOverlapEvents(false); // 불필요
+	GunBoxColComponent->SetGenerateOverlapEvents(true); // 각종 판정에 사용
 	GunBoxColComponent->SetShouldUpdatePhysicsVolume(false);
 	GunBoxColComponent->SetCollisionResponseToChannel(ECC_PlayerPawn, ECollisionResponse(DefaultItemCollisionWithPawn));
 	GunBoxColComponent->SetCollisionResponseToChannel(ECC_BotPawn, ECollisionResponse(DefaultItemCollisionWithPawn));
@@ -520,6 +539,55 @@ void AGunItem::GenerateWeaponAttr()
 	// NOTE: 투사체 스텟은 UI에 표기하지 않는다
 }
 
+int32 AGunItem::Host_GetGunPartsTierSum()
+{
+	int32 GunTier = 0;
+	TArray<UGunPartComponent*> Parts = GetGunParts();
+	for (UGunPartComponent* Part : Parts)
+	{
+		GunTier += Part->GetTier();
+	}
+	return GunTier;
+}
+
+void AGunItem::Server_RefreshInvObjValues()
+{
+	if (!HasAuthority()) return;
+	if (!IsValid(InvObject))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Server_RefreshInvObjValues - Invalid InvObject!"));
+		return;
+	}
+
+	Server_RefreshTier();
+	Server_RefreshPrice();
+}
+
+void AGunItem::Server_RefreshTier()
+{
+	if (!HasAuthority()) return;
+	int32 PartsTierSum = Host_GetGunPartsTierSum();
+	// TODO
+	// TEMP 임시로 랜덤한 티어를 갖게 설정
+	if (InvObject)
+	{
+		TArray<EItemTier> TEMPARR = {
+			EItemTier::IT_TIER_T1,
+			EItemTier::IT_TIER_T2,
+			EItemTier::IT_TIER_T3,
+			EItemTier::IT_TIER_T4,
+			EItemTier::IT_TIER_T5,
+		};
+		InvObject->Server_ChooseTierDuringRuntime(TEMPARR[FMath::Rand() % 5]);
+	}
+}
+
+void AGunItem::Server_RefreshPrice()
+{
+	if (!HasAuthority()) return;
+	// TODO
+}
+
 const FExplosionInfo AGunItem::GetStat_GunExplosionInfo(class AGameCharacter* Wielder) const
 {
 	FExplosionInfo GunExplosionInfoValue = FExplosionInfo();
@@ -537,7 +605,6 @@ const FExplosionInfo AGunItem::GetStat_GunExplosionInfo(class AGameCharacter* Wi
 	GunExplosionInfoValue.bApplyImpactOnExplosion = true;
 	GunExplosionInfoValue.bExplodeOnBeginPlay = true;
 	GunExplosionInfoValue.bDestroyAfterExplosion = true;
-	GunExplosionInfoValue.ImpactFalloffType = ERadialImpulseFalloffWrapper::RIFW_Linear;
 	GunExplosionInfoValue.ExplosionBlockedByType = { ECC_WorldStatic, ECC_WorldDynamic };
 	GunExplosionInfoValue.ExplosionTargetType = { ECC_WorldDynamic, ECC_PlayerPawn, ECC_BotPawn, ECC_PhysicsBody, ECC_Item };
 
@@ -901,23 +968,37 @@ void AGunItem::Server_SetCurrAmmo(int32 Value)
 	CurrAmmo = Value;
 
 	// 서버의 경우 수동 호출
-	Local_OnCurrAmmoUpdated();
+	Local_SetUIUsingAuthAmmo();
 }
 
 void AGunItem::OnRep_CurrAmmo()
 {
-	Client_PredictedCurrAmmo = CurrAmmo;
-
-	Local_OnCurrAmmoUpdated();
+	if (GetWorld())
+	{
+		FTimerManager& TimerManager = GetWorld()->GetTimerManager();
+		if (TimerManager.IsTimerActive(Client_CurrAmmoRefreshTimer))
+		{
+			TimerManager.ClearTimer(Client_CurrAmmoRefreshTimer);
+		}
+		TimerManager.SetTimer(
+			Client_CurrAmmoRefreshTimer,
+			[this]() {
+				Client_PredictedCurrAmmo = CurrAmmo;
+				Local_SetUIUsingAuthAmmo();
+			},
+			UI_PRED_AMMO_REFRESH_DELAY,
+			false
+		);
+	}
 }
 
-void AGunItem::Local_OnCurrAmmoUpdated()
+void AGunItem::Local_SetUIUsingAuthAmmo()
 {
 	// UI 업데이트 (서버,클라)
 	AGameCharacter* GameChar = GetItemDeployer();
 	if (GameChar && GameChar->Local_GetBoundHUDWidget().IsValid())
 	{
-		GameChar->Local_GetBoundHUDWidget()->UpdateAmmo();
+		GameChar->Local_GetBoundHUDWidget()->UpdateAmmo(CurrAmmo);
 	}
 }
 
@@ -1157,16 +1238,101 @@ void AGunItem::InitializeGunPartMesh()
 	}
 }
 
-void AGunItem::ResizeReachCompToMatchItem()
+void AGunItem::AdjustComponentsToMatchItemSize()
 {
-	Super::ResizeReachCompToMatchItem();
-	// TODO: 각 파츠들의 메쉬 크기도 고려해 조정
+	// 월드스페이스 정렬
+	FRotator OriginRotation = GetActorRotation();
+	SetActorRotation(FRotator::ZeroRotator);
+
+	// ABaseItem과 계층 구조 자체가 다르므로 완전히 새로 로직을 작성해야 함
+	FVector Extent = ItemSize;
+	Extent.X += ReachCompMargin;
+	Extent.Y += ReachCompMargin;
+	Extent.Z += ReachCompMargin;
+	ReachComponent->SetBoxExtent(Extent, true);
+
+	// 총기 크기에 맞게 콜리전 조정
+	GunBoxColComponent->SetBoxExtent(ItemSize);
+
+	// 오프셋 반영
+	ApplyComponentsItemSizeOffset();
+
+#if WITH_EDITOR
+	if (CVarShowDebugShapes.GetValueOnGameThread())
+	{
+		DrawDebugBox(GetWorld(), ReachComponent->GetComponentLocation(), ReachComponent->GetScaledBoxExtent(), FColor::Red, false, 5.0f, 0, 1.0);
+		DrawDebugBox(GetWorld(), GunBoxColComponent->GetComponentLocation(), GunBoxColComponent->GetScaledBoxExtent(), FColor::Yellow, false, 5.0f, 0, 1.0);
+	}
+#endif
+
+	// 다시 원래 회전으로 복구
+	SetActorRotation(OriginRotation);
+}
+
+void AGunItem::ApplyComponentsItemSizeOffset()
+{
+	// 월드스페이스 정렬
+	FRotator OriginRotation = GetActorRotation();
+	SetActorRotation(FRotator::ZeroRotator);
+
+	// 중요: GunItem은 GunBoxColComponent가 루트기 때문에,
+	// 루트를 움직이는 게 아니라 하위 자손들의 상대 위치를 오프셋의 반대 방향으로 움직인다
+	TArray<USceneComponent*> BoxColCompChildren;
+	GunBoxColComponent->GetChildrenComponents(false/*직계 자손만 변경*/, BoxColCompChildren);
+	for (USceneComponent* Child : BoxColCompChildren)
+	{
+		// 리치 컴포넌트는 오프셋을 주는 게 아닌, 루트 포지션에 맞추어야 함
+		if (Child == ReachComponent)
+		{
+			continue;
+		}
+		Child->SetWorldLocation(Child->GetComponentLocation() - ItemSizeBoxOffset/*오프셋을 더하는게 아닌 빼주는 것임에 유의*/);
+	}
+
+	// 리치 컴포넌트는 루트(콜리전)에 대해 0,0,0 오프셋과 동일한 회전을 가지게 설정한다
+	// 여기서 world location을 사용해 직접 위치를 조정할 경우 오류가 발생하기 때문에 어태치를 사용해 처리한다
+	ReachComponent->AttachToComponent(GunBoxColComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+
+	// 다시 원래 회전으로 복구
+	SetActorRotation(OriginRotation);
+}
+
+void AGunItem::UndoComponentsItemSizeOffsetExceptReach()
+{
+	// 월드스페이스 정렬
+	FRotator OriginRotation = GetActorRotation();
+	SetActorRotation(FRotator::ZeroRotator);
+
+	// ApplyComponentsItemSizeOffset 참고
+	TArray<USceneComponent*> BoxColCompChildren;
+	GunBoxColComponent->GetChildrenComponents(false, BoxColCompChildren);
+	for (USceneComponent* Child : BoxColCompChildren)
+	{
+		if (Child == ReachComponent)
+		{
+			continue;
+		}
+		Child->SetWorldLocation(Child->GetComponentLocation() + ItemSizeBoxOffset);
+	}
+
+	// 주의: ReachComponent의 경우 Undo해주지 않는다!
+
+	// 다시 원래 회전으로 복구
+	SetActorRotation(OriginRotation);
 }
 
 void AGunItem::OnRep_GunPartComp()
 {
 	if (!HasAuthority())
 	{
+		for (UGunPartComponent* Part : GetGunParts())
+		{
+			if (Part && !Part->GetMeshComp())
+			{
+				UE_LOG(LogTemp, Error, TEXT("OnRep_GunPartComp - GunPartComponent %s was replicated, but its mesh property is not synced properly! This will cause a discrepancy between client and the server!"), *(Part->GetName()));
+			}
+		}
+
 		bClient_AllPartsReplicated = true;
 
 		Client_InitGunParts();
@@ -1180,8 +1346,13 @@ void AGunItem::OnRep_GunPartComp()
 	}
 }
 
-void AGunItem::SetRelativeAttachTransform()
+void AGunItem::Local_PrepareAttachment()
 {
+	Super::Local_PrepareAttachment();
+	// 어태치 시에는 메시 위치에 오프셋이 존재해서는 안됨
+	// 어태치 이후에는 어차피 액터 콜리전이 무의미 하기 때문에 컴포넌트 오프셋이 중요치 않으므로 Undo함
+	UndoComponentsItemSizeOffsetExceptReach();
+
 	if (ShouldHoldWithBothArms())
 	{
 		if (GetGrip())
@@ -1202,28 +1373,82 @@ void AGunItem::SetRelativeAttachTransform()
 	}
 }
 
-FVector AGunItem::GetEstimatedItemSize()
+void AGunItem::RefreshItemSizeAndOffset()
 {
-	FVector ReceiverSize = FVector(0, 0, 0);
-	FVector BarrelSize = FVector(0, 0, 0);
-	FVector StockSize = FVector(0, 0, 0);
-	FVector SightSize = FVector(0, 0, 0);
-	FVector GunSize = FVector(0, 0, 0);
+	// 월드스페이스에서 계산해야 (=회전이 없어야) 바운딩 박스가 제대로 정렬됨
+	FRotator OriginRotation = GetActorRotation();
+	SetActorRotation(FRotator::ZeroRotator);
 
-	if (GetReceiver() && GetReceiver()->GetMeshComp()) 
-		ReceiverSize = GetReceiver()->GetMeshComp()->GetLocalBounds().BoxExtent;
-	if (GetBarrel() && GetBarrel()->GetMeshComp())
-		BarrelSize = GetBarrel()->GetMeshComp()->GetLocalBounds().BoxExtent;
-	if (GetStock() && GetStock()->GetMeshComp())
-		StockSize = GetStock()->GetMeshComp()->GetLocalBounds().BoxExtent;
-	if (GetSight() && GetSight()->GetMeshComp())
-		SightSize = GetSight()->GetMeshComp()->GetLocalBounds().BoxExtent;
+	bool bHasInitPosition = false;
+	FVector MinPosition = FVector(0, 0, 0);
+	FVector MaxPosition = FVector(0, 0, 0);
 
-	GunSize.Y = (ReceiverSize.Y + BarrelSize.Y + StockSize.Y); // 파츠간 겹치는 부분이 있으므로 오차 발생 가능
-	GunSize.X = FMath::Max3(ReceiverSize.X, BarrelSize.X, StockSize.X);
-	GunSize.Z = FMath::Max3(ReceiverSize.Z, BarrelSize.Z, StockSize.Z) + SightSize.Z;
-	//UE_LOG(LogTemp, Error, TEXT("GSIZE %f %f %f"), GunSize.X, GunSize.Y, GunSize.Z);
-	return GunSize;
+	TArray<UGunPartComponent*> GunParts = GetGunParts();
+	for (const UGunPartComponent* GunPart : GunParts)
+	{
+		UMeshComponent* GunMesh = GunPart->GetMeshComp();
+		if (!GunMesh) return;
+
+		if (GunMesh)
+		{
+			const FBoxSphereBounds& Bounds = GunMesh->Bounds;
+			FVector Center = Bounds.Origin;
+			FVector Extent = Bounds.BoxExtent;
+
+			// 8개 모서리 확인
+			for (int32 X = -1; X <= 1; X += 2)
+			{
+				for (int32 Y = -1; Y <= 1; Y += 2)
+				{
+					for (int32 Z = -1; Z <= 1; Z += 2)
+					{
+						FVector Corner = Center + FVector(X * Extent.X, Y * Extent.Y, Z * Extent.Z);
+
+						if (!bHasInitPosition)
+						{
+							bHasInitPosition = true;
+							MinPosition = Corner;
+							MaxPosition = Corner;
+						}
+						else
+						{
+							MinPosition.X = FMath::Min(Corner.X, MinPosition.X);
+							MaxPosition.X = FMath::Max(Corner.X, MaxPosition.X);
+
+							MinPosition.Y = FMath::Min(Corner.Y, MinPosition.Y);
+							MaxPosition.Y = FMath::Max(Corner.Y, MaxPosition.Y);
+
+							MinPosition.Z = FMath::Min(Corner.Z, MinPosition.Z);
+							MaxPosition.Z = FMath::Max(Corner.Z, MaxPosition.Z);
+
+#if WITH_EDITOR
+							if (CVarShowDebugShapes.GetValueOnGameThread())
+							{
+								DrawDebugSphere(GetWorld(), Corner, 3.0f, 4, FColor::Green, false, 5.0f, 0, 1.0);
+							}
+#endif
+						}
+					}
+				}
+			}
+		}
+	}
+	FBox CombinedBox(MinPosition, MaxPosition);
+
+	// 박스 중심이 액터 원점에서 떨어진 만큼을 오프셋으로 지정한다
+	ItemSize = CombinedBox.GetExtent();
+	ItemSizeBoxOffset = CombinedBox.GetCenter() - GetActorLocation();
+
+#if WITH_EDITOR
+	if (CVarShowDebugShapes.GetValueOnGameThread())
+	{
+		DrawDebugBox(GetWorld(), CombinedBox.GetCenter(), CombinedBox.GetExtent(), FColor::Magenta, false, 5.0f, 0, 1.0);
+	}
+#endif
+
+	// 회전 복구
+	// 가장 마지막에 하는 게 중요
+	SetActorRotation(OriginRotation);
 }
 
 void AGunItem::ConstructMeshTree()
@@ -1310,12 +1535,13 @@ bool AGunItem::AttachToPart(UGunPartComponent* Parent, UGunPartComponent* Comp, 
 	return true;
 }
 
-void AGunItem::SetShouldHoldWithBothArmsBySize()
+bool AGunItem::ShouldHoldWithBothArms() const
 {
-	if (GetEstimatedItemSize().Y > YLenLimitToHoldWithBothArms)
+	if (ItemSize.Y > YLenLimitToHoldWithBothArms)
 	{
-		bShouldHoldWithBothArms = true;
+		return true;
 	}
+	return false;
 }
 
 void AGunItem::RegisterVisibility(bool bVisibility)

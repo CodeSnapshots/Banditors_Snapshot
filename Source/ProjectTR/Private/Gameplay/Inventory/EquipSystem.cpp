@@ -75,7 +75,7 @@ bool UEquipSystem::Server_SwitchWeaponSlotTo(int32 SlotIdx)
 	{
 		// 액터 생성
 		// 이때 슬롯에는 여전히 InvObject가 남아있다
-		ABaseItem* SpawnedItem = NewInvObj->GenerateAndSpawnItem(GetTROwner(), GetTROwner()->GetHandPointInfo().Get<0>()/*임시로 그랩 위치에 생성*/, GetTROwner()->GetActorRotation(), FActorSpawnParameters());
+		ABaseItem* SpawnedItem = NewInvObj->GenerateAndSpawnItem(GetTROwner(), GetTROwner()->GetHandPointInfo().Get<0>()/*임시로 그랩 위치에 생성*/, GetTROwner()->GetActorRotation(), FActorSpawnParameters(), true, false/*장착 시에는 VFX 해제*/);
 		Server_SetCurrWeaponActor(Cast<AWieldItem>(SpawnedItem));
 		if (!CurrWeaponActor)
 		{
@@ -104,13 +104,6 @@ void UEquipSystem::Server_RetrieveCurrWeapon()
 
 	// 서버의 경우 수동 호출
 	Local_OnCurrWeaponActorUpdated();
-}
-
-bool UEquipSystem::TryEquipItemAt(UInvObject* InvObj, int32 SlotIdx)
-{
-	if (GetInvObjOfSlot(SlotIdx)) return false; // 위치 중복 허용 X
-	TryAddInvObjToSlot(InvObj, SlotIdx);
-	return true;
 }
 
 void UEquipSystem::ProcessWeaponAttachment()

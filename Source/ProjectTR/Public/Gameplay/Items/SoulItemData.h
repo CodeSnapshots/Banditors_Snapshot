@@ -20,7 +20,7 @@ class PROJECTTR_API USoulItemData : public UItemData
 public:
 	virtual bool CacheItem(const class ABaseItem* Item) override;
 
-	class ATRPlayerController* GetCachedController() { return Server_Controller; }
+	class ATRPlayerController* GetCachedController() const { return Server_Controller; }
 	void CacheController(class ATRPlayerController* Controller) { Server_Controller = Controller; }
 
 protected:

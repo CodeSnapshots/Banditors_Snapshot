@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
 #include "Core/TREnums.h"
-#include "DataAssets/FxConfig.h"
+#include "DataAssets/GunFxConfig.h"
 #include "DataAssets/AudioConfig.h"
 #include "DataAssets/CamShakeConfig.h"
 #include "DataAssets/ProjectileConfig.h"
@@ -62,7 +62,7 @@ public:
 	void SetupMeshComp(UStaticMesh* Static, USkeletalMesh* Skeletal);
 
 	// 메쉬 컴포넌트를 반환한다
-	UMeshComponent* GetMeshComp();
+	UMeshComponent* GetMeshComp() const;
 
 	// 현재 메쉬 컴포넌트의 타입을 반환한다
 	EGunPartMeshType GetMeshCompType();
@@ -236,7 +236,7 @@ public:
 	bool bOverrideExplosionVFXEnum = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	ENiagaraReference ExplosionVFXEnumValue = ENiagaraReference::ENR_NULL;
+	EGunNiagaraReference ExplosionVFXEnumValue = EGunNiagaraReference::ENR_NULL;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bOverrideExplVFXRadiusConstant = false;
@@ -454,14 +454,14 @@ protected:
 	bool bSetMuzzleFlashVFXFromEnum = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	ENiagaraReference MuzzleFlashVFXEnum = ENiagaraReference::ENR_NULL;
+	EGunNiagaraReference MuzzleFlashVFXEnum = EGunNiagaraReference::ENR_NULL;
 
 /* 탄피 배출 VFX */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bSetShellEjectVFXFromEnum = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	ENiagaraReference ShellEjectVFXEnum = ENiagaraReference::ENR_NULL;
+	EGunNiagaraReference ShellEjectVFXEnum = EGunNiagaraReference::ENR_NULL;
 
 /* 카메라 셰이크 */
 // LEGACY: 카메라 셰이크는 현재 사용되지 않음

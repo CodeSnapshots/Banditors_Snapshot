@@ -10,9 +10,10 @@
 #include "Core/TRMacros.h"
 #include "Core/TRUtils.h"
 #include "Core/TRCVar.h"
-#include "DataAssets/FxConfig.h"
+#include "DataAssets/GunFxConfig.h"
 #include "DataAssets/CamShakeConfig.h"
 #include "Damage/TRDamageType.h"
+#include "DungeonActors/BreakableActor.h"
 #include "Items/GunItem.h"
 #include "Characters/FPSCharacter.h"
 #include "Characters/GameCharacter.h"
@@ -43,6 +44,24 @@ bool UWeaponFireComponent::Host_CanTrigger(AGameCharacter* Invoker)
 		return GunOwner->Host_CanFireShot();
 	}
 	return false;
+}
+
+bool UWeaponFireComponent::Server_ShouldLoopIntervalTimer() const
+{
+	if (!FMath::IsNearlyEqual(TriggerInterval, CurrRapidFireInterval))
+	{
+		UE_LOG(LogTemp, Error, TEXT("UWeaponFireComponent::Server_ShouldLoopIntervalTimer - Interval desync!"));
+	}
+	return bIsRapidFiring;
+}
+
+bool UWeaponFireComponent::Client_ShouldLoopIntervalTimer() const
+{
+	if (!FMath::IsNearlyEqual(TriggerInterval, CurrRapidFireInterval))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UWeaponFireComponent::Client_ShouldLoopIntervalTimer - Interval desync! This could happen due to replication delay."));
+	}
+	return bLocal_IsRapidFxPlaying;
 }
 
 void UWeaponFireComponent::SetupVirtualTargetDistance(const FVector& StartPos, const FVector& Direction, AActor* FireActor)
@@ -134,7 +153,7 @@ void UWeaponFireComponent::OnRep_RecoilAnimInfluencer() const
 	}
 }
 
-void UWeaponFireComponent::OnPerHitscanHitboxCollision(UHitboxComponent* HitboxComp, FVector NormalImpulse, const FHitResult& Hit, AGunItem* GunOwner, AGameCharacter* Shooter, bool bIgnoreColVFX)
+void UWeaponFireComponent::OnPerHitscanHitboxCollision(UHitboxComponent* HitboxComp, const FHitResult& Hit, AGunItem* GunOwner, AGameCharacter* Shooter, bool bIgnoreColVFX)
 {
 	if (!HitboxComp)
 	{
@@ -205,12 +224,12 @@ void UWeaponFireComponent::OnPerHitscanHitboxCollision(UHitboxComponent* HitboxC
 		Damage *= TRUtils::GetFallOffMultOfDist(HitboxOwner->GetDistanceTo(GunOwner), GunOwner->GetStat_DmgDistFallOffMult(Shooter), GunConst::GUN_MAX_FALLOFF_DIST, GunConst::GUN_MIN_FALLOFF_DIST);
 	}
 
-	UGameplayStatics::ApplyPointDamage(HitboxOwner, Damage, NormalImpulse, Hit, Shooter->Controller, Shooter, GunOwner->GetStat_DamageType(Shooter));
+	UGameplayStatics::ApplyPointDamage(HitboxOwner, Damage, Hit.ImpactNormal, Hit, Shooter->Controller, Shooter, GunOwner->GetStat_DamageType(Shooter));
 }
 
-void UWeaponFireComponent::OnPerHitscanObjectCollision(TWeakObjectPtr<UPrimitiveComponent> ObjectComp, FVector NormalImpulse, const FHitResult& Hit, AGunItem* GunOwner, AGameCharacter* Shooter, bool bIgnoreColVFX)
+void UWeaponFireComponent::OnPerHitscanObjectCollision(const FHitResult& Hit, AGunItem* GunOwner, AGameCharacter* Shooter, bool bIgnoreColVFX)
 {
-	if (!ObjectComp.IsValid())
+	if (!Hit.Component.IsValid())
 	{
 		UE_LOG(LogTemp, Error, TEXT("OnHitscanObjectCollision - Invalid component!"));
 		return;
@@ -219,6 +238,17 @@ void UWeaponFireComponent::OnPerHitscanObjectCollision(TWeakObjectPtr<UPrimitive
 	{
 		UE_LOG(LogTemp, Error, TEXT("OnHitscanObjectCollision - invalid argument!"));
 		return;
+	}
+
+	// 오브젝트 로직
+	AActor* HitActor = Hit.GetActor();
+	if (HitActor)
+	{
+		ABreakableActor* Breakable = Cast<ABreakableActor>(HitActor);
+		if (Breakable)
+		{
+			Breakable->Server_ProcessCrumbling((-Hit.ImpactNormal).GetSafeNormal()/* 총알은 뚫고 지나가는 게 더 자연스럽기 때문에 크기는 작게 준다*/);
+		}
 	}
 
 	// 물리 충돌
@@ -321,7 +351,7 @@ void UWeaponFireComponent::Local_Fx()
 		// 로컬에서 발사가 가능하다고 판단했을 경우 UI값을 추측해 사용; 이 값은 이후 동기화됨
 		if (!Local_CurrFxActor->HasAuthority() && Local_CurrFxActor->Local_GetBoundHUDWidget().IsValid())
 		{
-			GunOwner->Client_PredictedCurrAmmo = GunOwner->CurrAmmo; // NOTE: OnRep은 최초 초기값 전달 시에는 호출되지 않기 때문에 여기서 한번 더 동기화를 시켜야 함
+			// NOTE: Client_PredictedCurrAmmo 값의 reconciliation은 OnRep 타이머에서 처리
 			GunOwner->Client_PredictedCurrAmmo = FMath::Max(0, GunOwner->Client_PredictedCurrAmmo - GunOwner->Client_PredictedAmmoPerShot);
 			Local_CurrFxActor->Local_GetBoundHUDWidget()->UpdateAmmo(GunOwner->Client_PredictedCurrAmmo);
 		}
@@ -1091,7 +1121,7 @@ bool UWeaponFireComponent::ProcessHitscanSingle(FHitResult& out_HitResult, bool&
 				out_bHitResultValid = true;
 			}
 
-			OnPerHitscanHitboxCollision(HitboxComp, HitResult.ImpactNormal, HitResult, GunOwner, CurrFireActor, bIgnoreColVFX);
+			OnPerHitscanHitboxCollision(HitboxComp, HitResult, GunOwner, CurrFireActor, bIgnoreColVFX);
 			IgnoredActors.Add(HitResult.GetActor());
 
 			out_CharactersHit++;
@@ -1112,10 +1142,16 @@ bool UWeaponFireComponent::ProcessHitscanSingle(FHitResult& out_HitResult, bool&
 				out_bHitResultValid = true;
 			}
 
-			OnPerHitscanObjectCollision(HitResult.Component, HitResult.ImpactNormal, HitResult, GunOwner, CurrFireActor, bIgnoreColVFX);
+			OnPerHitscanObjectCollision(HitResult, GunOwner, CurrFireActor, bIgnoreColVFX);
 			IgnoredActors.Add(HitResult.GetActor());
 
-			// 현재 오브젝트 관통은 불가하므로 재귀 없음
+			// Breakable일 경우 관통
+			if (HitResult.GetActor() && HitResult.GetActor()->IsA<ABreakableActor>())
+			{
+				return ProcessHitscanSingle(out_HitResult, out_bHitResultValid, out_CharactersHit, LineTraceBegin, LineTraceEnd, TraceDirection, RecursiveDepth + 1, MaxRecursiveDepth, IgnoredComponents, IgnoredActors, bIgnoreColVFX);
+			}
+
+			// 그 외 오브젝트는 관통 불가
 		}
 	}
 	return true;

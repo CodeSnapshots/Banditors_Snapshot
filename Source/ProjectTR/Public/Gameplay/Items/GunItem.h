@@ -13,7 +13,7 @@
 #include "Core/TRMacros.h"
 #include "TRExplosion.h"
 #include "DataAssets/CamShakeConfig.h"
-#include "DataAssets/FxConfig.h"
+#include "DataAssets/GunFxConfig.h"
 #include "DataAssets/AudioConfig.h"
 #include "DataAssets/ProjectileConfig.h"
 #include "DataAssets/BulletConfig.h"
@@ -79,6 +79,7 @@ public:
 	// 오버라이드
 	virtual void BeginPlay() override;
 	virtual void OnPostInitializeComponents() override;
+	virtual void OnPostInvObjectGeneration() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	virtual void OnDeployerStatChanged() override;
@@ -93,8 +94,9 @@ public:
 	// 공통 로직
 	void Host_InitGunParts();
 
-	// 복구 시 캐싱해둔 클래스 정보를 기반으로 GunPartsComp들을 재생성한다
-	virtual bool RestoreFromItemData(class UItemData* Data) override;
+	// 복구 시 클래스 정보를 기반으로 GunPartsComp들을 재생성한다
+	virtual bool Server_RestoreItem_PreSpawn(const class UInvObject* SrcInvObject) override;
+	virtual bool Server_RestoreItem_PostSpawn(const class UInvObject* SrcInvObject) override;
 
 	// 1회 격발 이후 처리 로직
 	void OnShotFired();
@@ -102,6 +104,16 @@ public:
 	// 현재 등록된 총기 스펙을 기준으로 설명을 생성한다
 	// 여기서 생성된 설명은 아이템 액터 생성 플로우를 거치며 인벤토리 오브젝트에 바인딩된다
 	void GenerateWeaponAttr();
+	
+	// 이 총기의 파츠들의 티어값의 합을 반환한다
+	// 일반적으로 값이 높을 수록 더 우수한 파츠가 많음을 의미한다
+	// 이 함수는 모든 파츠의 전달이 완료된 상태에서만 유효하다
+	int32 Host_GetGunPartsTierSum();
+
+	// 각종 정보를 최신화한다
+	void Server_RefreshInvObjValues();
+	void Server_RefreshTier();
+	void Server_RefreshPrice();
 
 #pragma region /** Networking */
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override
@@ -568,7 +580,7 @@ public:
 protected:
 	UFUNCTION()
 	void OnRep_CurrAmmo();
-	void Local_OnCurrAmmoUpdated();
+	void Local_SetUIUsingAuthAmmo();
 #pragma endregion
 
 #pragma region /** Parts */
@@ -606,6 +618,9 @@ public:
 	void SetSight(class UGunPartComponent* Comp) { GunPartComponents.SightComp = Comp; }
 	void SetStock(class UGunPartComponent* Comp) { GunPartComponents.StockComp = Comp; }
 
+	// 어태치를 준비하기 위해 일부 컴포넌트들의 상대적 위치를 변경한다
+	virtual void Local_PrepareAttachment() override;
+
 protected:
 	// 아이템 메쉬 컴포넌트를 Receiver로 설정한다
 	void SetMeshToReceiver();
@@ -619,18 +634,22 @@ protected:
 	// 모든 파츠들에 대해 초기화 작업을 처리한다
 	void InitializeGunPartMesh();
 
-	// 리치 컴포넌트의 크기를 동적으로 현재 메쉬에 맞게 수정한다
-	virtual void ResizeReachCompToMatchItem() override;
+	// 총기의 경우 리치 컴포넌트 뿐만 아니라 콜리전 컴포넌트도 같이 조정해 주어야 함
+	virtual void AdjustComponentsToMatchItemSize() override;
+
+	// 컴포넌트를 아이템 크기에 맞게 조정한다
+	void ApplyComponentsItemSizeOffset();
+
+	// ReachComponent를 제외한 나머지 컴포넌트들의 조정 사항(ApplyComponentsItemSizeOffset)을 Undo한다
+	// 이 함수의 유일한 사용 목적은 아이템 장착 시의 메시 위치 조정을 위함이다
+	void UndoComponentsItemSizeOffsetExceptReach();
 
 	UFUNCTION()
 	void OnRep_GunPartComp();
 
-	// 루트와 그립 컴포넌트의 상대적 거리차에 따라 어태치 지점을 변경한다
-	// 어태치 각도는 상수값으로 고정한다
-	void SetRelativeAttachTransform();
-
-	// 이 총기의 파츠를 포함한 전체 물리적 크기와 유사한 값을 반환한다
-	virtual FVector GetEstimatedItemSize() override;
+	// 이 총기의 파츠를 포함한 전체 물리적 크기 및 전체 바운딩 박스를 계산해 멤버로 저장한다
+	// 총기를 회전시켰다 복구하기 때문에 가급적 게임플레이 런타임 동안에는 사용하지 않는 게 권장된다
+	virtual void RefreshItemSizeAndOffset() override;
 
 protected:
 	// 총기 파츠 컴포넌트
@@ -651,12 +670,21 @@ protected:
 	// Parent에 총기 파츠 메쉬를 부착한다
 	bool AttachToPart(UGunPartComponent* Parent, UGunPartComponent* Comp, FName SocketName = NAME_None);
 
-	// 이 아이템의 크기에 맞게 자동으로 bShouldHoldWithBothArms 값을 설정한다
-	virtual void SetShouldHoldWithBothArmsBySize();
+	// 이 아이템의 크기에 맞는 값을 반환한다
+	virtual bool ShouldHoldWithBothArms() const override;
 
 protected:
 	// Y 길이 추정치가 이 길이를 넘으면 양손 파지한다
 	const float YLenLimitToHoldWithBothArms = 26.0f;
+#pragma endregion
+
+#pragma region /** UI */
+protected:
+	// 클라이언트에서 현재 장탄 값을 수신받을 경우, 곧바로 적용하는 게 아니라 일정 텀을 두고 값을 적용한다
+	// 이때 만약 해당 텀 동안 새 값이 또 수신될 경우, 텀을 리셋하고 기존 값을 덮어쓴다 (타이머 쿨다운 리셋)
+	// 이렇게 하는 이유는 Client prediction이 처리되는 동안에는 서버의 값을 무시하게 만들기 위함이다
+	// 이때 사용할 텀은 너무 길면 오차가 큰 상태가 오래 유지되고, 너무 짧으면 Client prediction이 의미가 없어진다
+	FTimerHandle Client_CurrAmmoRefreshTimer;
 #pragma endregion
 
 #pragma region /** Visuals / VFX */
@@ -714,7 +742,7 @@ public:
 /* 에셋 리소스 */
 	// FX 리소스
 	UPROPERTY(EditDefaultsOnly)
-	class UFxConfig* FxConfig = nullptr;
+	class UGunFxConfig* GunFxConfig = nullptr;
 
 	// 카메라 셰이크 리소스
 	UPROPERTY(EditDefaultsOnly)
@@ -756,7 +784,7 @@ public:
 	// NOTE: 이 값들은 총기에 직접 사용되지 않고, 필요 시 Explosion 객체로 전달된다
 	// 또한 Explosion 액터 단위에서 레플리케이션 되므로 여기서 미리 레플리케이션 할 필요가 없다
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	ENiagaraReference ExplosionVFXEnum = ENiagaraReference::ENR_NULL;
+	EGunNiagaraReference ExplosionVFXEnum = EGunNiagaraReference::ENR_NULL;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float ExplosionVFXRadiusConstant = 1.0f;

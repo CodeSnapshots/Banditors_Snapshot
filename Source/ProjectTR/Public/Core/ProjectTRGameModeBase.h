@@ -61,13 +61,13 @@ protected:
 // 따라서 CollisionResponse, Instigator 등을 지정하기 위해서는 Params 내 변수들을 사용해 직접 값을 변경해주어야 한다
 public:
 	// 아이템 액터 생성을 위해 사용한다
-	class ABaseItem* SpawnItem(TSubclassOf<class ABaseItem> ItemClass, UWorld* World, FVector Location, FRotator Rotation, FActorSpawnParameters Params);
+	class ABaseItem* SpawnItem(TSubclassOf<class ABaseItem> ItemClass, UWorld* World, FVector Location, FRotator Rotation, FActorSpawnParameters Params, bool bUseTierVFX);
 
 	// 게임플레이에 영향을 주지 않는, 장식용 아이템을 생성하기 위해 사용한다
-	class ABaseItem* SpawnDecorativeItem(class UInvObject* InvObj, UWorld* World, FVector Location, FRotator Rotation, FActorSpawnParameters Params);
+	class ABaseItem* SpawnDecorativeItem(class UInvObject* SrcInvObj, UWorld* World, FVector Location, FRotator Rotation, FActorSpawnParameters Params);
 
 	// 주어진 InvObject, ItemData를 기반으로 아이템 액터를 재생성 하기 위해 사용한다
-	class ABaseItem* RespawnItem(TSubclassOf<class ABaseItem> ItemClass, UWorld* World, FVector Location, FRotator Rotation, FActorSpawnParameters Params, class UInvObject* InvObject, class UItemData* ItemData);
+	class ABaseItem* RespawnItem(TSubclassOf<class ABaseItem> ItemClass, UWorld* World, FVector Location, FRotator Rotation, FActorSpawnParameters Params, class UInvObject* SrcInvObj, bool bUseTierVFX);
 
 	// 총기 랜덤 생성을 위해 사용한다
 	// 티어에 0 이하의 값이 주어질 경우 각 파츠들의 티어 분포는 완전히 랜덤한 값을 가지게 된다
@@ -338,6 +338,9 @@ protected:
 	// 시간 경과 여부
 	bool bIsTimeOver = false;
 
+	// 현재 던전 타이머의 활성화 여부
+	bool bIsTimerActive = false;
+
 protected:
 	// 던전 타이머 갱신
 	void UpdateDungeonTime(float DeltaTime);
@@ -358,6 +361,10 @@ public:
 	// 탈출까지 남은 시간
 	// 시간이 경과한 경우 0을 반환한다
 	FORCEINLINE int32 GetSecondsLeft() { return FMath::Max<int32>(0, FMath::RoundToInt(DungeonTotalTimeGiven - DungeonTime)); }
+
+	// 던전 타이머 활성화 상태를 조정
+	// 이 함수는 같은 입력으로 여러 번 중복 호출될 수 있다
+	void SetDungeonTimerState(bool bActive);
 #pragma endregion
 
 #pragma region /** Dungeon Tick */

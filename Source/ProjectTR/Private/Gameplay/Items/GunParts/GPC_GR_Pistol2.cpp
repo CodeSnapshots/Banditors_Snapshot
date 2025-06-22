@@ -47,9 +47,9 @@ UGPC_GR_Pistol2::UGPC_GR_Pistol2()
 
 	// VFX
 	bSetMuzzleFlashVFXFromEnum = true;
-	MuzzleFlashVFXEnum = ENiagaraReference::ENR_MZF_Energy_1;
+	MuzzleFlashVFXEnum = EGunNiagaraReference::ENR_MZF_Energy_1;
 	bSetShellEjectVFXFromEnum = true;
-	ShellEjectVFXEnum = ENiagaraReference::ENR_SEJ_Default;
+	ShellEjectVFXEnum = EGunNiagaraReference::ENR_SEJ_Default;
 
 	bOverrideApplyLightToMuzzleOnFire = true;
 	bApplyLightToMuzzleOnFireValue = true;

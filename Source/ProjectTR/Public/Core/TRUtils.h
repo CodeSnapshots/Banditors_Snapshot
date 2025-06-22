@@ -6,6 +6,8 @@
 #include "Kismet/KismetMathLibrary.h"
 
 #include "Core/TRStructs.h"
+#include "Core/TREnums.h"
+#include "DataAssets/TierFxConfig.h"
 #include "StatusEffect/StatusEffect.h"
 #include "SystemActors/SpawnPoint.h"
 
@@ -105,4 +107,11 @@ public:
     // 주어진 액터에 대응되는 Stencil 값을 반환한다
     // 적절한 값을 찾지 못한 경우 기본값을 반환한다
     static int32 GetOutlineStencilValueFromActor(AActor* Target);
+
+    // 주어진 액터가 무언가를 드랍할 때 사용하는 기본값을 반환한다
+    static FVector GetDefaultDropLocation(AActor* Dropper);
+    static FRotator GetDefaultDropRotation(AActor* Dropper);
+
+    // 주어진 아이템 티어에 맞는 나이아가라 레퍼런스를 반환한다
+    static ETierNiagaraReference GetNiagaraRefFromTier(EItemTier Tier, bool bLoop);
 };

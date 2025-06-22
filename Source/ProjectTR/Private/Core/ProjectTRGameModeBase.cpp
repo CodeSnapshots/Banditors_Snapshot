@@ -239,36 +239,51 @@ void AProjectTRGameModeBase::RefreshAllSpectators()
 	}
 }
 
-ABaseItem* AProjectTRGameModeBase::SpawnItem(TSubclassOf<ABaseItem> ItemClass, UWorld* World, FVector Location, FRotator Rotation, FActorSpawnParameters Params)
+ABaseItem* AProjectTRGameModeBase::SpawnItem(TSubclassOf<ABaseItem> ItemClass, UWorld* World, FVector Location, FRotator Rotation, FActorSpawnParameters Params, bool bUseTierVFX)
 {
 	FTransform SpawnTransform(Rotation, Location, FVector(1, 1, 1));
 	ABaseItem* SpawnedItem = Cast<ABaseItem>(UGameplayStatics::BeginDeferredActorSpawnFromClass(World, ItemClass, SpawnTransform, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn));
 
 	// 생성자 이후 추가 로직
+	SpawnedItem->bServer_UseTierVFX = bUseTierVFX;
 
 	SpawnedItem = Cast<ABaseItem>(UGameplayStatics::FinishSpawningActor(SpawnedItem, SpawnTransform));
 	return SpawnedItem;
 }
 
-ABaseItem* AProjectTRGameModeBase::SpawnDecorativeItem(UInvObject* InvObj, UWorld* World, FVector Location, FRotator Rotation, FActorSpawnParameters Params)
+ABaseItem* AProjectTRGameModeBase::SpawnDecorativeItem(UInvObject* SrcInvObj, UWorld* World, FVector Location, FRotator Rotation, FActorSpawnParameters Params)
 {
 	FTransform SpawnTransform(Rotation, Location, FVector(1, 1, 1));
-	ABaseItem* SpawnedItem = Cast<ABaseItem>(UGameplayStatics::BeginDeferredActorSpawnFromClass(World, InvObj->GetBaseItemClass(), SpawnTransform, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn));
+	ABaseItem* SpawnedItem = Cast<ABaseItem>(UGameplayStatics::BeginDeferredActorSpawnFromClass(World, SrcInvObj->GetBaseItemClass(), SpawnTransform, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn));
 
 	// 생성자 이후 추가 로직
-	SpawnedItem->RestoreFromItemData(InvObj->GetItemData());
+	bool bPreSpawnRestoreResult = SpawnedItem->Server_RestoreItem_PreSpawn(SrcInvObj);
 	if (SpawnedItem)
 	{
+		// 아이콘 생성 시 아이템이 굉장히 먼 거리에 생성되는데, 이때 레플리케이션이 되어야 클라이언트 사이드에도 오브젝트 메쉬가 캡처 가능해짐
+		SpawnedItem->NetCullDistanceSquared = MAX_FLT;
+
+		// 아이템의 스폰 이후의 위치는 로컬 단위에서 조정됨
+		SpawnedItem->SetReplicateMovement(false);
+
 		// 아이콘 생성 해제
 		// NOTE: 이걸 하지 않을 경우 BeginPlay에서 아이콘 생성 -> DecorativeItem 생성 -> BeginPlay -> ...
 		// 무한 재귀호출에 걸린다
 		// 클라이언트 레플리케이션을 위해 PostInit 단계에서 처리한다
 		SpawnedItem->bShouldInitializeIcon = false;
 
+		// 티어 VFX 해제
+		SpawnedItem->bServer_UseTierVFX = false;
+
 		// 기타 무효화 로직 필요 시 추가
 	}
 
 	SpawnedItem = Cast<ABaseItem>(UGameplayStatics::FinishSpawningActor(SpawnedItem, SpawnTransform));
+
+	if (bPreSpawnRestoreResult)
+	{
+		SpawnedItem->Server_RestoreItem_PostSpawn(SrcInvObj);
+	}
 
 	// 피직스, 콜리전 해제
 	// NOTE: 피직스 설정을 덮어쓰기 위해서는 PostInitialization 이후 호출해야 한다
@@ -286,15 +301,27 @@ ABaseItem* AProjectTRGameModeBase::SpawnDecorativeItem(UInvObject* InvObj, UWorl
 	return SpawnedItem;
 }
 
-ABaseItem* AProjectTRGameModeBase::RespawnItem(TSubclassOf<class ABaseItem> ItemClass, UWorld* World, FVector Location, FRotator Rotation, FActorSpawnParameters Params, UInvObject* InvObject, UItemData* ItemData)
+ABaseItem* AProjectTRGameModeBase::RespawnItem(TSubclassOf<class ABaseItem> ItemClass, UWorld* World, FVector Location, FRotator Rotation, FActorSpawnParameters Params, UInvObject* SrcInvObj, bool bUseTierVFX)
 {
+	if (!SrcInvObj)
+	{
+		UE_LOG(LogTemp, Error, TEXT("RespawnItem - Invalid InvObject!"));
+		return nullptr;
+	}
+
 	FTransform SpawnTransform(Rotation, Location, FVector(1, 1, 1));
 	ABaseItem* SpawnedItem = Cast<ABaseItem>(UGameplayStatics::BeginDeferredActorSpawnFromClass(World, ItemClass, SpawnTransform, ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn));
 
 	// 생성자 이후 추가 로직
-	SpawnedItem->RestoreFromItemData(ItemData);
+	SpawnedItem->bServer_UseTierVFX = bUseTierVFX;
+	bool bPreSpawnRestoreResult = SpawnedItem->Server_RestoreItem_PreSpawn(SrcInvObj);
 
 	SpawnedItem = Cast<ABaseItem>(UGameplayStatics::FinishSpawningActor(SpawnedItem, SpawnTransform));
+
+	if (bPreSpawnRestoreResult)
+	{
+		SpawnedItem->Server_RestoreItem_PostSpawn(SrcInvObj);
+	}
 	return SpawnedItem;
 }
 
@@ -318,7 +345,9 @@ AGunItem* AProjectTRGameModeBase::SpawnRandomizedGunItem(UWorld* World, FVector 
 	RandomizeGunParts(TierData, GunItem, &ReceiverComp, &BarrelComp, &GripComp, &MagazineComp, &MuzzleComp, &SightComp, &StockComp);
 	///////////////TESTING
 	//ReceiverComp = NewObject<UGPC_TestReceiver>(GunItem);
+	//ReceiverComp->GetMeshComp()->Rename(nullptr, GunItem);
 	//BarrelComp = NewObject<UGPC_TestBarrel>(GunItem);
+	//BarrelComp->GetMeshComp()->Rename(nullptr, GunItem);
 
 	// 파츠 부착
 	GunItem->SetReceiver(ReceiverComp);
@@ -400,7 +429,18 @@ UGunPartComponent* AProjectTRGameModeBase::SelectAndCreatePart(AGunItem* GunItem
 		UE_LOG(LogTemp, Error, TEXT("SelectAndCreatePart - Invalid gun part class! Args: %d %d"), PartType, PartTier);
 		return nullptr;
 	}
-	return NewObject<UGunPartComponent>(GunItem, SelectedGunPartClass);
+
+	UGunPartComponent* GPC = NewObject<UGunPartComponent>(GunItem, SelectedGunPartClass);
+
+	if (GPC->GetMeshComp())
+	{
+		// 중요:
+		// Mesh component의 아우터를 이 총기 아이템으로 설정한다
+		// 메시가 정상적으로 레플리케이션 되게 만들기 위함임
+		// 아직 초기 레플리케이션이 처리되기 이전이므로(파츠가 액터 프로퍼티에 등록되기 이전이기 때문에) 이 시점에서의 아우터 변경이 유효함
+		GPC->GetMeshComp()->Rename(nullptr, GunItem);
+	}
+	return GPC;
 }
 
 void AProjectTRGameModeBase::InitPartsList()
@@ -1205,10 +1245,12 @@ void AProjectTRGameModeBase::OnGameClear()
 
 void AProjectTRGameModeBase::UpdateDungeonTime(float DeltaTime)
 {
-	// 시간 초과 시 더이상 시간을 갱신하지 않음
+	// 시간 초과 혹은 타이머 비활성화 시 시간을 갱신하지 않고 스테이트도 변경하지 않는다
 	if (bIsTimeOver) return;
+	if (!bIsTimerActive) return;
 
 	DungeonTime += DeltaTime;
+
 	ATRGameState* TRGS = GetGameState<ATRGameState>();
 	int32 DungeonTimeSeconds = GetSecondsLeft();
 	if (TRGS && TRGS->Local_GetDungeonTimeLeft() != DungeonTimeSeconds)
@@ -1221,6 +1263,14 @@ void AProjectTRGameModeBase::UpdateDungeonTime(float DeltaTime)
 	{
 		bIsTimeOver = true;
 		OnTimeOver();
+	}
+
+	// 적 생성 스테이트는 타이머가 동작할 때만 변경된다
+	CurrEnemyGenStateTime += DeltaTime;
+	UpdateIntensity(DeltaTime);
+	if (CurrEnemyGenStateTargetTime <= CurrEnemyGenStateTime)
+	{
+		ChangeToNextState();
 	}
 }
 
@@ -1257,6 +1307,12 @@ void AProjectTRGameModeBase::OnEnterRedMode()
 	{
 		TRGS->Server_ProcessRedModeEnter();
 	}
+}
+
+void AProjectTRGameModeBase::SetDungeonTimerState(bool bActive)
+{
+	if (bIsTimerActive == bActive) return;
+	bIsTimerActive = bActive;
 }
 
 void AProjectTRGameModeBase::ChangeEnemyGeneration(float IntensityGoal, float ReachTime)
@@ -1347,16 +1403,6 @@ void AProjectTRGameModeBase::DungeonTick(float DeltaTime)
 {
 	// 던전 경과 시간 갱신
 	UpdateDungeonTime(DeltaTime);
-
-	// 시간은 틱 델타 단위로 더해짐
-	CurrEnemyGenStateTime += DeltaTime;
-
-	UpdateIntensity(DeltaTime);
-	if (CurrEnemyGenStateTargetTime <= CurrEnemyGenStateTime)
-	{
-		// 기본 사이클을 따라서 다음 번 스테이트로 넘어간다
-		ChangeToNextState();
-	}
 	ManageEnemies(DeltaTime);
 
 #if WITH_EDITOR
@@ -1647,9 +1693,10 @@ void AProjectTRGameModeBase::UpdateIconOf(UInvObject* InvObj)
 	}
 
 	// 기존 아이콘 생성에 사용한 액터 존재 시 파괴
-	if (InvObj->GetCurrIconStageActor().IsValid())
+	if (InvObj->CurrIconStageActor.IsValid())
 	{
-		InvObj->GetCurrIconStageActor()->Destroy();
+		InvObj->CurrIconStageActor->Destroy();
+		InvObj->CurrIconStageActor = nullptr;
 	}
 
 	FVector SpawnLoc = IssueNewSpawnLocation();
@@ -1658,22 +1705,40 @@ void AProjectTRGameModeBase::UpdateIconOf(UInvObject* InvObj)
 	FActorSpawnParameters ItemSpawnParam;
 	ItemSpawnParam.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
+	bool bSuccess = false;
 	AIconStageActor* StageActor = SpawnIconStage(GetWorld(), SpawnLoc, BaseSpawnRotation, StageSpawnParam);
-	if (StageActor && StageActor->DisplayComponent)
+	ABaseItem* SpawnedItem = nullptr;
+	if (StageActor)
 	{
-		// 이어지는 Setup단계에서 적절한 트랜스폼으로 재설정되므로 여기서 사용되는 위치, 회전은 크게 의미가 없음
-		ABaseItem* SpawnedItem = SpawnDecorativeItem(InvObj, GetWorld(), StageActor->DisplayComponent->GetComponentLocation(), StageActor->DisplayComponent->GetComponentRotation(), ItemSpawnParam);
+		// 로컬에서 Setup 시 적절한 트랜스폼으로 재설정되므로 여기서 사용되는 위치, 회전은 크게 의미가 없음
+		SpawnedItem = SpawnDecorativeItem(InvObj, GetWorld(), SpawnLoc, FRotator::ZeroRotator, ItemSpawnParam);
 		if (SpawnedItem)
 		{
-			// 아이콘 생성 시 아이템이 굉장히 먼 거리에 생성되는데, 이때 레플리케이션이 되어야 클라이언트 사이드에도 오브젝트 메쉬가 캡처 가능해짐
-			SpawnedItem->NetCullDistanceSquared = MAX_FLT;
+			// 모든 참조 관계 바인딩
+			if (StageActor->DisplayedActor || StageActor->ReferencingInvObj || InvObj->CurrIconStageActor.IsValid())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("UpdateIconOf - There are uncleared leftover values! Please check! Null: %d %d %d"), StageActor->DisplayedActor, StageActor->ReferencingInvObj, InvObj->CurrIconStageActor.IsValid());
+			}
+			StageActor->DisplayedActor = SpawnedItem;
+			StageActor->ReferencingInvObj = InvObj;
+			InvObj->CurrIconStageActor = StageActor;
 
-			// 아이템 별로 추가 회전이 필요할 경우 같이 전달한다
-			StageActor->SetupDisplayActor(SpawnedItem, SpawnedItem->IconDisplayRotation);
+			// 서버의 경우 초기화 로직 직접 호출
+			InvObj->Local_InitIconStageActor();
 
-			// 모든 과정이 성공적으로 처리된 경우 바인딩
-			InvObj->SetCurrIconStageActor(StageActor);
+			bSuccess = true;
 		}
+	}
+
+	if (!bSuccess)
+	{
+		UE_LOG(LogTemp, Error, TEXT("UpdateIconOf - Failed updating! Trying to rollback!"));
+		StageActor->DisplayedActor = nullptr;
+		StageActor->ReferencingInvObj = nullptr;
+		InvObj->CurrIconStageActor = nullptr;
+
+		if (StageActor) StageActor->Destroy();
+		if (SpawnedItem) SpawnedItem->Destroy();
 	}
 }
 

@@ -113,3 +113,19 @@ enum class EItemAttrType : uint8
 	IAT_POSITIVE UMETA(DisplayName = "positive"),
 	IAT_NEGATIVE UMETA(DisplayName = "negative"),
 };
+
+/* Item 티어를 나타내는 Enum */
+UENUM(BlueprintType)
+enum class EItemTier : uint8
+{
+	IT_TIER_UNSPECIFIED UMETA(DisplayName = "unspecified"),
+
+	IT_TIER_NONE UMETA(DisplayName = "none"), // Unspecified와 구분해야 함
+
+	IT_TIER_T1 UMETA(DisplayName = "common"),
+	IT_TIER_T2 UMETA(DisplayName = "rare"),
+	IT_TIER_T3 UMETA(DisplayName = "advanced"),
+	IT_TIER_T4 UMETA(DisplayName = "elite"),
+	IT_TIER_T5 UMETA(DisplayName = "legendary"),
+	IT_OBJECTIVE UMETA(DisplayName = "objective"),
+};

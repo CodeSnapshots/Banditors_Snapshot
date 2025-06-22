@@ -4,10 +4,12 @@
 #include "DungeonActors/IconStageActor.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/ArrowComponent.h"
+#include "Components/BoxComponent.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "ImageUtils.h"
 
 #include "Core/TRMacros.h"
+#include "Inventory/InvObject.h"
 #include "Items/BaseItem.h"
 
 // Sets default values
@@ -62,18 +64,18 @@ void AIconStageActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
-void AIconStageActor::SetupDisplayActor(AActor* ActorToDisplay, FRotator DeltaDisplayRot)
+void AIconStageActor::Local_SetupDisplayActor()
 {
-	if (IsValid(DisplayedActor))
+	if (!IsValid(DisplayedActor))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SetupDisplayActor - DisplayedActor is valid. Please check if the function has been called before!"));
+		UE_LOG(LogTemp, Warning, TEXT("Local_SetupDisplayActor - DisplayedActor is invalid!"));
+		return;
 	}
 
-	if (ActorToDisplay)
+	if (DisplayedActor)
 	{
-		ActorToDisplay->SetActorLocation(GetItemStageLocation());
-		ActorToDisplay->SetActorRotation(GetItemStageRotation() + DeltaDisplayRot);
-		DisplayedActor = ActorToDisplay;
+		DisplayedActor->SetActorLocation(GetItemStageLocation());
+		DisplayedActor->SetActorRotation(GetItemStageRotation() + DisplayedActor->IconDisplayRotation);
 
 		// 카메라 조정
 		FVector ActorOrigin; // Unused
@@ -81,26 +83,35 @@ void AIconStageActor::SetupDisplayActor(AActor* ActorToDisplay, FRotator DeltaDi
 		ABaseItem* GameItem = Cast<ABaseItem>(DisplayedActor);
 		if (GameItem)
 		{
-			ActorExtent = GameItem->GetEstimatedItemSize();
-			AdjustCameraOnTarget(ActorExtent.Y, ActorExtent.Z);
+			if (GameItem->GetRootComponent() && GameItem->ReachComponent)
+			{
+				// 리치 컴포넌트 중앙이 카메라 위치에 오도록 맞춘다
+				// 아이템 종류에 따라(총기) 이미 맞춰져 있을 수도 있다
+				// 메시는 액터 생성 과정을 거치며 리치 컴포넌트에 align 되어 있으므로, 아이콘 위치가 정확하게 표기된다
+				FVector RootReachOffset = GameItem->GetRootComponent()->GetComponentLocation() - GameItem->ReachComponent->GetComponentLocation();
+				GameItem->SetActorLocation(GameItem->GetActorLocation() + RootReachOffset);
+			}
+
+			ActorExtent = GameItem->GetItemSize();
+			float AspectRatio = 1.0f;
+			if (GameItem->GetInvObject() && GameItem->GetInvObject()->GetDimensions().Y > 0)
+			{
+				// NOTE:
+				// 텍스처 SizeX, SizeY가 제대로 반영되지 않는 오류가 있으므로 어차피 같은 값을 가지는 아이콘 격자 크기를 사용
+				AspectRatio = static_cast<float>(GameItem->GetInvObject()->GetDimensions().X) / GameItem->GetInvObject()->GetDimensions().Y;
+			}
+			AdjustCameraOnTarget(ActorExtent.X, ActorExtent.Y, ActorExtent.Z, AspectRatio);
 		}
 		else
 		{
 			DisplayedActor->GetActorBounds(true, ActorOrigin, ActorExtent);
-			AdjustCameraOnTarget(ActorExtent.Z, ActorExtent.Y);
+			AdjustCameraOnTarget(ActorExtent.X, ActorExtent.Y, ActorExtent.Z, 1.0f);
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SetupDisplayActor - ActorToDisplay is nullptr!"));
+		UE_LOG(LogTemp, Warning, TEXT("Local_SetupDisplayActor - ActorToDisplay is nullptr!"));
 	}
-}
-
-UTextureRenderTarget2D* AIconStageActor::CreateIconRenderTarget(int32 Width, int32 Height)
-{
-	UTextureRenderTarget2D* RenderTarget = NewObject<UTextureRenderTarget2D>();
-	RenderTarget->InitAutoFormat(Width, Height);
-	return RenderTarget;
 }
 
 void AIconStageActor::SetTextureTargetAs(UTextureRenderTarget2D* Target)
@@ -146,21 +157,34 @@ FRotator AIconStageActor::GetItemStageRotation() const
 	return FRotator(0,0,0);
 }
 
-void AIconStageActor::AdjustCameraOnTarget(float TargetWidth, float TargetHeight)
+void AIconStageActor::AdjustCameraOnTarget(float TargetDepth, float TargetWidth, float TargetHeight, float AspectRatio)
 {
 	FVector DefaultRelativeLocaiton = CaptureComponent->GetRelativeLocation();
 
-	// 아이템 크기에 따른 거리 조정
-	const float CLOSEST_X_DIST = 50.f;
-	const float FARTHEST_X_DIST = 120.f;
+	float FOVDegrees = CaptureComponent->FOVAngle;
+	float FOVRadians = FMath::DegreesToRadians(FOVDegrees);
+	float VerticalFOVRadians = 2 * FMath::Atan(FMath::Tan(FOVRadians / 2) / AspectRatio);
 
-	// 배율 조정용 상수값
-	// 가로세로 중 최장 길이가 10cm일때 아이템으로부터 19.5cm 떨어지도록 설정되어있음 (19.5/10)
-	const float LEN_CONSTANT = 2.15f;
+	float DistanceFromObjectWidth = TargetWidth / FMath::Tan(FOVRadians / 2.0f);
+	float DistanceFromObjectHeight = TargetHeight / FMath::Tan(VerticalFOVRadians / 2.0f);
+	float DistanceFromObject = FMath::Max(DistanceFromObjectWidth, DistanceFromObjectHeight);
 
-	float NewXDist = FMath::Clamp(TargetWidth * LEN_CONSTANT, CLOSEST_X_DIST, FARTHEST_X_DIST);
-	CaptureComponent->SetRelativeLocation(FVector(NewXDist * -1/* 음의 방향으로 이동 */, DefaultRelativeLocaiton.Y, DefaultRelativeLocaiton.Z));
+	CaptureComponent->SetRelativeLocation(
+		FVector(
+			(DistanceFromObject + (TargetDepth / 2)) * -1, /*중요: 물체의 두께를 고려해주어야 카메라가 올바르게 물체 전체를 담아냄. 음의 방향으로 이동*/
+			DefaultRelativeLocaiton.Y, 
+			DefaultRelativeLocaiton.Z
+		)
+	);
 	return;
+}
+
+void AIconStageActor::OnRep_IconRelatives()
+{
+	if (ReferencingInvObj && DisplayedActor)
+	{
+		ReferencingInvObj->Local_InitIconStageActor();
+	}
 }
 
 void AIconStageActor::BeginPlay()

@@ -85,8 +85,16 @@ AFPSCharacter::AFPSCharacter(const FObjectInitializer& ObjectInitializer)
 	// 일인칭 카메라
 	FPSCamera = CreateDefaultSubobject<UFPSCameraComponent>(TEXT("FPSCamera"));
 	check(FPSCamera != nullptr);
-	FPSCamera->SetupAttachment(SkeletalMesh, TEXT("head")); // BeginPlay에서 다시 소켓에 재부착함; 여기서는 BP 뷰포트에서의 편집을 위해 임시로 부착함
-	FPSCamera->bUsePawnControlRotation = false; // 메시 기반 회전 사용
+
+	FPSSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("FPSSpringArm"));
+	FPSSpringArm->SetupAttachment(SkeletalMesh, TEXT("head")); // BeginPlay에서 다시 소켓에 재부착함; 여기서는 BP 뷰포트에서의 편집을 위해 임시로 부착함
+	FPSCamera->SetupAttachment(FPSSpringArm);
+	FPSSpringArm->bUsePawnControlRotation = true;
+	FPSSpringArm->bInheritYaw = true;
+	FPSSpringArm->bInheritPitch = true; // 중요: FPS 시점에도 스프링암을 사용하는 이유로, 카메라만 사용할 경우 PawnControlRotation을 true로 설정해도 pitch 정보가 동기화 되지 않는 문제가 있음.
+	FPSSpringArm->bInheritRoll = false;
+	FPSSpringArm->bDoCollisionTest = false;
+	FPSSpringArm->TargetArmLength = 0.0f;
 
 	// 삼인칭 카메라와 스프링암
 	TPSCamera = CreateDefaultSubobject<UFPSCameraComponent>(TEXT("TPSCamera"));
@@ -161,7 +169,7 @@ void AFPSCharacter::BeginPlay()
 	// 소켓에 어태치
 	FAttachmentTransformRules CamAttachRule = FAttachmentTransformRules::SnapToTargetIncludingScale;
 	CamAttachRule.bWeldSimulatedBodies = true;
-	FPSCamera->AttachToComponent(GetMesh(), CamAttachRule, TEXT("FPSCam"));
+	FPSSpringArm->AttachToComponent(GetMesh(), CamAttachRule, TEXT("FPSCam"));
 
 	// VFX 바인딩
 	if (SlideVFX)
@@ -175,6 +183,7 @@ void AFPSCharacter::BeginPlay()
 	AimedTargetUICollisionParams.AddIgnoredActor(this);
 	AimedTargetUIObjQueryParams.AddObjectTypesToQuery(ECC_PlayerPawn);
 	AimedTargetUIObjQueryParams.AddObjectTypesToQuery(ECC_Interactive);
+	AimedTargetUIObjQueryParams.AddObjectTypesToQuery(ECC_OverlappableInteractive);
 	AimedTargetUIObjQueryParams.AddObjectTypesToQuery(ECC_Item); // 필요 시 추가
 
 	// 핑
@@ -182,6 +191,7 @@ void AFPSCharacter::BeginPlay()
 	AimedTargetPingCollisionParams.AddIgnoredActor(this);
 	AimedTargetPingObjQueryParams.AddObjectTypesToQuery(ECC_PlayerPawn);
 	AimedTargetPingObjQueryParams.AddObjectTypesToQuery(ECC_Interactive);
+	AimedTargetPingObjQueryParams.AddObjectTypesToQuery(ECC_OverlappableInteractive);
 	AimedTargetPingObjQueryParams.AddObjectTypesToQuery(ECC_Item); 
 	AimedTargetPingObjQueryParams.AddObjectTypesToQuery(ECC_BotPawn); // 적 핑 가능; 필요 시 추가
 }
@@ -236,7 +246,10 @@ void AFPSCharacter::Local_OnPlayerDamageInflictedToTarget_Implementation(AGameCh
 		ATRGameState* TRGS = World->GetGameState<ATRGameState>();
 		if (TRGS)
 		{
-			TRGS->Local_DisplayDamageNumber(GetWorld(), TRGS->DefaultDamageNumberWidgetClass, FTransform(DamageLocation), Damage, false);
+			if (Target)
+			{
+				TRGS->Local_DisplayDamageNumber(GetWorld(), TRGS->DefaultDamageNumberWidgetClass, FTransform(Target->GetDamageNumberSpawnLocation(0.0f)), Damage, false);
+			}
 		}
 	}
 
@@ -250,6 +263,12 @@ void AFPSCharacter::Local_OnPlayerDamageInflictedToTarget_Implementation(AGameCh
 			if (FPSHUD && FPSHUD->Crosshair)
 			{
 				FPSHUD->Crosshair->PlayHitEffect(bIsKillshot, bIsCrit);
+			}
+
+			// 히트 머터리얼 이펙트 (타깃 대상)
+			if (Target)
+			{
+				Target->Local_ActivateHitEffectMaterial(0.2f, 1.0f, FVector::ZeroVector);
 			}
 
 			// TODO: 히트사운드
@@ -309,9 +328,6 @@ void AFPSCharacter::Look(const FInputActionValue& Value)
 	if (Controller != nullptr)
 	{
 		const FVector2D LookValue = Value.Get<FVector2D>() * RotationSensitivity;
-		
-		// 애니메이션 회전 속도는 마우스 회전 속도와 일치
-		GetTRCharacterMovementComponent()->SetTurnRate(FMath::Clamp(LookValue.X, -1.0f, 1.0f));
 
 		if (LookValue.X != 0.f)
 		{
@@ -374,7 +390,6 @@ void AFPSCharacter::Attack2(const FInputActionValue& Value)
 	if (Host_CanPerformFire(false))
 	{
 		Host_RegisterFire(false);
-		Local_PlayItemFx(false);
 	}
 }
 
@@ -434,7 +449,7 @@ void AFPSCharacter::DebugAction(const FInputActionValue& Value)
 		AProjectTRGameModeBase* GameMode = GetWorld()->GetAuthGameMode<AProjectTRGameModeBase>();
 		if (GameMode)
 		{
-			GameMode->SpawnRandomizedGunItem(GetWorld(), GetHandPointInfo().Get<0>(), FRotator(), FActorSpawnParameters(), 0);
+			GameMode->SpawnRandomizedGunItem(GetWorld(), GetHandPointInfo().Get<0>(), TRUtils::GetDefaultDropRotation(this), FActorSpawnParameters(), 0);
 		}
 	}
 #endif
@@ -464,7 +479,12 @@ void AFPSCharacter::Roll(const FInputActionValue& Value)
 	UBaseCharacterMovementComponent* MoveComp = GetTRCharacterMovementComponent();
 
 	// 클라이언트의 로컬 인풋 방향을 전달
-	MoveComp->Server_RegisterRollRPC(MoveComp->GetMovingForward(), MoveComp->GetMovingRight());
+	MoveComp->Local_RequestRollRegister(MoveComp->GetMovingForward(), MoveComp->GetMovingRight());
+}
+
+bool AFPSCharacter::CanJumpInternal_Implementation() const
+{
+	return (!bIsCrouched || GetTRCharacterMovementComponent()->GetIsSliding()) && JumpIsAllowedInternal();
 }
 
 void AFPSCharacter::Interact(const FInputActionValue& Value)
@@ -729,7 +749,12 @@ void AFPSCharacter::Tick(float DeltaTime)
 	{
 		if (IsLocallyControlled())
 		{
-			if (GEngine) GEngine->AddOnScreenDebugMessage(TR_LOGKEY_PLAYERSPEED, 5.f, FColor::Green, FString::Printf(TEXT("Speed: %f"), GetVelocity().Size()));
+			if (GEngine) GEngine->AddOnScreenDebugMessage(TR_LOGKEY_PLAYERMOVEMENT + HasAuthority(), 5.f, FColor::Green, FString::Printf(TEXT("Speed: %f MoveMode: %d"), GetVelocity().Size(), GetTRCharacterMovementComponent()->MovementMode.GetIntValue()));
+			if (GEngine) GEngine->AddOnScreenDebugMessage(TR_LOGKEY_CAMERA_ROT + HasAuthority(), 5.f, FColor::Green, FString::Printf(TEXT("FPS: %f %f %f TPS: %f %f %f, Auth: %d"),
+				FPSCamera->GetComponentRotation().Yaw, FPSCamera->GetComponentRotation().Pitch, FPSCamera->GetComponentRotation().Roll,
+				TPSCamera->GetComponentRotation().Yaw, TPSCamera->GetComponentRotation().Pitch, TPSCamera->GetComponentRotation().Roll,
+				HasAuthority())
+			);
 		}
 	}
 #endif
@@ -943,6 +968,7 @@ TArray<FHitResult> AFPSCharacter::Reach()
 		CollisionParams.AddIgnoredActor(GetOwner());
 		FCollisionObjectQueryParams ObjColParam;
 		ObjColParam.AddObjectTypesToQuery(ECC_Interactive);
+		ObjColParam.AddObjectTypesToQuery(ECC_OverlappableInteractive);
 		TArray<FHitResult> InteractiveHits;
 		if (World->LineTraceMultiByObjectType(InteractiveHits, StartLocation, EndLocation, ObjColParam, CollisionParams))
 		{
@@ -1036,7 +1062,7 @@ void AFPSCharacter::Server_SpawnSoulAt(FVector Location, FRotator Rotation)
 				return;
 			}
 
-			ATRSoul* Soul = Cast<ATRSoul>(GameMode->SpawnItem(SoulClass, World, Location, Rotation, FActorSpawnParameters()));
+			ATRSoul* Soul = Cast<ATRSoul>(GameMode->SpawnItem(SoulClass, World, Location, Rotation, FActorSpawnParameters(), true));
 			if (!IsValid(Soul))
 			{
 				UE_LOG(LogTemp, Error, TEXT("Server_SpawnSoulAt - Something went wrong during soul spawning!"));
@@ -1293,6 +1319,13 @@ void AFPSCharacter::Server_PingAtAim_Implementation()
 	{
 		AActor* Target = AimedPingHit.GetActor();
 		if (!Target) return;
+
+#if WITH_EDITOR
+		if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+		{
+			TR_PRINT_ARGS("Pinged target: %f %f %f", Target->GetActorLocation().X, Target->GetActorLocation().Y, Target->GetActorLocation().Z);
+		}
+#endif
 		
 		TSet<UPrimitiveComponent*> TargetComps = TRUtils::GetOutlineMeshesFromActor(Target, false);
 		int32 TargetStencil = TRUtils::GetOutlineStencilValueFromActor(Target);

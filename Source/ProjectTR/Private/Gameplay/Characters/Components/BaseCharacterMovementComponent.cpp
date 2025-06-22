@@ -30,20 +30,12 @@ UBaseCharacterMovementComponent::UBaseCharacterMovementComponent()
 	bUseAccelerationForPaths = true;
 	bUseFixedBrakingDistanceForPaths = true;
 
-	// 디폴트 캐싱 사용하는 값들
-	JumpZVelocity = DefaultJumpZVelocity;
-	AirControl = DefaultAirControl;
-	
-	MaxWalkSpeed = DefaultMaxWalkSpeed;
-	MinAnalogWalkSpeed = DefaultMinAnalogWalkSpeed;
-	MaxWalkSpeedCrouched = DefaultMaxWalkSpeedCrouched;
-
-	BrakingDecelerationWalking = DefaultBrakingDecelerationWalking;
-	MaxAcceleration = DefaultMaxAcceleration;
-	GroundFriction = DefaultGroundFriction;
-
-	GravityScale = DefaultGravityScale;
-	Mass = DefaultMass;
+	GravityScale = 2.35;
+	MaxAcceleration = 12000.0f;
+	BrakingFrictionFactor = 1.85f;
+	GroundFriction = 4.0f;
+	bMaintainHorizontalGroundVelocity = false;
+	JumpZVelocity = 775.0f;
 }
 
 void UBaseCharacterMovementComponent::BeginPlay()
@@ -72,9 +64,24 @@ void UBaseCharacterMovementComponent::BeginPlay()
 	DefaultSlideFriction = SlideFriction;
 	DefaultSlideStrafePower = SlideStrafePower;
 
-	DefaultRollSpeed = RollSpeed;
-	DefaultRollZAccelMult = RollZAccelMult;
+	DefaultRollXYSpeed = RollXYSpeed;
+	DefaultRollZSpeed = RollZSpeed;
 	DefaultRollDelay = RollDelay;
+}
+
+void UBaseCharacterMovementComponent::OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode)
+{
+	Super::OnMovementModeChanged(PreviousMovementMode, PreviousCustomMode);
+	bool bWasModeSliding = (PreviousMovementMode == MOVE_Custom && PreviousCustomMode == CMOVE_Slide);
+	bool bIsModeSliding = (MovementMode == MOVE_Custom && CustomMovementMode == CMOVE_Slide);
+	if (!bWasModeSliding && bIsModeSliding)
+	{
+		SetIsSliding(true);
+	}
+	if (bWasModeSliding && !bIsModeSliding)
+	{
+		SetIsSliding(false);
+	}
 }
 
 AGameCharacter* UBaseCharacterMovementComponent::GetTROwner()
@@ -85,11 +92,7 @@ AGameCharacter* UBaseCharacterMovementComponent::GetTROwner()
 void UBaseCharacterMovementComponent::Server_RegisterRollRPC_Implementation(float Forward, float Right)
 {
 	if (GetOwnerRole() < ROLE_Authority) return;
-	// NOTE: 추후 필요 시 !IsFalling() 체크 가능
-	if (!IsCrouching() && !bIsRolling)
-	{
-		DoStartRolling(Forward, Right);
-	}
+	Local_DoStartRolling(Forward, Right);
 }
 
 void UBaseCharacterMovementComponent::SetDeltaMaxWalkSpeedCached(float Value)
@@ -115,7 +118,7 @@ void UBaseCharacterMovementComponent::SetDeltaJumpSpeedCached(float Value)
 void UBaseCharacterMovementComponent::SetDeltaRollSpeedCached(float Value)
 {
 	DeltaRollSpeedCached = Value;
-	RollSpeed = FMath::Max(0.0f, DefaultRollSpeed + DeltaRollSpeedCached);
+	RollXYSpeed = FMath::Max(0.0f, DefaultRollXYSpeed + DeltaRollSpeedCached);
 }
 
 void UBaseCharacterMovementComponent::SetDeltaRollDelayCached(float Value)
@@ -164,7 +167,6 @@ bool UBaseCharacterMovementComponent::CanSlideNow() const
 
 void UBaseCharacterMovementComponent::EnterSlide()
 {
-	SetIsSliding(true);
 	Velocity += Velocity.GetSafeNormal2D() * SlideOnEnterImpulse;
 	SetMovementMode(MOVE_Custom, CMOVE_Slide);
 }
@@ -178,7 +180,6 @@ void UBaseCharacterMovementComponent::PhysSlide(float deltaTime, int32 Iteration
 
 	if (!CanSlideNow())
 	{
-		SetIsSliding(false);
 		SetMovementMode(MOVE_Walking);
 		StartNewPhysics(deltaTime, Iterations);
 		return;
@@ -390,48 +391,68 @@ bool UBaseCharacterMovementComponent::DoJump(bool bReplayingSimulatedInput)
 	return Super::DoJump(bReplayingSimulatedInput);
 }
 
-void UBaseCharacterMovementComponent::DoStartRolling(float Forward, float Right)
+bool UBaseCharacterMovementComponent::CanAttemptJump() const
 {
-	// 애니메이션 및 기타 FX 재생
-	GetTROwner()->Multicast_Roll(Forward, Right);
+	return IsJumpAllowed() &&
+		(!bWantsToCrouch || GetIsSliding()/* 슬라이딩 도중 점프 가능 */) &&
+		(IsMovingOnGround() || IsFalling());
+}
 
-	// 서버 로직 처리
-	if (GetOwnerRole() >= ROLE_Authority)
+void UBaseCharacterMovementComponent::Local_RequestRollRegister(float Forward, float Right)
+{
+	if (GetOwnerRole() == ENetRole::ROLE_AutonomousProxy)
 	{
-		SetIsRolling(true);
-
-		AGameCharacter* GameCharacter = Cast<AGameCharacter>(GetCharacterOwner());
-		if (GameCharacter)
-		{
-			// 머즐 XY 방향이 전방
-			FVector ForwardDirection = GameCharacter->GetMuzzleInfo().Get<1>().Vector();
-			ForwardDirection.Z = 0;
-			ForwardDirection.Normalize();
-
-			FVector2D ForwardDirection2D = FVector2D(ForwardDirection.X, ForwardDirection.Y);
-			ForwardDirection2D = ForwardDirection2D.GetRotated(GetInputDirectionAngleFromForward(Forward, Right));
-
-			RollTowards(FVector(ForwardDirection2D.X, ForwardDirection2D.Y, 0));
-		}
-
-		// 쿨다운 적용
-		UWorld* World = GetWorld();
-		if (World)
-		{
-			World->GetTimerManager().SetTimer(RollCooldownTimer, this, &UBaseCharacterMovementComponent::DoEndRolling, RollDelay, false);
-		}
+		PrepareClientPredictedMove(EstimatedRollTime);
+		Local_DoStartRolling(Forward, Right);
+		Server_RegisterRollRPC(Forward, Right);
+	}
+	else if (GetOwnerRole() == ENetRole::ROLE_Authority)
+	{
+		Server_RegisterRollRPC(Forward, Right);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Local_RequestRollRegister - Simulated proxies should not call this function!"));
 	}
 }
 
-void UBaseCharacterMovementComponent::DoEndRolling()
+void UBaseCharacterMovementComponent::Local_DoStartRolling(float Forward, float Right)
+{
+	// NOTE: 추후 필요 시 IsFalling() 체크 가능
+	if (IsCrouching() || bIsRolling)
+	{
+		return;
+	}
+
+	AGameCharacter* GameCharacter = Cast<AGameCharacter>(GetCharacterOwner());
+	if (GameCharacter)
+	{
+		// 머즐 XY 방향이 전방
+		FVector ForwardDirection = GameCharacter->GetMuzzleInfo().Get<1>().Vector();
+		ForwardDirection.Z = 0;
+		ForwardDirection.Normalize();
+
+		FVector2D ForwardDirection2D = FVector2D(ForwardDirection.X, ForwardDirection.Y);
+		ForwardDirection2D = ForwardDirection2D.GetRotated(GetInputDirectionAngleFromForward(Forward, Right));
+
+		RollTowards(FVector(ForwardDirection2D.X, ForwardDirection2D.Y, 0));
+	}
+
+	// 쿨다운 적용
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		World->GetTimerManager().SetTimer(RollCooldownTimer, this, &UBaseCharacterMovementComponent::Local_DoEndRolling, RollDelay, false);
+	}
+}
+
+void UBaseCharacterMovementComponent::Local_DoEndRolling()
 {
 	UWorld* World = GetWorld();
 	if (World && World->GetTimerManager().IsTimerActive(RollCooldownTimer))
 	{
 		World->GetTimerManager().ClearTimer(RollCooldownTimer);
 	}
-
-	SetIsRolling(false);
 }
 
 double UBaseCharacterMovementComponent::GetInputDirectionAngleFromForward(float Forward, float Right)
@@ -456,13 +477,44 @@ bool UBaseCharacterMovementComponent::IsCustomMovementMode(ECustomMovementMode I
 	return MovementMode == MOVE_Custom && CustomMovementMode == InCustomMovementMode;
 }
 
+void UBaseCharacterMovementComponent::PrepareClientPredictedMove(float PredictDuration)
+{
+	if (!GetWorld() || GetOwnerRole() != ENetRole::ROLE_AutonomousProxy)
+	{
+		return;
+	}
+
+	bIgnoreClientMovementErrorChecksAndCorrection = true;
+	GetWorld()->GetTimerManager().ClearTimer(ClientMovePredictionTimer);
+	GetWorld()->GetTimerManager().SetTimer(
+		ClientMovePredictionTimer,
+		[this]() {
+			bIgnoreClientMovementErrorChecksAndCorrection = false;
+		}, 
+		PredictDuration, 
+		false
+	);
+}
+
 void UBaseCharacterMovementComponent::RollTowards(const FVector& Direction)
 {
+	if (!GetCharacterOwner()) return;
 	if (!Direction.IsNearlyZero())
 	{
-		FVector RollAccel = (Direction.GetSafeNormal() * RollSpeed);
-		RollAccel.Z += Mass * RollZAccelMult; // 지면으로부터 약간 띄워올리기 위함
-		Launch(GetLastUpdateVelocity() + RollAccel);
+		float OriginSpeed = GetLastUpdateVelocity().Size();
+		FVector NewVelocity = GetLastUpdateVelocity() + (Direction.GetSafeNormal() * RollXYSpeed);
+		NewVelocity.Z = 0;
+
+		// 이미 속도가 롤링 속도보다 빠를 경우 더 빨라지지 않는다
+		NewVelocity = NewVelocity.GetSafeNormal() * FMath::Max(OriginSpeed, RollXYSpeed);
+
+		// 지면에 있을 경우에만 Z속도를 오버라이드해 띄워올린다
+		if (!IsFalling())
+		{
+			NewVelocity.Z = RollZSpeed;
+		}
+		// XY 속도는 항상 오버라이드한다
+		GetCharacterOwner()->LaunchCharacter(NewVelocity, true, !IsFalling());
 	}
 }
 

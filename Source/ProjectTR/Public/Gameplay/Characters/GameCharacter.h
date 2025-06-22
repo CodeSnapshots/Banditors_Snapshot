@@ -6,11 +6,13 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 #include "RecoilAnimationComponent.h"
 
 #include "Core/TRStructs.h"
 #include "Core/TREnums.h"
+#include "Core/TRMacros.h"
 #include "Characters/Components/BaseCharacterMovementComponent.h"
 #include "StatusEffect/StatusEffect.h"
 #include "GameCharacter.generated.h"
@@ -40,7 +42,7 @@ public:
 
 	// 재정의된 Character Movement Component 반환
 	UFUNCTION(BlueprintCallable)
-	FORCEINLINE class UBaseCharacterMovementComponent* GetTRCharacterMovementComponent() { return Cast<UBaseCharacterMovementComponent>(GetCharacterMovement()); }
+	FORCEINLINE class UBaseCharacterMovementComponent* GetTRCharacterMovementComponent() const { return Cast<UBaseCharacterMovementComponent>(GetCharacterMovement()); }
 
 public:
 	// Called every frame
@@ -490,12 +492,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
 	TObjectPtr<class UAnimConfig> AnimConfig = nullptr;
 
-/* Roll */
-public:
-	// Roll (NOT using client prediction)
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_Roll(float Forward, float Right);
-
 /* Item */
 public:
 	// 현재 꺼낼 아이템에 맞는 적당한 애니메이션 몽타주를 가져온다
@@ -830,6 +826,27 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_SetSlideFxRPC(bool bValue);
+
+	// 주어진 시간동안 이 캐릭터의 히트 머터리얼에 효과를 활성화한다
+	void Local_ActivateHitEffectMaterial(float Duration, float Strength, FVector Color);
+
+protected:
+	// 히트 이펙트 처리가 가능하도록 머터리얼을 수정한다
+	void InitHitEffectMaterial();
+
+	// 주어진 머터리얼이 유효한 히트 이펙트 머터리얼인지 검증한다
+	// 유효할 경우에만 true를 반환한다
+	bool IsValidHitEffectMaterial(UMaterialInstanceDynamic* DynMat) const;
+
+protected:
+	// 히트 이펙트 처리 시 사용할 머터리얼의 인덱스
+	// 기본적으로 0을 사용한다
+	UPROPERTY(EditDefaultsOnly)
+	int32 HitEffectMaterialIndex = 0;
+
+	// 히트 이펙트 처리에 사용되는 다이나믹 머터리얼
+	UPROPERTY(BlueprintReadOnly)
+	UMaterialInstanceDynamic* DynamicHitMaterial = nullptr;
 #pragma endregion
 
 #pragma region /** UI */
@@ -842,6 +859,9 @@ public:
 	// NOTE: 아래 함수들은 가급적 BossStateWidget에 의해서만 호출되어야 한다
 	void BindBossState(class UBossStateWidget* BossState);
 	void UnbindBossState();
+
+	// 데미지 넘버의 생성 초기 위치를 반환한다
+	virtual FVector GetDamageNumberSpawnLocation(float ZOffset) const;
 
 private:
 	// 현재 이 캐릭터에 바인딩된 HUD

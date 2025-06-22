@@ -45,6 +45,10 @@ protected:
 	UPROPERTY(EditAnywhere)
 	bool bTriggerLogicWhenMuzzleTriggered = true;
 
+	// 문이 열린 경우 던전 타이머를 활성화 시킬지 여부
+	UPROPERTY(EditAnywhere)
+	bool bActivateDungeonTimerIfOpened = false;
+
 private:
 	bool bServer_Opened = false;
 

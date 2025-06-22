@@ -18,25 +18,18 @@ void ATRSoul::BeginPlay()
 	
 }
 
-bool ATRSoul::RestoreFromItemData(UItemData* Data)
+bool ATRSoul::Server_RestoreItem_PreSpawn(const UInvObject* SrcInvObject)
 {
-	if (!Super::RestoreFromItemData(Data)) return false;
-	USoulItemData* SoulData = Cast<USoulItemData>(Data);
+	if (!Super::Server_RestoreItem_PreSpawn(SrcInvObject)) return false;
+	const USoulItemData* SoulData = Cast<USoulItemData>(SrcInvObject->GetItemData());
 	if (!IsValid(SoulData))
 	{
-		UE_LOG(LogTemp, Error, TEXT("Tried to restore a soul item from a non-SoulItemData %s."), *(Data->GetName()));
+		UE_LOG(LogTemp, Error, TEXT("Tried to restore a soul item from a non-SoulItemData InvObj %s."), *(SrcInvObject->GetName()));
 		return false;
-	}
-	if (!HasAuthority())
-	{
-		// 클라이언트는 아무 것도 복구하지 않음
-		// 만약 클라에 복구해야 할 값이 생길 경우 현재 코드 블록에 진입하기 이전에 처리를 완료하게 작성하면 됨
-		UE_LOG(LogTemp, Warning, TEXT("Client does not have anything to restore from soul item data. This is a normal behaviour."), *(Data->GetName()));
-		return true;
 	}
 	if (!IsValid(SoulData->GetCachedController()))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s has invalid cached data! Aborting."), *(Data->GetName()));
+		UE_LOG(LogTemp, Warning, TEXT("%s has invalid cached data! Aborting."), *(SrcInvObject->GetName()));
 		return false;
 	}
 

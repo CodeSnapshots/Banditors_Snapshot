@@ -23,14 +23,14 @@ ATRShop::ATRShop()
 void ATRShop::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// 보유 아이템 개수가 많을 경우 눈치채기 어려운 정도의 일시적 프레임 드랍이 발생할 수 있다
-	InitializeShop();
 }
 
 void ATRShop::Initialize()
 {
 	Super::Initialize();
+
+	// 보유 아이템 개수가 많을 경우 눈치채기 어려운 정도의 일시적 프레임 드랍이 발생할 수 있다
+	InitializeShop();
 }
 
 void ATRShop::OnTriggered()
@@ -70,7 +70,7 @@ void ATRShop::InitializeShop()
 		{
 			if (Item.ItemRef)
 			{
-				ABaseItem* DroppedItem = TRGM->SpawnItem(Item.ItemRef, World, GetActorLocation(), FRotator(), FActorSpawnParameters());
+				ABaseItem* DroppedItem = TRGM->SpawnItem(Item.ItemRef, World, GetActorLocation(), FRotator(), FActorSpawnParameters(), true);
 				if (DroppedItem)
 				{
 					UInvObject* ItemInvObj = DroppedItem->GetInvObject();
@@ -198,7 +198,7 @@ bool ATRShop::Server_TransferItem(UInvObject* InvObj, UInventoryComponent* Origi
 	// 공간이 부족한 경우 구매자 위치에 아이템을 드랍한다
 	if (Target->GetOwner())
 	{
-		bTransactionResult = Origin->TryDropInvObjectAtActorLocation(InvObj, Target->GetOwner());
+		bTransactionResult = Origin->TryDropInvObject(InvObj);
 		if (!bTransactionResult)
 		{
 			UE_LOG(LogTemp, Error, TEXT("Server_TransferItem - Unexpected error! Dropping the item onto the buyer location has failed due to unknown reason!"));

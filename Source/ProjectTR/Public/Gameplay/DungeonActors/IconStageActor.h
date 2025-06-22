@@ -19,6 +19,7 @@ public:
 		Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 		DOREPLIFETIME(AIconStageActor, DisplayedActor);
+		DOREPLIFETIME(AIconStageActor, ReferencingInvObj);
 	}
 #pragma endregion
 	
@@ -29,11 +30,7 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	// 무대에 세울 액터를 등록하고 정확한 위치에 배치한다
-	// 그 후 액터의 크기에 맞게 캡처 카메라 위치를 조정한다
-	void SetupDisplayActor(class AActor* ActorToDisplay, FRotator DeltaDisplayRot);
-
-	// Getter
-	const TWeakObjectPtr<AActor> GetDisplayedActor() const { return DisplayedActor; }
+	void Local_SetupDisplayActor();
 
 	// 아이콘 렌더 타깃 생성
 	class UTextureRenderTarget2D* CreateIconRenderTarget(int32 Width, int32 Height);
@@ -54,16 +51,25 @@ protected:
 	// 아이템 액터를 배치할 때 사용할 회전를 반환한다
 	FRotator GetItemStageRotation() const;
 
-	// 캡쳐하려는 대상의 가로 세로 크기에 따라 카메라 위치를 조정한다
-	void AdjustCameraOnTarget(float TargetWidth, float TargetHeight);
+	// 캡쳐하려는 대상의 XYZ 크기에 따라 카메라 위치를 조정한다
+	// 가로 세로만 고려하지 않고 타깃의 두께(Depth)도 고려하는 이유는,
+	// 액터 Location이 아니라, 액터의 실질적 끝점으로부터 카메라를 이동시켜야 올바른 거리만큼 이동하기 때문임
+	// AspectRatio에는 카메라가 투영될 곳의 가로/세로 값을 전달한다
+	void AdjustCameraOnTarget(float TargetDepth, float TargetWidth, float TargetHeight, float AspectRatio);
+
+	UFUNCTION()
+	void OnRep_IconRelatives();
 
 protected:
 	virtual void BeginPlay() override;
 
-protected:
+public:
 	// 현재 디스플레이 중인 액터
-	UPROPERTY(Replicated)
-	TObjectPtr<AActor> DisplayedActor = nullptr;
+	UPROPERTY(ReplicatedUsing = OnRep_IconRelatives)
+	TObjectPtr<class ABaseItem> DisplayedActor = nullptr;
+
+	UPROPERTY(ReplicatedUsing = OnRep_IconRelatives)
+	TObjectPtr<class UInvObject> ReferencingInvObj = nullptr;
 
 public:
 	// 아이콘 디스플레이용 카메라 컴포넌트

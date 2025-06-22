@@ -5,7 +5,7 @@
 #include "Components/SphereComponent.h"
 
 #include "Projectile/TRProjMovementComponent.h"
-#include "DataAssets/FxConfig.h"
+#include "DataAssets/GunFxConfig.h"
 
 ABulletTraceProjectile::ABulletTraceProjectile()
 {
@@ -32,9 +32,9 @@ ABulletTraceProjectile::ABulletTraceProjectile()
 void ABulletTraceProjectile::Local_InitializeVFX()
 {
 	// 바인딩 안되어있을 경우 기본 총알 Trace로 trail vfx 바인딩
-	if (!TrailVFX && FxConfig)
+	if (!TrailVFX && GunFxConfig)
 	{
-		TrailVFX = FxConfig->BLT_Default;
+		TrailVFX = GunFxConfig->BLT_Default;
 	}
 
 	// 나머지 초기화 진행

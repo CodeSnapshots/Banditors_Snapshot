@@ -22,8 +22,7 @@ protected:
 	virtual void BeginPlay() override;
 
 protected:
-	// NOTE: 현재로써 영혼 아이템의 ItemData를 사용한 복구는 서버에서만 처리되어도 문제가 없음
-	virtual bool RestoreFromItemData(UItemData* Data) override;
+	virtual bool Server_RestoreItem_PreSpawn(const class UInvObject* SrcInvObject) override;
 
 public:
 	// 이 영혼 아이템이 현재 새 플레이어 부활을 위해 사용될 수 있는지 여부

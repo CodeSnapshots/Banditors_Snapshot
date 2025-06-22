@@ -48,10 +48,6 @@ public:
 	// 장착 해제와는 별개의 개념으로, InvObj가 슬롯에는 남아있으나 액터는 파괴된다
 	void Server_RetrieveCurrWeapon();
 
-	// 해당 슬롯에 아이템을 추가한다
-	// 이미 해당 위치에 장착된 아이템이 있을 경우 아무 것도 수행하지 않는다
-	bool TryEquipItemAt(UInvObject* InvObj, int32 SlotIdx);
-
 	// 서버, 클라이언트 공통 로직
 	// WeaponActor를 어태치/디태치한다
 	// NOTE: 디태치의 경우, 이미 Destroy된 상태의 값을 Replicate 받는 것이기 때문에 실질적으로 클라이언트측에서는 디태치할 일이 없다

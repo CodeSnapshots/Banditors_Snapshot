@@ -19,7 +19,7 @@
 #include "Characters/Components/OuterHitboxComponent.h"
 #include "Characters/GameCharacter.h"
 #include "Characters/FPSCharacter.h"
-#include "DataAssets/FxConfig.h"
+#include "DataAssets/GunFxConfig.h"
 #include "Items/GunItem.h"
 
 // Sets default values
@@ -68,12 +68,12 @@ ABaseProjectile::ABaseProjectile()
     }
 
     // 기본 VFX 컨픽 바인딩
-    if (!FxConfig)
+    if (!GunFxConfig)
     {
-        static ConstructorHelpers::FObjectFinder<UFxConfig> FXFinder(TEXT(ASSET_DEFAULT_FX));
+        static ConstructorHelpers::FObjectFinder<UGunFxConfig> FXFinder(TEXT(ASSET_DEFAULT_GUN_FX));
         if (FXFinder.Succeeded())
         {
-            FxConfig = FXFinder.Object;
+            GunFxConfig = FXFinder.Object;
         }
         else
         {
@@ -108,7 +108,7 @@ void ABaseProjectile::BeginPlay()
 
     if (!HasAuthority())
     {
-        if (!bClient_ProjPredictInfoValid)
+        if (!bClient_HasReceivedInitProjInfo)
         {
             // 초기 정보 수신 전까지 prediction 중지
             ProjectileMovementComponent->bSimulationEnabled = false;
@@ -134,11 +134,19 @@ void ABaseProjectile::Tick(float DeltaTime)
 
     if (!HasAuthority())
     {
-        SetActorLocationAndRotation(
-            FMath::VInterpTo(GetActorLocation(), Client_ProjLerpTargetLocation, DeltaTime, TR_PROJ_MOVEREPL_RATE),
-            FMath::RInterpTo(GetActorRotation(), Client_ProjLerpTargetRotation, DeltaTime, TR_PROJ_MOVEREPL_RATE),
-            /*bSweep=*/ false
-        );
+        if (Client_ShouldFixPrediction())
+        {
+            SetActorLocationAndRotation(
+                FMath::VInterpTo(GetActorLocation(), Client_ProjLerpTargetLocation, DeltaTime, TR_PROJ_MOVEREPL_RATE),
+                FMath::RInterpTo(GetActorRotation(), Client_ProjLerpTargetRotation, DeltaTime, TR_PROJ_MOVEREPL_RATE),
+                /*bSweep=*/ false
+            );
+        }
+        else
+        {
+            // 회전은 항상 보정한다
+            SetActorRotation(FMath::RInterpTo(GetActorRotation(), Client_ProjLerpTargetRotation, DeltaTime, TR_PROJ_MOVEREPL_RATE));
+        }
     }
 }
 
@@ -165,7 +173,7 @@ void ABaseProjectile::Server_DestoryProjectile()
 
 void ABaseProjectile::OnRep_ProjPredictInfo()
 {
-    bClient_ProjPredictInfoValid = true;
+    bClient_HasReceivedInitProjInfo = true;
 
     ProjectileMovementComponent->InitialSpeed = Client_ProjPredictInfo.Client_InitialSpeed;
     ProjectileMovementComponent->MaxSpeed = Client_ProjPredictInfo.Client_MaxSpeed;
@@ -175,6 +183,17 @@ void ABaseProjectile::OnRep_ProjPredictInfo()
     ProjectileMovementComponent->Velocity = Client_ProjPredictInfo.Client_Velocity;
 
     ProjectileMovementComponent->bSimulationEnabled = true;
+}
+
+bool ABaseProjectile::Client_ShouldFixPrediction()
+{
+    float Dot = FVector::DotProduct(ProjectileMovementComponent->Velocity.GetSafeNormal(), (GetActorLocation() - Client_ProjLerpTargetLocation).GetSafeNormal());
+    float AngleDegree = FMath::RadiansToDegrees(FMath::Acos(Dot));
+    if (FMath::Abs(AngleDegree) <= TR_PROJ_PREDICTION_ALLOWANCE_DEGREE)
+    {
+        return false;
+    }
+    return true;
 }
 
 void ABaseProjectile::Server_SetProjPredictInfo()
@@ -286,6 +305,7 @@ void ABaseProjectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor*
                 }
             }
         }
+        // NOTE: Breakable의 경우 투사체가 아닌 Breakable 자체에서 로직 처리
         else
         {
             // 물리 충돌

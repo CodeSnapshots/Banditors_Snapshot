@@ -24,6 +24,9 @@ ATRAltar::ATRAltar()
     }
     DetectionComponent->SetupAttachment(RootComponent);
     DetectionComponent->SetCollisionProfileName(TEXT("AltarDetector"));
+    // NOTE: 
+    // Altar 콜리전은 OverlappableInteractive로 대체가 불가능한데, 이는 Altar에 소환된 아이템을 픽업할때 
+    // OverlappableInteractive의 경우 머즐 리치를 가로막기 때문임
 
     if (!SpawnPointComponent)
     {
@@ -118,7 +121,25 @@ bool ATRAltar::Server_OnTokenDetection(ATRToken* Token)
             TR_PRINT_ARGS("Token tier: %d", Token->GetTier());
         }
 #endif
-        GameMode->SpawnRandomizedGunItem(GetWorld(), GetSpawnLocation(), GetSpawnRotation(), FActorSpawnParameters(), Token->GetTier());
+        // 픽업 전까지 아이템을 스폰 지점에 띄워 회전시킨다
+        AGunItem* SpawnedItem = GameMode->SpawnRandomizedGunItem(GetWorld(), GetSpawnLocation(), GetActorRotation(), FActorSpawnParameters(), Token->GetTier());
+        if (SpawnedItem)
+        {
+            SpawnedItem->SetItemGravityTo(false);
+            if (SpawnedItem->GetPhysComponent())
+            {
+                SpawnedItem->GetPhysComponent()->SetPhysicsLinearVelocity(FVector::ZeroVector);
+                SpawnedItem->GetPhysComponent()->SetAngularDamping(0.0f); // 각속도 관성 해제
+                SpawnedItem->GetPhysComponent()->SetPhysicsAngularVelocityInDegrees(FVector(0.f, 0.f, 120.0f), false);
+            }
+
+#if WITH_EDITOR
+            if (CVarShowScreenDebugMsgs.GetValueOnGameThread())
+            {
+                TR_PRINT_ARGS("Gun tier: %d", SpawnedItem->Host_GetGunPartsTierSum());
+            }
+#endif
+        }
         Token->Destroy();
         return true;
     }

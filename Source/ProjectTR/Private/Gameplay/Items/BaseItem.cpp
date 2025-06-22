@@ -6,11 +6,16 @@
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 
 #include "Core/TRMacros.h"
 #include "Core/CustomUtil.h"
 #include "Core/TRUtils.h"
 #include "Core/TRStructs.h"
+#include "Core/TRCVar.h"
+#include "Core/ProjectTRGameModeBase.h"
+#include "DataAssets/TierFxConfig.h"
 #include "Items/ItemData.h"
 #include "Items/WieldItem.h"
 #include "Inventory/InvObject.h"
@@ -50,6 +55,20 @@ ABaseItem::ABaseItem()
         ReachComponent->SetupAttachment(MeshComponent);
     }
 #pragma endregion
+
+    // 기본 VFX 컨픽 바인딩
+    if (!TierFxConfig)
+    {
+        static ConstructorHelpers::FObjectFinder<UTierFxConfig> TierFXFinder(TEXT(ASSET_DEFAULT_TIER_FX));
+        if (TierFXFinder.Succeeded())
+        {
+            TierFxConfig = TierFXFinder.Object;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("ABaseItem - Unable to find default Tier FX config asset!"));
+        }
+    }
 }
 
 // Called when the game starts or when spawned
@@ -73,17 +92,10 @@ void ABaseItem::PostInitializeComponents()
     // NOTE: 아래 작업들은 OnPostInitializeComponents 이후에 처리되어야 하는데,
     // OnPostInitializeComponents 과정에서 아래 작업들의 결과에 영향을 줄 만한 값이 변경될 소지가 있기 때문이다.
 
-    // 메시 컴포넌트 초기화 및 등록 완료되었으므로 컴포넌트 크기 조정
-    ResizeReachCompToMatchItem();
-
-    // 아이템 데이터, 인벤토리 오브젝트 없을 경우 최초 생성
-    if (!IsValid(ItemData))
-    {
-        GenerateItemData(this);
-    }
+    // 인벤토리 오브젝트 없을 경우 최초 생성
     if (!IsValid(InvObject))
     {
-        GenerateInvObject(this);
+        GenerateInvObject(GetWorld() /* 초기 아우터는 월드로 설정; 즉 InvObject는 아이템 액터를 레퍼런스 하지 않음 */);
         GenerateInvObjDescription();
         VerifyInvObject();
     }
@@ -92,6 +104,17 @@ void ABaseItem::PostInitializeComponents()
     if (PhysComp)
     {
         PhysComp->bReplicatePhysicsToAutonomousProxy = true;
+    }
+
+    OnPostInvObjectGeneration();
+
+    if (HasAuthority() && bServer_UseTierVFX)
+    {
+        // 서버에서는 이 시점에 아이템의 종류와 무관하게 티어가 결정되어 있어야 함
+        TierVFXReference = TRUtils::GetNiagaraRefFromTier(InvObject->Host_GetTier(), true);
+
+        // 서버의 경우 수동 호출
+        Local_SpawnAndAttachTierEffect();
     }
 }
 
@@ -105,6 +128,16 @@ void ABaseItem::OnPostInitializeComponents()
 
     // 주의: PostInitializeComponents 단에서 컴포넌트 계층구조의 변화를 유발하는 함수는 서버와 클라 모두에서 실행해주어야 한다
     SetRootToMeshComponent();
+
+    // 메시 컴포넌트 초기화 및 등록 완료되었으므로 액터 전체 크기를 계산하고, 연관된 컴포넌트들을 조정한다
+    // 서버와 클라 모두에서 실행해주어야 한다
+    RefreshItemSizeAndOffset();
+    AdjustComponentsToMatchItemSize();
+}
+
+void ABaseItem::OnPostInvObjectGeneration()
+{
+    // 필요 시 추가
 }
 
 void ABaseItem::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -112,12 +145,10 @@ void ABaseItem::EndPlay(const EEndPlayReason::Type EndPlayReason)
     Super::EndPlay(EndPlayReason);
 }
 
-void ABaseItem::CacheBeforeDestruction(UObject* NewOuter)
+AGameCharacter* ABaseItem::GetItemOwner() const
 {
-    InvObject->Rename(nullptr, NewOuter);
-    ItemData->Rename(nullptr, NewOuter);
-    // 데이터 저장
-    CacheToItemData();
+    if (!InvObject) return nullptr;
+    return InvObject->GetInvObjectOwner();
 }
 
 // Called every frame
@@ -248,13 +279,32 @@ void ABaseItem::SetItemCollisionWithPawnTo(ECollisionResponse ColResponse)
     return;
 }
 
-void ABaseItem::ResizeReachCompToMatchItem()
+void ABaseItem::AdjustComponentsToMatchItemSize()
 {
-    FVector Extent = GetEstimatedItemSize();
+    // 월드스페이스 정렬
+    FRotator OriginRotation = GetActorRotation();
+    SetActorRotation(FRotator::ZeroRotator);
+
+    FVector Extent = ItemSize;
     Extent.X += ReachCompMargin;
     Extent.Y += ReachCompMargin;
     Extent.Z += ReachCompMargin;
     ReachComponent->SetBoxExtent(Extent, true);
+
+    // 메시의 실제 시각적인 중간 지점을 구한 후 리치 컴포넌트를 해당 위치로 이동시킨다
+    FBoxSphereBounds Bounds = MeshComponent->CalcBounds(MeshComponent->GetComponentTransform());
+    FVector RealCenter = Bounds.Origin;
+    ReachComponent->SetWorldLocation(RealCenter);
+
+#if WITH_EDITOR
+    if (CVarShowDebugShapes.GetValueOnGameThread())
+    {
+        DrawDebugBox(GetWorld(), ReachComponent->GetComponentLocation(), ReachComponent->GetScaledBoxExtent(), FColor::Red, false, 5.0f, 0, 1.0);
+    }
+#endif
+
+    // 다시 원래 회전으로 복구
+    SetActorRotation(OriginRotation);
 }
 
 bool ABaseItem::IsItemSimulatingGravity() const
@@ -309,23 +359,29 @@ void ABaseItem::SetItemPhysicsTo(bool bPhysics)
 
 void ABaseItem::CacheToItemData() const
 {
-    if (!IsValid(ItemData))
+    if (!IsValid(InvObject) || !IsValid(InvObject->GetItemData()))
     {
         UE_LOG(LogTemp, Error, TEXT("ItemData is invalid, Failed to cache to item data!"));
         return;
     }
-    if (!ItemData->CacheItem(this))
+    if (!InvObject->GetItemData()->CacheItem(this))
     {
         UE_LOG(LogTemp, Error, TEXT("ItemData caching has failed!"));
     }
     return;
 }
 
-bool ABaseItem::RestoreFromItemData(UItemData* Data)
+bool ABaseItem::Server_RestoreItem_PreSpawn(const UInvObject* SrcInvObject)
 {
+    if (!HasAuthority())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Server_RestoreItem_PreSpawn - Called from client!"));
+        return false;
+    }
+    const UItemData* Data = SrcInvObject->GetItemData();
     if (!IsValid(Data))
     {
-        UE_LOG(LogTemp, Error, TEXT("Passed-in data is null, Failed to cache to item data!"));
+        UE_LOG(LogTemp, Error, TEXT("Server_RestoreItem_PreSpawn - Passed-in data is null, Failed to cache to item data!"));
         return false;
     }
     
@@ -334,20 +390,38 @@ bool ABaseItem::RestoreFromItemData(UItemData* Data)
     return true;
 }
 
-void ABaseItem::GenerateItemData(UObject* Outer)
+bool ABaseItem::Server_RestoreItem_PostSpawn(const UInvObject* SrcInvObject)
+{
+    if (!HasAuthority())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Server_RestoreItem_PostSpawn - Called from client!"));
+        return false;
+    }
+    const UItemData* Data = SrcInvObject->GetItemData();
+    if (!IsValid(Data))
+    {
+        UE_LOG(LogTemp, Error, TEXT("Server_RestoreItem_PostSpawn - Passed-in data is null, Failed to cache to item data!"));
+        return false;
+    }
+
+    // 필요 시 추가 로직은 개별 클래스에서 구현한다
+    return true;
+}
+
+UItemData* ABaseItem::GenerateItemData(UObject* Outer)
 {
     UClass* DataClass = ItemDataClass;
-    UItemData* GeneratedData = nullptr;
-
     if (!IsValid(DataClass))
     {
         UE_LOG(LogTemp, Error, TEXT("Item %s has no default ItemDataClass set."), *GetName());
     }
     else
     {
-        ItemData = NewObject<UItemData>(Outer, ItemDataClass, TEXT("ItemData"));
+        // 중요: Outer가 이 액터가 아닐 수 있기 때문에, NewObject에 TEXT를 사용해 이름을 전달하면 크래시 발생
+        FName UniqueName = MakeUniqueObjectName(Outer, ItemDataClass, FName("ItemData"));
+        return NewObject<UItemData>(Outer, ItemDataClass, UniqueName);
     }
-    return;
+    return nullptr;
 }
 
 void ABaseItem::GenerateInvObject(UObject* Outer)
@@ -361,8 +435,10 @@ void ABaseItem::GenerateInvObject(UObject* Outer)
     }
     else
     {
-        GeneratedObj = NewObject<UInvObject>(Outer, TypeClass, TEXT("InvObject"));
-        GeneratedObj->SetItemData(ItemData);
+        // 중요: Outer가 이 액터가 아닐 수 있기 때문에, NewObject에 TEXT를 사용해 이름을 전달하면 크래시 발생
+        FName UniqueName = MakeUniqueObjectName(Outer, TypeClass, FName("InvObject"));
+        GeneratedObj = NewObject<UInvObject>(Outer, TypeClass, UniqueName);
+        GeneratedObj->SetItemData(GenerateItemData(Outer));
         GeneratedObj->SetBaseItemClass(GetClass()); // GetClass는 BP일 경우 BP 클래스를 반환한다
         InvObject = GeneratedObj;
     }
@@ -383,19 +459,17 @@ UInvObject* ABaseItem::CreateDefaultInvObject()
     return NewObject<UInvObject>();
 }
 
-bool ABaseItem::OnItemEquip(UEquipSystem* EquSys, int32 SlotIdx)
+void ABaseItem::RefreshItemSizeAndOffset()
 {
-    // ABaseItem은 장착이 불가능
-    // NOTE: 게임플레이 시스템 상 장착은 불가하지만 소켓에 물리적으로 부착하는 것은 지원함
-    UE_LOG(LogTemp, Error, TEXT("Item %s is not a AWieldItem. You cannot Equip it."), *this->GetName());
-    return false;
-}
-
-FVector ABaseItem::GetEstimatedItemSize()
-{
-    if (!GetMeshComponent()) return FVector(0, 0, 0);
-    return GetMeshComponent()->GetLocalBounds().BoxExtent;
-}
+    if (!GetMeshComponent())
+    {
+        ItemSize = FVector::OneVector;
+        ItemSizeBoxOffset = FVector::ZeroVector;
+        return;
+    }
+    ItemSize = GetMeshComponent()->GetLocalBounds().BoxExtent;
+    ItemSizeBoxOffset = FVector::ZeroVector;
+};
 
 void ABaseItem::RegisterVisibility(bool bVisibility)
 {
@@ -421,7 +495,7 @@ bool ABaseItem::OnItemPickup(UInventoryComponent* InvComp)
         {
             if (HasAuthority())
             {
-                CacheBeforeDestruction(InvComp->GetOwner());
+                CacheToItemData();
                 Destroy();
             }
             return true;
@@ -438,11 +512,6 @@ void ABaseItem::SetInvObject(UInvObject* InvObj)
 TObjectPtr<class UInvObject> ABaseItem::GetInvObject()
 {
     return InvObject;
-}
-
-void ABaseItem::SetItemData(UItemData* Data)
-{
-    ItemData = Data;
 }
 
 void ABaseItem::GenerateInvObjDescription()
@@ -463,6 +532,11 @@ void ABaseItem::Server_InitializeIcon()
         UE_LOG(LogTemp, Error, TEXT("Server_InitializeIcon - Client should not call this function!"));
         return;
     }
+    if (!GetWorld())
+    {
+        UE_LOG(LogTemp, Error, TEXT("Server_InitializeIcon - Invalid world!"));
+        return;
+    }
 
     UInvObject* InvObj = GetInvObject();
     if (HasAuthority() && InvObj)
@@ -470,10 +544,43 @@ void ABaseItem::Server_InitializeIcon()
         // 캐싱을 처리해야 메쉬 정보가 데이터에 기록되어 아이콘 생성 과정에서 사용할 수 있음
         bServer_HasInitializedIcon = true; // 아이콘 초기화가 완료되었음 또한 캐싱되어야 하므로 CacheToItemData보다 먼저 호출되어야 함
         CacheToItemData(); // 캐싱
-        GetInvObject()->Server_RequestUpdateIcon();
+        
+        AProjectTRGameModeBase* TRGM = Cast<AProjectTRGameModeBase>(GetWorld()->GetAuthGameMode());
+        if (TRGM)
+        {
+            TRGM->UpdateIconOf(InvObj);
+        }
         return;
     }
     UE_LOG(LogTemp, Error, TEXT("Server_InitializeIcon - Something went wrong!"));
     return;
 }
 
+UNiagaraComponent* ABaseItem::Local_SpawnAndAttachTierEffect()
+{
+    if (!IsValid(TierFxConfig)) return nullptr;
+
+    UNiagaraComponent* SpawnedComp = UNiagaraFunctionLibrary::SpawnSystemAttached(
+        TierFxConfig->SearchNiagaraFromEnum(TierVFXReference),
+        GetRootComponent(),
+        NAME_None,
+        FVector::ZeroVector,
+        FRotator::ZeroRotator,
+        EAttachLocation::KeepRelativeOffset,
+        true,
+        true
+    );
+
+    // 항상 월드 회전 사용
+    if (SpawnedComp)
+    {
+        SpawnedComp->SetUsingAbsoluteRotation(true);
+        SpawnedComp->SetUsingAbsoluteScale(true);
+    }
+    return SpawnedComp;
+}
+
+void ABaseItem::OnRep_TierVFXReference()
+{
+    Local_SpawnAndAttachTierEffect();
+}

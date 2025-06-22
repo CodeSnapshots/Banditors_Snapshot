@@ -27,7 +27,7 @@ public:
 	// 아이콘 초기화 여부를 캐싱한다
 	// 1회 이상 동적 생성했을 경우 true
 	void CacheHasInitIcon(bool bValue) { bCachedHasInitIcon = bValue; }
-	bool GetCachedHasInitIcon() { return bCachedHasInitIcon; }
+	bool GetCachedHasInitIcon() const { return bCachedHasInitIcon; }
 
 protected:
 	UPROPERTY(BlueprintReadOnly)

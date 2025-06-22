@@ -8,6 +8,7 @@
 #include "Net/UnrealNetwork.h"
 
 #include "Core/ReplicatedObject.h"
+#include "Core/TREnums.h"
 #include "StatusEffect/StatusEffect.h"
 #include "InvObject.generated.h"
 
@@ -40,20 +41,25 @@ public:
 	{
 		Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+		DOREPLIFETIME(UInvObject, ItemData);
 		DOREPLIFETIME(UInvObject, ItemName);
 		DOREPLIFETIME(UInvObject, ItemDesc);
 		DOREPLIFETIME(UInvObject, ItemAttributesForUI);
 		DOREPLIFETIME(UInvObject, CurrIconStageActor);
+		DOREPLIFETIME(UInvObject, Tier);
 	}
 
 public:
 	// 이 InvObject에 대응되는 아이템을 생성하고 생성된 아이템에 ItemData를 등록한다
-	class ABaseItem* GenerateAndSpawnItem(UObject* Outer, FVector Location, FRotator Rotation, FActorSpawnParameters Params, bool bRestoreUsingItemData = true);
+	class ABaseItem* GenerateAndSpawnItem(UObject* Outer, FVector Location, FRotator Rotation, FActorSpawnParameters Params, bool bRestoreUsingItemData, bool bUseTierVFX);
 
 	// 이 오브젝트 및 이 오브젝트 하위의 모든 오브젝트들에 대해 수동으로 아우터를 변경한다
 	// Owner가 아닌 Outer임에 유의
 	// bAddToRootSet가 true면 루트셋에 추가한다
 	virtual void ChangeOuterRecursive(UObject* NewOuter, bool bAddToRootSet);
+
+	// InvObject의 Owner는 해당 오브젝트를 인벤토리 컴포넌트 내에 보유하고 있는 캐릭터로 정의한다
+	class AGameCharacter* GetInvObjectOwner() const;
 
 #pragma region /** Gameplay */
 /* Status Effects */
@@ -82,7 +88,9 @@ public:
 
 /* Shop */
 protected:
-	// 가격
+	// NOTE:
+	// 가격은 한번 결정된 이후 변해서는 안된다
+	// 총기를 비롯한 일부 아이템의 경우 가격이 런타임에 결정될 수 있다
 	UPROPERTY(EditDefaultsOnly, Category = "Gameplay")
 	int32 Price = 1;
 
@@ -94,13 +102,33 @@ public:
 	// Getters
 	const int32 Local_GetPrice() const { return Price; }
 	const bool Local_IsMarketable() const { return bMarketable; }
+
+/* Tier */
+private:
+	// NOTE:
+	// 티어는 한번 결정된 이후 변해서는 안된다
+	// 총기를 비롯한 일부 아이템의 경우 티어가 런타임에 결정될 수 있다, 이 경우 반드시 setter를 사용해야 한다
+	// NOTE:
+	// Unspecified와 None을 구분지어야 한다
+	UPROPERTY(EditDefaultsOnly, ReplicatedUsing = OnRep_Tier, Category = "Gameplay")
+	EItemTier Tier = EItemTier::IT_TIER_UNSPECIFIED;
+
+protected:
+	UFUNCTION()
+	void OnRep_Tier();
+
+public:
+	const EItemTier Host_GetTier() const { return Tier; }
+
+	// 티어를 수정하는 것은 티어 결정 시점이 런타임인 특수한 경우(e.g. 총기)에 한해 허용된다
+	void Server_ChooseTierDuringRuntime(EItemTier NewTier);
 #pragma endregion
 
 #pragma region /** Item Data */
 protected:
 	// 아이템 데이터
 	// 아이템 액터 생성 시 초기화
-	UPROPERTY(BlueprintReadOnly, Category = "Item Data")
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Item Data")
 	TObjectPtr<class UItemData> ItemData = nullptr;
 
 	// 대응되는 아이템 클래스
@@ -114,7 +142,7 @@ public:
 	void SetBaseItemClass(TSubclassOf<class ABaseItem> Class);
 
 	/* Getters */
-	class UItemData* GetItemData() { return ItemData; }
+	class UItemData* GetItemData() const { return ItemData; }
 	TSubclassOf<class ABaseItem> GetBaseItemClass() { return BaseItemClass; }
 #pragma endregion
 
@@ -172,12 +200,7 @@ protected:
 	
 	// 아이콘 매터리얼이 Dynamic한지 여부; 렌더타깃 등의 기능을 사용하기 위해서는 Dynamic material이 필요하다
 	// 이 값은 캐싱을 통해 보존되지 않는다
-	bool bIsIconMatDynamic = false;
-
-	// 이 값이 참일 경우 매터리얼 인스턴스를 직접 바운딩해 아이콘으로 그대로 사용한다
-	// 이 경우 가로세로 픽셀 크기와 비율을 고려해야 하기 때문에 권장되는 방법은 아니다
-	UPROPERTY(EditDefaultsOnly, Category = "Icon")
-	bool bUseStaticBoundIcon = false;
+	bool bLocal_IsIconMatDynamic = false;
 
 public:
 	// 현재 아이콘 매터리얼 Getter
@@ -187,26 +210,17 @@ public:
 	// 아이콘 매터리얼 Getter
 	FORCEINLINE UMaterialInstance* GetIcon() const;
 
-	// 동적으로 이 오브젝트에 맞는 아이콘을 생성한다
-	// NOTE: 동적으로 메쉬 정보가 변하는 아이템의 경우 아이콘 생성 전에 해당 정보들이 ItemData에 캐싱되어있어야 한다
-	void Server_RequestUpdateIcon();
-
-	// 주어진 액터를 기반으로 렌더타겟을 설정해 매터리얼을 추출하고 InvObject의 아이콘으로 설정한다
-	void Host_ProcessRefreshIcon(TWeakObjectPtr<class AIconStageActor> TargetActor);
-
 /* IconStage */
-protected:
-	// 현재 바인딩된 아이콘의 원본 액터
-	// nullptr일 수 있다
-	UPROPERTY(ReplicatedUsing = OnIconStageActorRepl)
-	TWeakObjectPtr<class AIconStageActor> CurrIconStageActor = nullptr;
-
 public:
-	void SetCurrIconStageActor(class AIconStageActor* IconStageActor);
-	TWeakObjectPtr<class AIconStageActor> GetCurrIconStageActor() { return CurrIconStageActor; }
+	UPROPERTY(ReplicatedUsing = OnRep_IconStageActor)
+	TWeakObjectPtr<class AIconStageActor> CurrIconStageActor = nullptr;
 
 protected:
 	UFUNCTION()
-	void OnIconStageActorRepl();
+	void OnRep_IconStageActor();
+
+public:
+	// 클라이언트 아이콘 생성 로직의 시작점이자, 실질적 로직 구현부
+	void Local_InitIconStageActor();
 #pragma endregion
 };

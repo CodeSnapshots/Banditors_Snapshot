@@ -67,11 +67,11 @@ UGPC_TestReceiver::UGPC_TestReceiver()
 	bSetCameraShakeFromEnum = true;
 	CameraShakeClassEnum = ECamShakeReference::ECR_OnFireCamShake;
 	bSetMuzzleFlashVFXFromEnum = true;
-	MuzzleFlashVFXEnum = ENiagaraReference::ENR_MZF_Energy_1;
+	MuzzleFlashVFXEnum = EGunNiagaraReference::ENR_MZF_Energy_1;
 	bSetProjectileFromEnum = true;
 	ProjectileEnum = EProjectileReference::EPR_DefaultProj;
 	bSetShellEjectVFXFromEnum = true;
-	ShellEjectVFXEnum = ENiagaraReference::ENR_SEJ_Default;
+	ShellEjectVFXEnum = EGunNiagaraReference::ENR_SEJ_Default;
 
 	bOverrideApplyLightToMuzzleOnFire = true;
 	bApplyLightToMuzzleOnFireValue = true;
@@ -100,7 +100,7 @@ UGPC_TestReceiver::UGPC_TestReceiver()
 	MinExplosionMultiplierValue = 1.0f;
 	DeltaBaseImpactStrength = 1000.0f;
 	bOverrideExplosionVFXEnum = true;
-	ExplosionVFXEnumValue = ENiagaraReference::ENR_EXP_Default;
+	ExplosionVFXEnumValue = EGunNiagaraReference::ENR_EXP_Default;
 	bOverrideExplVFXRadiusConstant = true;
 	ExplVFXRadiusConstantValue = 0.01f;
 

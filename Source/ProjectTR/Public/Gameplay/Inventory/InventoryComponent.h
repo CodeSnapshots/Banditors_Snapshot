@@ -99,7 +99,7 @@ public:
 
 	// 아이템 스폰 (InvObject 기반 생성) RPC
 	UFUNCTION(Server, Reliable)
-	void Server_SpawnItemFromInvObjectRPC(class UInvObject* InvObj, FVector Location);
+	void Server_SpawnItemFromInvObjectRPC(class UInvObject* InvObj);
 
 	// 아이템을 이동하기 위해 호출하는 RPC
 	// 동일 컴포넌트 내의 이동도 지원한다
@@ -138,17 +138,10 @@ public:
 	bool TryRemoveInvObject(class UInvObject* InvObj);
 
 	// InvObject를 인벤토리에서 제거한 후, 이 컴포넌트의 부모의 드랍 위치에 아이템을 생성하고 아이템 데이터를 연동한다
-	// AGameCharacter의 자식 클래스들의 경우 Muzzle 위치에 드랍한다
+	// 주의: 항상 드랍 위치/회전 판정은 서버에서 처리해야 한다
+	// 클라가 임의로 위치/회전을 정해 발송하는 방식을 피해야 한다
 	UFUNCTION(BlueprintCallable)
 	bool TryDropInvObject(class UInvObject* InvObj);
-
-	// InvObject를 인벤토리에서 제거한 후, 입력으로 주어진 액터의 위치에 대응되는 아이템을 생성하고 아이템 데이터를 연동한다
-	UFUNCTION(BlueprintCallable)
-	bool TryDropInvObjectAtActorLocation(class UInvObject* InvObj, AActor* Actor);
-
-	// InvObject를 인벤토리에서 제거한 후, 주어진 Location에 대응되는 아이템을 생성하고 아이템 데이터를 연동한다
-	UFUNCTION(BlueprintCallable)
-	bool TryDropInvObjectAt(class UInvObject* InvObj, FVector Location);
 
 	// 소유한 모든 InvObject에 대해 드랍 처리를 한 번에 시도한다
 	void Server_DropAllInvObjectImmediate(FVector Location, float RandomOffset);

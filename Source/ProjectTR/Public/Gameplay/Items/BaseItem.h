@@ -8,6 +8,7 @@
 #include "Engine/ActorChannel.h"
 
 #include "Core/TREnums.h"
+#include "DataAssets/TierFxConfig.h"
 #include "BaseItem.generated.h"
 
 USTRUCT(BlueprintType)
@@ -54,31 +55,35 @@ protected:
 	virtual void PostInitializeComponents() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
-	// 개별 액터에서 PostInitializeComponents 대신 이 함수를 오버라이드해 사용한다
+	// PostInitializeComponents 내에서 더 세부적으로 처리 시점을 구분한다
+	// 이 함수들은 서버와 클라 모두에서 호출되므로, 내부적으로 net role을 구분해서 분기를 나눠야 한다
 	virtual void OnPostInitializeComponents();
+	virtual void OnPostInvObjectGeneration();
+
 public:
 	virtual void Tick(float DeltaTime) override;
 
-	// 아이템 캐싱 및 아우터 변경 작업이 필요할 경우 호출한다
-	// NOTE: 아이템 액터를 Destory할 경우, 만약 아이템 정보가 인벤토리(EquSys 등)에 남을 경우 반드시 이 함수를 호출해주어야 한다
-	// e.g. 무기 슬롯 변경 시 Deploy된 무기 Retrieve, 아이템 Pickup 등
-	// NOTE: 이 함수는 아이템 정보를 변형시킬 수 있으므로 특수한 경우를 제외하면 가급적 아이템 파괴 직전에만 호출하는 것이 권장된다
-	void CacheBeforeDestruction(UObject* NewOuter);
+	// 아이템 소유자는 아이템에 바인딩된 인벤토리 오브젝트의 소유자로 정의한다
+	class AGameCharacter* GetItemOwner() const;
+
+	// 장착 이전 처리 로직
+	virtual void Local_PrepareAttachment() { /* 필요 시 구현 */ }
 
 #pragma region /** Networking */
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override
 	{
 		Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-		DOREPLIFETIME(ABaseItem, ItemData);
 		DOREPLIFETIME(ABaseItem, InvObject);
 		DOREPLIFETIME(ABaseItem, MeshComponent);
+		DOREPLIFETIME(ABaseItem, TierVFXReference);
 	}
 #pragma endregion
 
 #pragma region /** Components */
 public:
 	// 아이템 리치 판정용 컴포넌트
+	// NOTE: 아이템 타입에 따라 어태치된 부모 컴포넌트가 다를 수 있다
 	UPROPERTY(VisibleAnywhere, Category = "Collision")
 	TObjectPtr<class UBoxComponent> ReachComponent = nullptr;
 
@@ -140,13 +145,9 @@ public:
 	void SetItemCollisionWithPawnTo(ECollisionResponse ColResponse);
 
 protected:
-	// 리치 컴포넌트의 크기를 동적으로 현재 메쉬에 맞게 수정한다
-	virtual void ResizeReachCompToMatchItem();
-
-protected:
 	// 리치 컴포넌트의 크기에 아이템 메시에 대해 얼마만큼의 여백을 줄 것인지 설정
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-	float ReachCompMargin = 10.0f;
+	float ReachCompMargin = 30.0f;
 #pragma endregion
 
 #pragma region /** Physics */
@@ -190,21 +191,19 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Item Data")
 	TSubclassOf<class UItemData> ItemDataClass = nullptr;
 
-	// 아이템 데이터
-	UPROPERTY(BlueprintReadOnly, Replicated)
-	TObjectPtr<class UItemData> ItemData = nullptr;
-
 protected:
-	// 이 아이템에 대응되는 아이템 데이터 객체를 생성한다
-	void GenerateItemData(UObject* Outer);
+	// 이 아이템에 대응되는 아이템 데이터 객체를 생성해 반환한다
+	class UItemData* GenerateItemData(UObject* Outer);
 
 public:
-	// 인자로 전달된 ItemData에 할당된 정보를 기반으로 이 아이템의 정보를 복구한다
+	// 인자로 전달된 InvObject에 할당된 정보를 기반으로 이 아이템의 정보를 복구한다
+	// 인자로 전달된 InvObject는 이 액터에 바인딩된 InvObject와는 무관하므로, 이 함수는 아이템 복구 및 복사에 모두 사용될 수 있다
+	// (대부분의 경우 이 액터는 아직 InvObject가 바인딩조차 되어있지 않을 수 있다)
 	// 성공 여부를 반환한다
-	virtual bool RestoreFromItemData(class UItemData* Data);
-
-	// ItemData 등록
-	void SetItemData(class UItemData* Data);
+	
+	// 패스를 나누어 분할해 처리하며, 모두 처리되어야 비로소 완전한 복구가 완료된다
+	virtual bool Server_RestoreItem_PreSpawn(const class UInvObject* SrcInvObject);
+	virtual bool Server_RestoreItem_PostSpawn(const class UInvObject* SrcInvObject);
 
 	// 이 아이템의 현재 정보를 ItemData에 캐싱한다
 	void CacheToItemData() const;
@@ -257,7 +256,7 @@ protected:
 	TObjectPtr<class UInvObject> InvObject = nullptr;
 
 public:
-	// 이 아이템에 대응되는 InvObject를 생성하고 생성된 InvObject에 ItemData를 등록한다
+	// 이 아이템에 대응되는 InvObject와 ItemData를 생성 및 등록한다
 	void GenerateInvObject(UObject* Outer);
 
 	// 아이템 픽업 시 호출; 성공적으로 인벤토리에 추가되었는지 여부 반환
@@ -277,13 +276,35 @@ protected:
 	UInvObject* CreateDefaultInvObject();
 #pragma endregion
 
-#pragma region /** Equipments */
-public:
-	// 아이템 장착 시도 시 호출
-	virtual bool OnItemEquip(class UEquipSystem* EquSys, int32 SlotIdx);
+#pragma region /** Size */
+protected:
+	// 이 아이템의 물리적 크기 및 크기 extent의 액터 중심으로부터의 오프셋을 계산해 멤버 변수 값을 업데이트한다
+	// 다만 이 값이 변경된다고 해서 연관된 컴포넌트들의 크기나 오프셋은 변하지 않으므로 직접 수정해주어야 한다
+	// 아이템 타입에 따라 실행 시점이 다를 수 있다
+	virtual void RefreshItemSizeAndOffset();
 
-	// 이 아이템의 물리적 크기와 유사한 값을 반환한다
-	virtual FVector GetEstimatedItemSize();
+	// 함수 호출 전에 RefreshItemSizeAndOffset가 호출되어야 유효한 값이 적용된다
+	// 아이템 타입에 따라 실행 시점이 다를 수 있다
+	virtual void AdjustComponentsToMatchItemSize();
+
+public:
+	FVector GetItemSize() const { return ItemSize; }
+	FVector GetItemSizeBoxOffset() const { return ItemSizeBoxOffset; }
+
+protected:
+	/* 중요 */
+	// ItemSize, ItemSizeBoxOffset의 올바른 값을 구하기 위해서 먼저 대상 액터를 월드로테이션에 정렬을 해야 한다
+	// 이는 바운딩 박스가 월드로테이션(=(0,0,0))에서만 실제 범위와 동일하기 때문임
+	// 따라서 값을 구한 이후 이 값들을 다른 무언가에 사용할 때에도 적용할 대상을 먼저 월드로테이션으로 만든 후에 적용해야 한다
+	FVector ItemSize;
+
+	// 이 값은 동적으로 크기가 결정되는 아이템에 한해서만 0이 아닌 값을 갖는다
+	// 이 값이 어떤 역할을 하는지 이해하는 게 중요한데,
+	// GunItem을 예시로 들면, Gun은 모든 컴포넌트들의 박스들을 고려해 하나의 큰 콜리전 박스를 동적으로 생성한다
+	// 이때 생성된 콜리전 박스는 크기는 정확하지만 위치가 총기 아이템과 서로 맞지 않는데,
+	// 이는 총기 파츠 메시들이 중앙 정렬되어있지 않기 때문이다
+	// 따라서 이 오프셋 값을 사용해 컴포넌트들간의 위치 관계를 조정하는 것으로 총기와 콜리전 박스를 정렬한다
+	FVector ItemSizeBoxOffset = FVector::ZeroVector;
 #pragma endregion
 
 #pragma region /** Attachment */
@@ -319,7 +340,7 @@ public:
 	const ECharacterParts GetCharacterAttachPartName() { return AttachPart; }
 #pragma endregion
 
-#pragma region /** Render */
+#pragma region /** Visuals */
 public:
 	// 이 아이템의 렌더링 여부를 변경하는 걸 요청한다
 	// 동적으로 생성된 메쉬가 있을 경우, 모든 메쉬들의 레플리케이션이 처리 완료된 시점에 처리해야 한다
@@ -328,6 +349,31 @@ public:
 	// 이 아이템의 렌더링 여부를 설정한다
 	// 오버라이드 시 부모 함수를 콜해야 한다
 	virtual void SetItemVisibility(bool bVisibility);
+
+	// 이 아이템의 등급 별 특수효과를 나타내는 나이아가라 컴포넌트를 생성한 후 부착한다
+	class UNiagaraComponent* Local_SpawnAndAttachTierEffect();
+
+protected:
+	UFUNCTION()
+	void OnRep_TierVFXReference();
+
+public:
+	UPROPERTY(EditDefaultsOnly)
+	class UTierFxConfig* TierFxConfig = nullptr;
+
+	// 현재 사용중인 티어 VFX
+	// NOTE: 현재는 런타임 VFX 변경은 지원하지 않음
+	// 정확히 말하면 NULL에서 NOT NULL로 바뀌어 런타임에 1회 초기화하는 것은 가능하지만
+	// NOT NULL -> NULL or NOT NULL은 불가능함
+	// 다만 추후 필요 시 기존 나이아가라 컴포넌트 파괴 후 생성하는 것으로 쉽게 구현 가능
+	UPROPERTY(ReplicatedUsing = OnRep_TierVFXReference)
+	ETierNiagaraReference TierVFXReference = ETierNiagaraReference::ENR_NULL;
+
+	// 이 아이템의 Tier vfx 사용 여부
+	// 이 값은 PostInitializeComponents 이전에 설정되어 있어야 한다
+	// 이 값이 false면 TierVFXReference도 NULL 상태를 유지하기 때문에 자연스럽게 클라이언트에도 상태가 동기화된다
+	UPROPERTY(EditAnywhere)
+	bool bServer_UseTierVFX = true;
 
 protected:
 	// RegisterVisibility 호출 이후 아직 SetItemVisibility가 호출되지 않았을 경우 true로 설정한다

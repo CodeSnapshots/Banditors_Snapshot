@@ -126,7 +126,7 @@ void ATRChest::Server_DropRewards()
 		FVector DropCenter = GetActorLocation() + (GetActorForwardVector() * 30.0f);
 		for (const FDropItem& Loot : ChosenRewards)
 		{
-			ABaseItem* DroppedItem = TRGM->SpawnItem(Loot.ItemRef, World, DropCenter, FRotator(), FActorSpawnParameters());
+			ABaseItem* DroppedItem = TRGM->SpawnItem(Loot.ItemRef, World, DropCenter, FRotator(), FActorSpawnParameters(), true);
 			if (DroppedItem->GetPhysComponent())
 			{
 				FVector ImpulseDirection = FMath::VRandCone(GetActorForwardVector() + GetActorUpVector(), FMath::DegreesToRadians(25.f)).GetSafeNormal();

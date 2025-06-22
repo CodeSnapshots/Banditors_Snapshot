@@ -106,7 +106,7 @@ void UInventoryComponent::Server_ImportInvComp(TArray<class UInvObject*> NewValu
 			AProjectTRGameModeBase* TRGM = Cast<AProjectTRGameModeBase>(GetWorld()->GetAuthGameMode());
 			if (TRGM)
 			{
-				ABaseItem* TempItem = TRGM->RespawnItem(InvObj->GetBaseItemClass(), GetWorld(), FVector(), FRotator(), FActorSpawnParameters(), InvObj, InvObj->GetItemData());
+				ABaseItem* TempItem = TRGM->RespawnItem(InvObj->GetBaseItemClass(), GetWorld(), FVector(), FRotator(), FActorSpawnParameters(), InvObj, true);
 				if (TempItem && TempItem->GetInvObject())
 				{
 					// 레벨 트랜지션 이후에는 기존 아이콘 생성 여부와 무관하게 아이콘을 재생성한다
@@ -118,11 +118,6 @@ void UInventoryComponent::Server_ImportInvComp(TArray<class UInvObject*> NewValu
 						UE_LOG(LogTemp, Error, TEXT("Server_ImportInvComp - Something went wrong during inventory restoring!"));
 					}
 					Server_MoveFromInvToInvRPC(NewObj, this, NewDatas[Index].GridX, NewDatas[Index].GridY);
-
-					// InvObject와 다르게 기존 ItemData는 그대로 재사용함
-					// 이때 이미 데이터를 기반으로 액터 멤버들에 대한 복구는 완료된 상황이므로, 데이터만 바꿔주면 됨
-					NewObj->SetItemData(InvObj->GetItemData());
-					NewObj->GetItemData()->Rename(nullptr, GetOwner()); // 아우터를 다시 캐릭터로 설정 (OnItemPickup -> CacheBeforeDestruction 참고)
 				}
 				else
 				{
@@ -137,9 +132,9 @@ void UInventoryComponent::Server_ImportInvComp(TArray<class UInvObject*> NewValu
 	bIsImportingInventory = false;
 }
 
-void UInventoryComponent::Server_SpawnItemFromInvObjectRPC_Implementation(UInvObject* InvObj, FVector Location)
+void UInventoryComponent::Server_SpawnItemFromInvObjectRPC_Implementation(UInvObject* InvObj)
 {
-	ABaseItem* GeneratedItem = InvObj->GenerateAndSpawnItem(GetWorld(), Location, FRotator(), FActorSpawnParameters());
+	ABaseItem* GeneratedItem = InvObj->GenerateAndSpawnItem(GetWorld(), TRUtils::GetDefaultDropLocation(GetOwner()), TRUtils::GetDefaultDropRotation(GetOwner()), FActorSpawnParameters(), true, true);
 	return;
 }
 
@@ -296,24 +291,10 @@ bool UInventoryComponent::TryDropInvObject(UInvObject* InvObj)
 		UE_LOG(LogTemp, Warning, TEXT("InvComp has no owner. Failed to drop InvObject at owner location."));
 		return false;
 	}
-	if (AGameCharacter* GameCharacter = Cast<AGameCharacter>(GetOwner()))
-	{
-		return TryDropInvObjectAt(InvObj, GameCharacter->GetHandPointInfo().Get<0>());
-	}
-	return TryDropInvObjectAtActorLocation(InvObj, GetOwner());
-}
-
-bool UInventoryComponent::TryDropInvObjectAtActorLocation(UInvObject* InvObj, AActor* Actor)
-{
-	return TryDropInvObjectAt(InvObj, Actor->GetActorLocation());
-}
-
-bool UInventoryComponent::TryDropInvObjectAt(UInvObject* InvObj, FVector Location)
-{
 	Local_ForceRefreshUI();
 	if (TryRemoveInvObject(InvObj))
 	{
-		Server_SpawnItemFromInvObjectRPC(InvObj, Location);
+		Server_SpawnItemFromInvObjectRPC(InvObj);
 		return true;
 	}
 	return false;
@@ -333,7 +314,7 @@ void UInventoryComponent::Server_DropAllInvObjectImmediate(FVector Location, flo
 		UInvObject* DropObj = GetInvObjOfId(DropObjId);
 
 		FVector2D XYOffset = FMath::RandPointInCircle(RandomOffset);
-		Server_SpawnItemFromInvObjectRPC(DropObj, FVector(Location.X + XYOffset.X, Location.Y + XYOffset.Y, Location.Z));
+		DropObj->GenerateAndSpawnItem(GetWorld(), FVector(Location.X + XYOffset.X, Location.Y + XYOffset.Y, Location.Z), TRUtils::GetDefaultDropRotation(GetOwner()), FActorSpawnParameters(), true, true);
 
 		RemoveInvObject(DropObjId);
 	}
@@ -677,6 +658,10 @@ bool UInventoryComponent::AddInvObject(UInvObject* InvObj, int32 TopLeftX, int32
 	Server_RegisterRefreshUI();
 	Server_OnInventoryContentChanged();
 	Server_OnInvObjectAdded(InvObj);
+
+	// 소유 확정; 아우터 변경
+	InvObj->ChangeOuterRecursive(GetOwner(), false);
+
 	return true;
 }
 
@@ -732,6 +717,10 @@ bool UInventoryComponent::RemoveInvObject(int32 ObjId)
 	Server_RegisterRefreshUI();
 	Server_OnInventoryContentChanged();
 	Server_OnInvObjectRemoved(InvObj);
+
+	// 소유 포기 확정; 아우터 변경
+	InvObj->ChangeOuterRecursive(GetWorld(), false);
+
 	return true;
 }
 

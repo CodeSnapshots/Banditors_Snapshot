@@ -1,0 +1,822 @@
+1b002841 - hagukin, Mon Jun 23 03:21:52 2025 +0900 : Fix: CVar 선언 cpp로 이동
+03b2180b - hagukin, Mon Jun 23 02:27:40 2025 +0900 : Fix: 사소한 오류 수정
+610a7efc - hagukin, Mon Jun 23 02:26:34 2025 +0900 : Feat: 아이콘 생성 로직 개선
+d4cda4f8 - hagukin, Sat Jun 21 02:52:23 2025 +0900 : Feat: 아이템 크기에 따라 동적으로 렌더타깃 카메라 위치 결정짓도록 개선
+ba398487 - hagukin, Fri Jun 20 00:04:57 2025 +0900 : Fix: Tier VFX 스케일도 고정값 사용하도록 수정
+41640213 - hagukin, Fri Jun 20 00:01:47 2025 +0900 : Chore: 기존 아이템들에 Tier VFX 적용
+2cd4dfdd - hagukin, Thu Jun 19 23:45:32 2025 +0900 : Feat: 액터 생성 시 Tier VFX 사용 여부 결정할 수 있도록 기능 추가
+127ddfec - hagukin, Thu Jun 19 23:12:42 2025 +0900 : Feat: Tier 결정 로직을 호스트 별 로직에서 서버 로직으로 전환
+94259e40 - hagukin, Thu Jun 19 20:36:17 2025 +0900 : Feat: 아이템 티어 시스템, 티어 별 VFX 추가
+d0a85b9e - hagukin, Thu Jun 19 17:31:18 2025 +0900 : Fix: 삭제된 채널 이름 참조하는 부분 제거
+dbc4e20d - hagukin, Thu Jun 19 14:21:38 2025 +0900 : Feat: TierFxConfig 추가
+0ec4639c - hagukin, Thu Jun 19 13:52:25 2025 +0900 :  Chore: VFX 에셋 명칭 수정
+3138c40f - hagukin, Thu Jun 19 13:47:12 2025 +0900 : Chore: FxConfig를 GunFxConfig로 명칭 수정
+947b710e - hagukin, Mon Jun 16 18:17:08 2025 +0900 : Feat: 캐릭터 폭발 넉백 개선
+14f0e468 - hagukin, Mon Jun 16 17:26:57 2025 +0900 : Feat: Altar에 총기 소환 시의 시각 효과 개선
+be87236a - hagukin, Mon Jun 16 16:52:20 2025 +0900 : Fix: OverlappableInteractive가 머즐 인터랙션이 되지 않는 문제 수정
+3abee9f5 - hagukin, Mon Jun 16 16:32:01 2025 +0900 : Fix: 총기 아이템도 오버랩 가능하도록 수정
+94f69f32 - hagukin, Mon Jun 16 16:11:32 2025 +0900 : Feat: 열쇠 오버랩으로 트리거 가능하도록 개선
+b0bda7fb - hagukin, Mon Jun 16 15:20:39 2025 +0900 : Chore: V2_Cross1 제너레이터에 추가
+fe176d8b - hagukin, Mon Jun 16 15:15:02 2025 +0900 : Chore: 리프 룸 스폰포인트 위치 조정
+1e5981fd - hagukin, Mon Jun 16 15:14:11 2025 +0900 : Feat: 스폰 룸의 문을 개방했을 때 던전 타이머가 시작되도록 수정
+d564100a - hagukin, Mon Jun 16 14:40:20 2025 +0900 : Feat: 리프 룸 리워크
+4722b4c2 - hagukin, Mon Jun 16 14:16:23 2025 +0900 : Chore: 게임플레이 편의성 관련 값 조정
+ed04d4d4 - hagukin, Mon Jun 16 13:58:08 2025 +0900 : Feat: 캐릭터 머터리얼에 히트 이펙트 적용
+499c26b8 - hagukin, Mon Jun 16 13:48:33 2025 +0900 : Feat: 히트 이펙트 머터리얼 효과 추가
+f19c687f - hagukin, Mon Jun 16 10:54:27 2025 +0900 : Chore: 메시 조정
+394486bb - hagukin, Mon Jun 16 10:53:15 2025 +0900 : Feat: 룸 추가
+930a139f - hagukin, Sun Jun 15 13:03:49 2025 +0900 : Feat: 룸 Exit 리워크
+31ad169f - hagukin, Sat Jun 14 16:28:47 2025 +0900 : Fix: include 위치 수정
+9b9148bb - hagukin, Sat Jun 14 16:27:56 2025 +0900 : Chore: 캐릭터 디폴트 무브먼트 수치 조정
+415c319c - hagukin, Sat Jun 14 16:16:37 2025 +0900 : Chore: 게임 폴리싱
+2b979fb5 - hagukin, Sat Jun 14 15:51:27 2025 +0900 : Chore: 코어 아이템들 가시성 향상
+d5255953 - hagukin, Sat Jun 14 15:31:47 2025 +0900 : Feat: 기존 맵 일부 V2로 마이그레이션
+2efb9346 - hagukin, Sat Jun 14 14:13:07 2025 +0900 : Feat: 룸 추가
+0b95cd72 - hagukin, Sat Jun 14 13:28:44 2025 +0900 : Feat: 룸 리워크 - 스폰 룸 추가
+4a2e17d5 - hagukin, Wed Jun 11 08:16:55 2025 +0900 : Chore: 테스트용 맵 추가
+81b4494f - hagukin, Sat Jun 7 22:35:45 2025 +0900 : Chore: pivot 관련 불필요한 로직 전부 제거
+a85a3f0f - hagukin, Sat Jun 7 22:16:17 2025 +0900 : Chore: 플레이어 애니메이션 BP의 멀티스레드 업데이트 해제
+7be96da2 - hagukin, Sat Jun 7 22:09:13 2025 +0900 : Refactor: 구르기의 Client prediction 시간값 추가
+0d0598c8 - hagukin, Sat Jun 7 22:02:00 2025 +0900 : Feat: 대시 개선
+732dbe1e - hagukin, Sat Jun 7 21:05:05 2025 +0900 : Feat: 점프패드 추가, 트리거볼륨 구조 개선 및 논플레이어 캐릭터에 대해서도 로직 처리할 수 있도록 개선
+840fdbb6 - hagukin, Sat Jun 7 19:26:03 2025 +0900 : Refactor: 불필요한 부분 제거, 구조 개선
+b0342233 - hagukin, Sat Jun 7 19:13:24 2025 +0900 : Refactor: CMC 불필요한 값들 제거
+35d5613f - hagukin, Sat Jun 7 18:47:45 2025 +0900 : Feat: 대시 로직 client prediction 적용
+e0b63fdc - hagukin, Fri Jun 6 02:47:58 2025 +0900 : Chore: 이동 수치 조정
+4e2e6ea3 - hagukin, Fri Jun 6 01:37:40 2025 +0900 : Feat: 아이템 트리거 Client prediction 개선
+575ec2e0 - hagukin, Fri Jun 6 00:27:09 2025 +0900 : Feat: 아이템 트리거 및 격발 타이머 개선
+80d0be55 - hagukin, Thu Jun 5 23:23:17 2025 +0900 : Fix: 불필요한 타이머 루프 해제
+e223476e - hagukin, Thu Jun 5 23:21:18 2025 +0900 : Fix: 불필요한 FX 호출 제거
+572e56b9 - hagukin, Mon Jun 2 19:43:51 2025 +0900 : Feat: 장탄수 UI Prediciton 개선
+fc8fee13 - hagukin, Mon Jun 2 17:42:54 2025 +0900 : Feat: 봇 네브에이전트 반경이 캡슐 반경에 의해 제어되도록 수정
+5bd4de60 - hagukin, Mon Jun 2 17:34:51 2025 +0900 : Fix: 클라이언트에서 리치 컴포넌트 오프셋 조정에 문제가 있던 점 수정
+6be9092e - hagukin, Mon Jun 2 16:58:45 2025 +0900 : Fix: 인벤토리 드랍 시 일부 client authoritative 했던 로직 수정
+29a9f3dc - hagukin, Mon Jun 2 15:40:50 2025 +0900 : Fix: 건파츠 메시가 간혹 정상적으로 동기화 되지 않는 문제 수정
+233b2879 - hagukin, Mon Jun 2 15:00:17 2025 +0900 : Fix: 파지 자체 판정을 항상 동적으로 계산하도록 수정
+1d020e08 - hagukin, Mon Jun 2 03:04:01 2025 +0900 : Chore: 주석 추가
+e06180a3 - hagukin, Mon Jun 2 03:00:24 2025 +0900 : Fix: 바운딩 박스와 액터 회전 오차로 인한 오류 수정
+6f3cde37 - hagukin, Mon Jun 2 01:17:11 2025 +0900 : Feat: 투사체 prediction이 정확할 경우 보간하지 않도록 개선
+25260065 - hagukin, Sat May 31 22:36:03 2025 +0900 : Fix: 클라이언트에서 종종 아이콘이 생성되지 않는 문제 수정
+f8df2409 - hagukin, Sat May 31 22:21:42 2025 +0900 : Feat: 드랍 시 액터 회전에 영향 받도록 개선
+f3a4fc22 - hagukin, Sat May 31 21:23:50 2025 +0900 : Feat: 아이템의 콜리전 박스 동적 조정 기능 추가, 건파츠 관련 버그 수정
+c4eeffaa - hagukin, Sat May 31 20:44:17 2025 +0900 : Chore: 함수에 const 추가
+2dc2aeb6 - hagukin, Sat May 31 20:43:47 2025 +0900 : Feat: 디버깅 로그 추가
+c2f21cf6 - hagukin, Sat May 31 12:41:47 2025 +0900 : Feat: 복구 로직을 시점에 따라 분할, 장탄 복구 기능 구현
+74704fce - hagukin, Sat May 31 12:20:21 2025 +0900 : Fix: 아우터가 생성 호출 액터와 달라짐에 의한 크래시 방지
+4f74484e - hagukin, Sat May 31 11:57:02 2025 +0900 : Feat: 아이템 복구 시 복구자에 대한 레퍼런스를 가져올 수 있도록 개선
+742e00b6 - hagukin, Sat May 31 11:42:49 2025 +0900 : Refactor: InvObject Outer 관리 시점 변경, Equip 관련 불필요한 함수 제거
+95fc3f68 - hagukin, Sat May 31 11:14:21 2025 +0900 : Refactor: GetInvObjectOwner 추가
+9909136f - hagukin, Sat May 31 11:07:12 2025 +0900 : Refactor: ItemData가 InvObject 내에서만 관리되도록 수정
+6b734c6e - hagukin, Sat May 31 09:30:49 2025 +0900 : Refactor: 아이템 관련 로직 리팩토링
+d5c3caf8 - hagukin, Fri May 30 12:12:57 2025 +0900 : Fix: Breakable이 플레이어와는 블로킹 대신 오버랩 사용하도록 개선
+fe0a89d7 - hagukin, Thu May 29 18:22:03 2025 +0900 : Feat: Breakable 액터 파괴 로직 추가
+fee5891b - hagukin, Thu May 29 17:34:01 2025 +0900 : Feat: Crumble 시 더 자연스럽게 깨지도록 구현
+736cdf08 - hagukin, Thu May 29 13:34:57 2025 +0900 : Feat: 총알이 Breakable 관통하도록 수정
+528a0c45 - hagukin, Thu May 29 13:31:56 2025 +0900 : Fix: 히트스캔이 Breakable과 충돌하도록 콜리전 수정
+87aa059a - hagukin, Thu May 29 13:26:34 2025 +0900 : Feat: 히트스캔과 Breakable 인터랙션 로직 추가
+bc367f4e - hagukin, Thu May 29 13:13:34 2025 +0900 : Feat: BreakableActor 개선
+d5478eaf - hagukin, Thu May 29 12:27:30 2025 +0900 : Feat: BreakableActor 제작
+aa876848 - hagukin, Thu May 29 07:03:31 2025 +0900 : Feat: GeometryCollection 추가
+8b90e645 - hagukin, Thu May 29 05:08:06 2025 +0900 : Chore: 플레이어 캐릭터 메시 오프셋 조정
+fdd00e68 - hagukin, Wed May 28 18:55:10 2025 +0900 : Chore: TPS 카메라 FOV 조정
+2e47788b - hagukin, Wed May 28 18:22:49 2025 +0900 : Chore: 에셋 추가
+40a79328 - hagukin, Wed May 28 17:21:02 2025 +0900 : Feat: 데미지넘버 스폰 위치 조정
+030afaa4 - hagukin, Wed May 28 17:00:27 2025 +0900 : Feat: 커스텀 무브먼트 모드 전환 시의 로직 처리 개선
+34e16345 - hagukin, Wed May 28 16:50:27 2025 +0900 : Feat: 슬라이딩 도중 점프 허용
+4caa61ca - hagukin, Sun May 25 05:15:04 2025 +0900 : Feat: FPS 카메라 개선
+3e0e1bdf - hagukin, Thu May 22 09:06:05 2025 +0900 : Chore: BS 재생속도 조정
+9d9870a6 - hagukin, Thu May 22 08:52:31 2025 +0900 : Chore: 이동 수치 조정
+cb9f93a7 - hagukin, Thu May 22 08:35:50 2025 +0900 : Feat: 플레이어 속력 디버깅 로그 추가
+d66bc631 - hagukin, Thu May 22 06:53:02 2025 +0900 : Feat: 투사체 초기 속도 prediction 대상에 추가
+00d845d0 - hagukin, Thu May 22 06:45:06 2025 +0900 : Feat: FPS Pitch 동기화
+0c1c870f - hagukin, Thu May 22 05:14:23 2025 +0900 : Fix: 조준 대상과 UI 아웃라인 대상의 불일치 해결
+030713cf - hagukin, Wed May 21 23:55:31 2025 +0900 : Refactor: 잔여 blend weight 제거
+5989593e - hagukin, Wed May 21 23:43:25 2025 +0900 : Refactor: 불필요한 blend weight 제거
+a387729b - hagukin, Wed May 21 23:22:15 2025 +0900 : Refactor: procedural 애니메이션 일부 제거
+6af5f49c - hagukin, Wed May 21 22:44:41 2025 +0900 : Refactor: 애니메이션 수정
+fb29cc71 - hagukin, Wed May 21 22:29:35 2025 +0900 : Refactor: 불필요한 애니메이션 요소 제거
+913c3da9 - hagukin, Wed May 21 22:14:08 2025 +0900 : Refactor: 애니메이션 시스템 수정
+a8962a4d - hagukin, Wed May 21 07:20:38 2025 +0900 : Refactor: 건파츠 레플리케이션 구조 개선
+72fb6266 - hagukin, Wed May 21 06:23:27 2025 +0900 : Fix: 투사체 Client prediction 수정
+5c62346d - hagukin, Wed May 21 06:02:21 2025 +0900 : Feat: 투사체 Client prediction 추가
+cc5edd38 - hagukin, Wed May 21 04:25:10 2025 +0900 : Chore: 경화기 반동 개선
+737e8d1c - hagukin, Wed May 21 04:22:13 2025 +0900 : Chore: 중화기 반동 개선
+4043ce5f - hagukin, Wed May 21 03:53:32 2025 +0900 : Chore: FPS 카메라 각도 조정
+101410ce - hagukin, Wed May 21 01:38:15 2025 +0900 : Chore: CharMovement tick rate 조정
+9b24f1f0 - hagukin, Wed May 21 01:22:32 2025 +0900 : Chore: AnimInterface 콘텐츠 위치 변경
+f258486e - hagukin, Wed May 21 01:15:50 2025 +0900 : Fix: ANS 공유로 인한 밀리 관련 오류 수정
+333ef93f - hagukin, Wed May 21 00:37:17 2025 +0900 : Feat: Skeleton, Lich, Mimic, Ghoul 애니메이션 조정
+5e8fc35f - hagukin, Tue May 20 21:55:38 2025 +0900 : Feat: 신규 몬스터 클래스 초안 추가
+c85b331d - hagukin, Mon May 19 01:33:31 2025 +0900 : Chore: 몬스터 스텟 조정
+b3dfacb1 - hagukin, Mon May 19 01:05:27 2025 +0900 : Fix: 밀리 오류 수정
+e31f11e5 - hagukin, Mon May 19 00:52:49 2025 +0900 : Feat: 밀리 로직 개선
+77ecce81 - hagukin, Thu May 15 23:09:18 2025 +0900 : Chore: 누락되었던 스폰포인트 추가
+572ce843 - hagukin, Thu May 15 22:46:31 2025 +0900 : Chore: 문에 부착된 토치들 오프셋 조정
+9b62a3e4 - hagukin, Thu May 15 22:26:10 2025 +0900 : Feat: 던전 룸 추가
+16f15437 - hagukin, Thu May 15 20:46:57 2025 +0900 : Chore: 플레이어 리스폰 시 낑김 방지를 위해 문 오프셋 조정
+2c6b7485 - hagukin, Mon May 12 22:24:54 2025 +0900 : Fix: 블렌더블 위치 After tonemapping으로 변경
+67398f15 - hagukin, Mon May 12 22:20:25 2025 +0900 : Feat: 커스텀 스텐실을 사용한 아웃라인 추가
+79d7f346 - hagukin, Mon May 12 20:12:53 2025 +0900 : Chore: 관전 폰 콜리전 활성화
+dd88a661 - hagukin, Mon May 12 20:03:31 2025 +0900 : Feat: 관전 대상 사망 시 리프레시 로직 추가
+b225f197 - hagukin, Mon May 12 18:57:48 2025 +0900 : Refactor: 관전 로직 리팩토링
+d0e2d47e - hagukin, Mon May 12 18:22:29 2025 +0900 : Fix: 로컬 조작중인 캐릭터가 사망 시에만 드래그 드랍 취소하도록 수정
+43d3874d - hagukin, Mon May 12 16:54:10 2025 +0900 : Feat: 관전 폰 인풋 함수 추가
+ab9bd5e2 - hagukin, Fri May 9 01:52:23 2025 +0900 : Feat: 관전 카메라 추가
+946ece4a - hagukin, Thu May 8 23:12:53 2025 +0900 : Chore: 프로퍼티 리플렉션 노출
+4b75c0f3 - hagukin, Thu May 8 23:05:01 2025 +0900 : Feat: 게임오버 위젯 추가
+39bc53a4 - hagukin, Thu May 8 21:00:14 2025 +0900 : Feat: DDA 구현을 위해 봇의 patrol 위치를 Intensity에 대해 조정
+79e8d35f - hagukin, Thu May 8 20:46:15 2025 +0900 : Chore: 주석 수정
+46c6bfe7 - hagukin, Thu May 8 19:45:55 2025 +0900 : Feat: WaitMovement 태스크가 불필요한 1틱 딜레이 무시하도록 수정
+9ed86b6e - hagukin, Thu May 8 19:35:55 2025 +0900 : Feat: AI 최적화 관련 오류 수정, 기존 코드 및 BT 리팩토링
+f7f56de7 - hagukin, Thu May 8 19:03:26 2025 +0900 : Fix: 불필요한 FinishLatentTask 호출 제거
+d7ff1b49 - hagukin, Wed May 7 00:31:45 2025 +0900 : Chore: 상점 메시 콜리전 디테일하게 개선
+1e9ba034 - hagukin, Wed May 7 00:03:24 2025 +0900 : Chore: TRPhysicsStatic이 가상타깃과 충돌하지 않는 문제 수정
+20d8c0e3 - hagukin, Tue May 6 23:52:40 2025 +0900 : Chore: 주석 수정
+c1e586aa - hagukin, Tue May 6 14:13:14 2025 +0900 : Feat: 조준 보정 개선
+796b98ec - hagukin, Tue May 6 13:53:18 2025 +0900 : Fix: 조준 보정이 제대로 적용되지 않던 문제 수정
+505b8657 - hagukin, Tue May 6 13:07:25 2025 +0900 : Refactor: 플레이어 스테이트 유지 관련 구조 개선
+9a623067 - hagukin, Tue May 6 09:47:38 2025 +0900 : Fix: 단일 밀리 공격의 중복 히트 처리 방지
+fd8ed138 - hagukin, Tue May 6 09:40:15 2025 +0900 : Fix: 델리게이트 바인딩 에러 해결
+c8b18b3f - hagukin, Tue May 6 08:45:35 2025 +0900 : Fix: Super 호출 누락 수정
+44f2353b - hagukin, Tue May 6 04:29:39 2025 +0900 : Chore: 카메라 관련 콜리전 설정 조정
+50ebfa3f - hagukin, Tue May 6 04:22:27 2025 +0900 : Chore: 피격 카메라 셰이크 수치 조정
+a4388fc9 - hagukin, Tue May 6 04:18:39 2025 +0900 : Feat: CVar을 사용해 디버깅 및 로깅 토글 기능 추가, 미사용 코드 및 완료된 TODO 제거
+6631ff7c - hagukin, Tue May 6 00:40:34 2025 +0900 : Fix: UI Zorder 조정, 파츠 초기화 시 MaxAmmo값의 변경이 CurrAmmo 값에 반영되지 않는 문제 수정
+3040e168 - hagukin, Tue May 6 00:35:44 2025 +0900 : Chore: 파츠 임시 스텟 부여
+71e3c087 - hagukin, Fri Apr 18 03:44:21 2025 +0900 : Refactor: AI컨트롤러 풀 개선
+454c1add - hagukin, Fri Apr 18 03:30:34 2025 +0900 : Fix: AI pause 시 tick도 정지되도록 수정
+9e7adb75 - hagukin, Fri Apr 18 03:18:55 2025 +0900 : Fix: 생성자 델리게이트 바인딩들의 처리 시점 변경
+6a4e8111 - hagukin, Fri Apr 18 03:09:45 2025 +0900 : Feat: Move가 실패했을 때 연속해서 pathfinding을 하지 않도록 최적화, 공격 태스크 코드 리팩토링
+09859679 - hagukin, Fri Apr 18 02:30:22 2025 +0900 : Fix: Pause와 Halt 로직이 뒤바뀐 문제 수정
+44d51dcd - hagukin, Fri Apr 18 02:29:30 2025 +0900 : Feat: 크라우드 컴포넌트 초기화 추가
+e2577e15 - hagukin, Fri Apr 18 02:28:33 2025 +0900 : Chore: 일부 컴포넌트들의 네비게이션 영향 해제
+d100975d - hagukin, Thu Apr 17 23:08:08 2025 +0900 : Chore: 디버그 print 제거
+4af38b32 - hagukin, Thu Apr 17 22:53:31 2025 +0900 : Fix: 헤더 오류 수정
+96c14919 - hagukin, Thu Apr 17 22:52:33 2025 +0900 : Refactor: 코드 파일 스트럭처 개선, 불필요한 파일 삭제
+4d77e550 - hagukin, Tue Apr 15 00:13:16 2025 +0900 : Chore: 디버깅 드로잉 주석 처리
+a6ac76f9 - hagukin, Tue Apr 15 00:09:01 2025 +0900 : Feat: 아군 정보 UI 디자인 개선
+3c203e6a - hagukin, Mon Apr 14 23:33:55 2025 +0900 : Feat: 아군 정보 UI 추가
+f72908c1 - hagukin, Fri Apr 11 20:30:05 2025 +0900 : Fix: 총기 모든 메시에 아웃라인 적용 안되던 문제 수정
+679e38c9 - hagukin, Fri Apr 11 20:22:42 2025 +0900 : Chore: 프로덕션 맵에도 아웃라인 매터리얼 적용
+33aef5f0 - hagukin, Fri Apr 11 20:06:44 2025 +0900 : Fix: 스폰 범위 조정
+478da325 - hagukin, Fri Apr 11 18:44:08 2025 +0900 : Feat: 봇 patrol 시 조금 더 게임플레이 적으로 의미있게 움직이도록 개선
+f136261e - hagukin, Fri Apr 11 18:28:31 2025 +0900 : Fix: 봇 스폰 시스템 리팩토링 과정에서의 오류 제거, 스폰 위치를 Inner로 변경
+56844d88 - hagukin, Fri Apr 11 15:14:16 2025 +0900 : Refactor: 봇 스폰 시스템 리팩토링
+6547c334 - hagukin, Fri Apr 11 13:54:53 2025 +0900 : Feat: 핑 시스템 추가, 조준 대상 아웃라인 적용
+1bac5751 - hagukin, Wed Apr 9 01:08:44 2025 +0900 : Chore: 아이템 VFX 에셋 임포트
+2db6c4eb - hagukin, Wed Apr 9 01:07:55 2025 +0900 : Chore: 아이템 VFX 에셋 추가
+bcf7a122 - hagukin, Wed Apr 9 01:03:09 2025 +0900 : Fix: 레벨업 시 경험치 UI가 갱신되지 않는 문제 수정, 경험치바 디자인 수정
+3db6767b - hagukin, Wed Apr 9 00:41:22 2025 +0900 : Feat: 경험치 바 시각효과 개선
+27032a22 - hagukin, Tue Apr 8 22:47:09 2025 +0900 : Feat: 플레이어 체력바 애니메이션 적용
+d190295a - hagukin, Tue Apr 8 22:24:14 2025 +0900 : Feat: 상자 아이템 드랍 효과 개선
+0d585f12 - hagukin, Tue Apr 8 21:54:05 2025 +0900 : Feat: 슬라이딩 VFX 추가
+d78e31c6 - hagukin, Tue Apr 8 03:09:29 2025 +0900 : Feat: 아웃라인 개선
+1c99f36e - hagukin, Tue Apr 8 02:58:17 2025 +0900 : Feat: 아웃라인 매터리얼 2가지 방식으로 구현해 추가
+935dcfd7 - hagukin, Mon Apr 7 00:25:02 2025 +0900 : Fix: 던전 로딩 스크린 Seamless 호환되도록 재추가
+d411fae5 - hagukin, Mon Apr 7 00:08:19 2025 +0900 : Fix: 레벨 트랜지션 시 슬롯 업데이트가 제대로 되지 않는 경우가 발생하는 문제 수정
+88915271 - hagukin, Sun Apr 6 10:35:46 2025 +0900 : Chore: 트랜지션 안정성 향상을 위해 방어적인 코드 추가
+42366453 - hagukin, Sun Apr 6 10:04:43 2025 +0900 : Fix: 트랜지션 안정성 증가, Equip slot 복구 로직 추가
+c24a8c57 - hagukin, Sun Apr 6 03:44:31 2025 +0900 : Fix: Async 블로킹, flushing을 매 trial마다 처리하는 것으로 안정성 증가
+bb450df1 - hagukin, Sun Apr 6 02:54:22 2025 +0900 : Fix: 서브레벨에 포함된 액터들만 제거하도록 수정
+5288ea58 - hagukin, Sun Apr 6 02:30:27 2025 +0900 : Feat: Seamless Level Streaming Travel 초안 제작
+02c5ca4a - hagukin, Thu Apr 3 11:16:40 2025 +0900 : Refactor: 불필요한 추상화 제거
+7f40d491 - hagukin, Mon Mar 31 19:31:01 2025 +0900 : Feat: 레벨 트랜지션 시 로딩 스크린 제거, 던전 생성 시에만 로딩 스크린 표시
+a45706c4 - hagukin, Mon Mar 31 18:20:53 2025 +0900 : Chore: 나이아가라 우선순위 Age로 변경
+0bab7f5c - hagukin, Mon Mar 31 09:47:46 2025 +0900 : Feat: 무기 전환 애니메이션 코드 리팩토링, 레벨 트랜지션 시 무기 상태 유지되도록 기능 추가
+f46e8b2a - hagukin, Mon Mar 31 07:19:06 2025 +0900 : Feat: 폭발 VFX NiagaraEffectType 추가
+63e1e3b0 - hagukin, Mon Mar 31 07:09:52 2025 +0900 : Refactor: 인벤토리 캐싱 및 복구 오류 수정
+77b5b004 - hagukin, Mon Mar 31 05:03:34 2025 +0900 : Refactor: 인벤토리 캐싱 및 복구 시스템을 Seamless transition에 맞게 리팩토링
+9900aae6 - hagukin, Mon Mar 31 04:10:30 2025 +0900 : Chore: 레거시 코드 제거
+c899fc53 - hagukin, Mon Mar 31 04:05:22 2025 +0900 : Refactor: Seamless transition으로 전환하기 위한 리팩토링
+7a97f08b - hagukin, Mon Mar 31 02:58:38 2025 +0900 : Chore: PIE 디버깅 시에도 Seamless가 적용되도록 콘픽 수정
+85be22d6 - hagukin, Sun Mar 30 23:07:24 2025 +0900 : Chore: 로비 맵 디자인 소폭 수정
+3ad94524 - hagukin, Sun Mar 30 23:04:15 2025 +0900 : Fix: 심리스 트래블 활성화
+b3981604 - hagukin, Sun Mar 30 20:22:11 2025 +0900 : Fix: 세션 접속 오류 수정
+e2ecb58b - hagukin, Sun Mar 30 04:47:30 2025 +0900 : Chore: 열쇠 - 문 페어 최대 개수 클램핑 시 방의 개수에 상수를 나눠주던 부분 제거
+16cc7d14 - hagukin, Sun Mar 30 04:44:08 2025 +0900 : Refactor: 순회 시 인덱스 자료형 int를 int32로 변경
+ae7ab724 - hagukin, Sun Mar 30 04:21:55 2025 +0900 : Fix: 키 소모 시 UI 업데이트가 되지 않던 문제 수정
+a93ce176 - hagukin, Sun Mar 30 04:07:30 2025 +0900 : Feat: BP에 어트리뷰트 재적용, 위젯 아이콘 변경
+05f87507 - hagukin, Sun Mar 30 03:45:08 2025 +0900 : Feat: 잠긴 문-열쇠 메커니즘을 개인 키에서 공용 키를 사용하는 방식으로 변경
+977f656f - hagukin, Sun Mar 30 02:50:28 2025 +0900 : Feat: 보스전 UI 추가, 스테이트 기반 UI를 플레이어 HUD와 분리
+700263fa - hagukin, Sat Mar 29 20:18:03 2025 +0900 : Feat: 룸 키 UI 추가, HUD 디자인 소폭 수정
+b203743d - hagukin, Fri Mar 28 00:56:21 2025 +0900 : Feat: 던전 각성 시의 시각효과 추가
+acc8f446 - hagukin, Wed Mar 26 18:55:58 2025 +0900 : Feat: 상태이상 UI 추가, 여러 아이템에 의해 동일 상태이상이 부여된 경우의 오류 수정
+03b0f8d4 - hagukin, Tue Mar 25 00:41:08 2025 +0900 : Chore: 네비게이션 bForceRebuildOnLoad 해제
+63715a43 - hagukin, Tue Mar 25 00:32:29 2025 +0900 : Chore: Boss floor 매터리얼 roughness 조정
+7b79e2b3 - hagukin, Tue Mar 25 00:30:52 2025 +0900 : Chore: 라이팅 수정
+30c2bece - hagukin, Tue Mar 25 00:16:27 2025 +0900 : Chore: 라이팅 수정
+364198d2 - hagukin, Tue Mar 25 00:03:04 2025 +0900 : Fix: 세션 생성 관련 오류 수정
+ff048120 - hagukin, Mon Mar 24 23:04:07 2025 +0900 : Chore: 패키징 설정
+fb927412 - hagukin, Sun Mar 2 08:57:40 2025 +0900 : Chore: 룸 스폰레이트 조정
+343b99ba - hagukin, Sun Mar 2 01:41:14 2025 +0900 : Chore: 플레이어 캐릭터 무브먼트 수치 조정
+4668dfed - hagukin, Sun Mar 2 00:59:05 2025 +0900 : Fix: UI 오류 수정
+a2d25fae - hagukin, Sat Mar 1 12:57:07 2025 +0900 : Fix: 클라이언트에서 함정 콜리전이 발생하는 문제 수정
+6fe5d01b - hagukin, Sat Mar 1 12:50:58 2025 +0900 : Fix: Exp UI 업데이트 시 불필요한 중복 호출 제거
+a4d8db47 - hagukin, Sat Mar 1 12:36:04 2025 +0900 : Feat: UI 이벤트 기반 방식으로 전환
+4d02f6d5 - hagukin, Sat Mar 1 04:27:31 2025 +0900 : Feat: 조준 기반 UI 표기 시스템 개선
+0a446c22 - hagukin, Sat Mar 1 02:37:22 2025 +0900 : Feat: 다이나믹 프로그래스바 추가
+01b2e445 - hagukin, Thu Feb 27 06:47:03 2025 +0900 : Feat: 스카이라이트, 디렉셔널 라이트 최적화
+c8850fb1 - hagukin, Thu Feb 27 06:27:25 2025 +0900 : Chore: 횃불 라이트 유효 범위 20000으로 조정
+2b88e730 - hagukin, Thu Feb 27 06:20:04 2025 +0900 : Feat: 던전 앰비언트 조명 추가
+58969d84 - hagukin, Thu Feb 27 05:42:42 2025 +0900 : Chore: 투사체 세부 수치 조정
+0d6c3b3b - hagukin, Thu Feb 27 01:18:40 2025 +0900 : Fix: 실내 조명을 위해 사용되던 스포트라이트 제거, 포인트 라이트 최적화
+aec56a0d - hagukin, Thu Feb 27 00:06:42 2025 +0900 : Feat: 던전 매터리얼에 에미시브 적용
+255a919d - hagukin, Wed Feb 26 00:49:41 2025 +0900 : Feat: 봇의 캐릭터 무브먼트 컴포넌트 틱레이트 감소
+0a38b2b3 - hagukin, Wed Feb 26 00:31:21 2025 +0900 : Feat: Deactivated된 봇의 스켈레탈 메시 비지빌리티 해제
+f7ee38de - hagukin, Wed Feb 26 00:16:50 2025 +0900 : Fix: Directional, Skylight 제거
+92a06761 - hagukin, Wed Feb 26 00:02:23 2025 +0900 : Fix: FX RPC 호출 최소화
+ff72a2b3 - hagukin, Mon Feb 24 15:22:00 2025 +0900 : Feat: PrimitiveComponent 라이팅, 섀도우 최적화
+e47777be - hagukin, Sun Feb 23 15:32:00 2025 +0900 : Fix: 총구 라이트의 섀도우 해제
+cba15c99 - hagukin, Sun Feb 23 15:21:58 2025 +0900 : Fix: 투사체의 동적 그림자 해제
+6ab60a63 - hagukin, Sun Feb 23 14:34:30 2025 +0900 : Fix: 네브메쉬볼륨 위치 조정
+900f596f - hagukin, Sun Feb 23 14:33:14 2025 +0900 : Chore: 투사체 이동 틱 수정
+9f26d0cb - hagukin, Sun Feb 23 14:26:12 2025 +0900 : Feat: Shrine 레벨 추가, RandomChoiceActor 오류 수정
+196c2cf1 - hagukin, Sun Feb 23 13:15:02 2025 +0900 : Chore: DAPreset 위치 변경
+377d98c6 - hagukin, Fri Feb 21 14:58:44 2025 +0900 : Feat: 투사체 동기화 시스템 개선
+86dee9b9 - hagukin, Fri Feb 21 13:54:52 2025 +0900 : Fix: 투사체 오브젝트 충돌 VFX 1회만 재생되도록 설정
+770e8a65 - hagukin, Fri Feb 21 13:32:48 2025 +0900 : Fix: bBounceOffObjIndefinitely가 바운스하지 않을때도 동작하는 문제 수정
+85d2908a - hagukin, Fri Feb 21 13:24:18 2025 +0900 : Feat: 유탄형 투사체 추가
+ec906c64 - hagukin, Fri Feb 21 10:46:35 2025 +0900 : Fix: 투사체 부하 감소
+9660f480 - hagukin, Wed Feb 19 10:57:38 2025 +0900 : Feat: 쇼케이스용 맵 제작
+5c014e3c - hagukin, Sun Feb 16 12:11:55 2025 +0900 : Feat: 문 개폐 로직 추가
+9d98941f - hagukin, Sun Feb 16 10:16:46 2025 +0900 : Feat: 키 스폰포인트 추가
+a956cffa - hagukin, Sun Feb 16 10:04:52 2025 +0900 : Feat: 키 스폰 위치 결정 로직 추가
+ded46257 - hagukin, Sun Feb 16 02:16:37 2025 +0900 : Chore: 상수값 매크로로 대체
+54ba1b13 - hagukin, Sun Feb 16 02:07:51 2025 +0900 : Feat: 페어 아이디 별로 문, 키 액터 클래스 지정 가능하도록 개선
+b69b1b8f - hagukin, Sun Feb 16 01:24:34 2025 +0900 : Feat: 잠긴 문 - 키 페어 생성 알고리즘 추가
+d3dc8dfa - hagukin, Sat Feb 15 05:25:48 2025 +0900 : Feat: Shrine 추가
+24dd7f04 - hagukin, Sat Feb 15 03:56:18 2025 +0900 : Fix: 맵 오류 수정
+a7624537 - hagukin, Sat Feb 15 03:29:00 2025 +0900 : Feat: 아이템 생성 방식 개선
+a498e131 - hagukin, Sat Feb 15 01:52:12 2025 +0900 : Feat: 맵 추가
+178d3076 - hagukin, Sat Feb 15 00:27:30 2025 +0900 : Fix: 던전 밸런스 조정
+7ae6b957 - hagukin, Sat Feb 15 00:09:56 2025 +0900 : Fix: 불필요한 로그 삭제 및 Attenuation, Concurrency가 제대로 등록되지 않는 문제 수정
+fcd209e8 - hagukin, Sat Feb 15 00:01:22 2025 +0900 : FIx: 사운드 설정 관련 오브젝트를 런타임에 생성 시 종종 크래시 발생하는 문제 수정
+64f22c3b - hagukin, Fri Feb 14 23:23:18 2025 +0900 : Fix: 불필요한 클래스 삭제, 리치 히트박스 조정
+b96b1afd - hagukin, Fri Feb 14 23:16:52 2025 +0900 : Fix: 게임모드 기본값 수정, GunItem 상속 블루프린트가 크래시 되는 문제 수정
+6ff0eae5 - hagukin, Fri Feb 14 22:56:02 2025 +0900 : Feat: 기본 아이템들 상자 보상에 추가
+473bd2ba - hagukin, Fri Feb 14 22:48:14 2025 +0900 : Feat: 기본 아이템들 추가
+a750410e - hagukin, Fri Feb 14 22:08:29 2025 +0900 : Fix: Fx 중단 요청이 처리된 이후 Unreliable한 RPC가 뒤늦게 전송되서 Fx가 다시 재생되는 문제 수정
+36519962 - hagukin, Fri Feb 14 21:23:16 2025 +0900 : Fix: 액터 파괴 시 Fx가 중단되지 않는 문제 수정
+750f28e5 - hagukin, Fri Feb 14 21:11:24 2025 +0900 : Feat: 각 격발마다 새 사운드 인스턴스를 생성하도록 수정
+814ac601 - hagukin, Fri Feb 14 00:47:49 2025 +0900 : Feat: 총기 사운드 추가
+46593f50 - hagukin, Tue Feb 11 22:39:39 2025 +0900 : Feat: 총기를 통한 상태이상 부여 기능 추가
+fd65fddd - hagukin, Wed Feb 5 13:15:20 2025 +0900 : Feat: 상태이상 수치값들을 검증하는 로직 추가
+0308f4e2 - hagukin, Wed Feb 5 13:00:28 2025 +0900 : Fix: 데미지 정보가 인스턴스에 전달되지 않는 오류 수정
+716fb098 - hagukin, Wed Feb 5 12:48:16 2025 +0900 : Feat: 상태이상이 데미지를 가할 수 있도록 구조 확장
+b41958ce - hagukin, Tue Feb 4 12:48:14 2025 +0900 : Fix: 상태이상 제거 후에도 타이머가 남아 동작하는 문제 수정
+00f1ec36 - hagukin, Tue Feb 4 12:27:44 2025 +0900 : Feat: 상태이상 이름, 설명 추가
+68721330 - hagukin, Tue Feb 4 12:11:35 2025 +0900 : Feat: 상태이상 시스템 체계화
+d04f19aa - hagukin, Mon Feb 3 08:29:52 2025 +0900 : Feat: 폭발 발생 시 충돌 VFX 재생 안되도록 수정
+26a27e0e - hagukin, Mon Feb 3 08:23:15 2025 +0900 : Chore: 트레이서 VFX 개선
+53e6d6e9 - hagukin, Mon Feb 3 07:19:00 2025 +0900 : Feat: 나이아가라 커스텀 풀링 시스템 추가, 히트스캔 로직 리팩토링
+54721163 - hagukin, Sun Feb 2 22:10:49 2025 +0900 : Fix: 히트박스 상대 Transform 기반으로 복구하는 로직에서의 오류 수정
+cd8c43ba - hagukin, Sun Feb 2 09:53:27 2025 +0900 : Feat: 사운드 서브시스템 추가
+f2813bc3 - hagukin, Sun Feb 2 07:36:09 2025 +0900 : Feat: 상점 액터가 던전 깊이에 따라 판매 물품 결정 가능하도록 기능 추가
+9c5020b7 - hagukin, Sun Feb 2 06:59:47 2025 +0900 : Feat: 기본 아이템들 추가
+e5110265 - hagukin, Thu Jan 30 01:39:40 2025 +0900 : Feat: 캐릭터 무브먼트 관련 스테이터스 효과 추가
+5589b4eb - hagukin, Wed Jan 29 20:47:42 2025 +0900 : Feat: 최대 체력 변경치 레플리케이션 되도록 개선
+44d1aef3 - hagukin, Wed Jan 29 20:27:31 2025 +0900 : Feat: StatusEffect의 DeltaMaxHealth 추가
+85527dd5 - hagukin, Wed Jan 29 20:05:47 2025 +0900 : Fix: StatusEffect의 총기 이펙트 중 작동 안되는 항목들 수정
+06ff2f58 - hagukin, Mon Jan 27 18:26:04 2025 +0900 : Fix: 사망 시 드래그 드랍 액션 취소하도록 수정
+79465784 - hagukin, Mon Jan 27 18:18:57 2025 +0900 : Feat: 서버 리스트 Refresh 로직 추가
+4f83895d - hagukin, Mon Jan 27 18:10:36 2025 +0900 : Feat: 멀티 로직 UI에 연결
+20b24107 - hagukin, Mon Jan 27 17:46:46 2025 +0900 : Feat: 임시 타이틀 디자인 추가
+acc2f89b - hagukin, Mon Jan 27 17:32:40 2025 +0900 : Feat: 타이틀 화면 디자인 수정
+1a054cd8 - hagukin, Mon Jan 27 14:02:22 2025 +0900 : Feat: BaseFrame 추가, 기존 UI들에 적용
+57b39526 - hagukin, Mon Jan 27 01:14:12 2025 +0900 : Chore: UI 플러그인 제거
+d90ca78e - hagukin, Sun Jan 26 23:36:40 2025 +0900 : Chore: 상자 머즐 트리거 가능하도록 수정
+6b44ddcf - hagukin, Sun Jan 26 23:27:24 2025 +0900 : Fix: 커밋 75b4b5e7에 누락된 부분 수정
+75b4b5e7 - hagukin, Sun Jan 26 23:13:34 2025 +0900 : Fix: 스테이터스가 총기 파라미터에 적용되지 않는 문제 수정
+40553f47 - hagukin, Sun Jan 26 22:21:25 2025 +0900 : Feat: 스테이터스 모디파이어 파라미터 추가
+4b73bc52 - hagukin, Sun Jan 26 21:09:30 2025 +0900 : Feat: Deterministic한 탄퍼짐 구현
+12ca0db5 - hagukin, Sun Jan 26 15:24:37 2025 +0900 : Feat: 레벨 깊이에 따라 상자 보상 동적으로 결정하는 기능 추가
+5b6b0d7b - hagukin, Sun Jan 26 13:59:04 2025 +0900 : Fix: 미믹 생성 시 AI 동작 안하던 문제 수정
+05000f1a - hagukin, Sun Jan 26 13:11:03 2025 +0900 : Fix: 히트박스 비지빌리티 설정
+de6486a1 - hagukin, Sun Jan 26 13:01:30 2025 +0900 : Fix: MissilePerShot을 Delta 타입으로 수정, Explosion의 콜리전 처리시 ExplosionInfo 확인하도록 수정
+aea2cc91 - hagukin, Fri Jan 24 05:10:48 2025 +0900 : Fix: 리슨 소켓이 이미 열려있어 레벨 트랜지션이 안되던 문제 수정
+9198c8e9 - hagukin, Wed Jan 22 15:42:20 2025 +0900 : Chore: 패키징 셋업
+e91ae6bb - hagukin, Wed Jan 22 15:20:23 2025 +0900 : Feat: 보스전 시스템 개선
+8948775d - hagukin, Wed Jan 22 12:34:22 2025 +0900 : Feat: 제단 파괴 로직 추가
+20747d2f - hagukin, Wed Jan 22 12:02:11 2025 +0900 : Feat: 제단 맵 추가
+33783a2d - hagukin, Wed Jan 22 11:48:40 2025 +0900 : Fix: 플랫폼에 Init during BeginPlay 플래그 켜져있던 문제 수정
+8aab0fbd - hagukin, Wed Jan 22 11:40:51 2025 +0900 : Fix: 관전 폰의 관전 대상이 없을 때의 컬링 오류 수정
+15898592 - hagukin, Wed Jan 22 11:04:17 2025 +0900 : Fix: 로비맵 라이팅 수정
+eebe0324 - hagukin, Tue Jan 21 10:32:18 2025 +0900 : Feat: 토큰 티어에 따라 생성 총기 파츠 티어를 조정할 수 있는 기능 추가
+a7f59c6a - hagukin, Mon Jan 20 20:01:10 2025 +0900 : Feat: 보스 룸 초안 제작, 로비 맵 디자인 수정
+a8e91429 - hagukin, Mon Jan 20 19:09:03 2025 +0900 : Feat: 맵 추가, 모든 맵들의 네브메시 바운드 크기 조정
+5f4f904c - hagukin, Mon Jan 20 12:26:45 2025 +0900 : Fix: 클라이언트에서 메쉬 초기화가 되지 않는 문제 수정
+e6410478 - hagukin, Mon Jan 20 11:54:10 2025 +0900 : Fix: 던전 레플리케이션 문제 수정
+18cc9f5a - hagukin, Sun Jan 19 11:13:57 2025 +0900 : Fix: 폰과 래그돌 사이 콜리전 해제
+67abc938 - hagukin, Sun Jan 19 11:10:21 2025 +0900 : Feat: 관전 폰 오쿨루전 개선
+d2aa506e - hagukin, Sun Jan 19 10:45:21 2025 +0900 : Fix: 상점 초기화 시점 변경
+091f577e - hagukin, Sun Jan 19 09:24:18 2025 +0900 : Feat: 던전 액터의 정적 생성 과정에서의 초기화 개선
+d1d4ae53 - hagukin, Sun Jan 19 07:19:38 2025 +0900 : Feat: 함정이 포함된 룸 추가
+61d071b9 - hagukin, Sun Jan 19 06:32:10 2025 +0900 : Feat: 룸 추가
+5022a5ae - hagukin, Sun Jan 19 06:31:28 2025 +0900 : Feat: 함정이 기본 무브먼트 루프와 개별적으로 회전할 수 있는 기능 추가, 룸 추가
+a00e1d6c - hagukin, Sun Jan 19 05:44:43 2025 +0900 : Feat: 총기 스테이터스 UI 문구 추가 및 수정
+a3ee062c - hagukin, Fri Jan 17 11:17:23 2025 +0900 : Fix: 관전 폰의 콜리전 해제
+97157d01 - hagukin, Fri Jan 17 10:55:35 2025 +0900 : Fix: 밀리 로직이 클라에서도 실행되는 오류 수정
+ff8b161c - hagukin, Fri Jan 17 10:20:55 2025 +0900 : Fix: 밀리 ANS 수정
+450801d3 - hagukin, Fri Jan 17 09:43:11 2025 +0900 : Fix: 풀에 추가된 AI가 로직 정지 시에도 퍼셉션을 처리하는 문제 수정
+038f1c37 - hagukin, Fri Jan 17 09:17:48 2025 +0900 : Chore: 함정 콜리전 채널 수정
+88cd65da - hagukin, Fri Jan 17 09:00:23 2025 +0900 : Feat: 봇들 간 콜리전 해제
+71041855 - hagukin, Fri Jan 17 08:28:03 2025 +0900 : Feat: 데미지 넘버를 로컬 단위에서 관리되도록 개선
+64511e1d - hagukin, Wed Jan 15 23:02:09 2025 +0900 : Fix: 스켈레톤 메시 콜리전 해제
+ab44b500 - hagukin, Wed Jan 15 22:08:08 2025 +0900 : Feat: 히트박스 불필요한 기능 해제
+0e7670c6 - hagukin, Mon Jan 13 01:59:27 2025 +0900 : Feat: 개선된 히트스캔 로직에 맞게 폭발 생성 로직 수정, 폭발 VFX 추가
+c4f5c229 - hagukin, Sun Jan 12 20:35:38 2025 +0900 : Chore: Copyright 문구 수정
+feb807ee - hagukin, Sun Jan 12 20:34:44 2025 +0900 : Feat: Shrine 추가
+c9741a85 - hagukin, Sun Jan 12 18:56:26 2025 +0900 : Fix: 플레이어 캐릭터 마찰력 및 3인칭 카메라 위치 소폭 조정
+53615dd0 - hagukin, Sun Jan 12 18:25:48 2025 +0900 : Feat: 함정 종류 추가
+bf6511c6 - hagukin, Sun Jan 12 05:05:16 2025 +0900 : Chore: Statue 분할된 메쉬 형태로 리임포트
+e0c7e872 - hagukin, Sun Jan 12 05:02:36 2025 +0900 : Chore: Shrine, Statue 에셋 추가
+85adc25e - hagukin, Sun Jan 12 04:47:31 2025 +0900 : Feat: 히트박스 성능 개선
+ccd81f0c - hagukin, Sun Jan 12 03:40:56 2025 +0900 : Fix: 히트박스 부착 시 본 Scale은 제외하도록 개선
+9c538d07 - hagukin, Sun Jan 12 03:34:08 2025 +0900 : Fix: 히트박스 컴포넌트 불필요한 탈부착 제거
+206a58d1 - hagukin, Wed Jan 8 18:34:17 2025 +0900 : Fix: 컴포넌트들의 불필요한 ShouldUpdatePhysicsVolume 해제
+8e34524c - hagukin, Wed Jan 8 17:42:50 2025 +0900 : Fix: 히트박스 오버랩 및 피직스 해제
+ad878154 - hagukin, Wed Jan 8 17:11:26 2025 +0900 : Fix: VirtualTarget 개선
+1d080ba9 - hagukin, Tue Jan 7 06:18:23 2025 +0900 : Feat: 던전 내 액티브한 봇을 하한선 이상으로 유지시키는 장치 추가
+10b77009 - hagukin, Tue Jan 7 06:07:20 2025 +0900 : Fix: 커스텀 룸 데이터 타입 비교 오류 수정
+882b5a6e - hagukin, Mon Jan 6 21:10:53 2025 +0900 : Chore: 던전 생성 파라미터 소폭 조정
+556d26a5 - hagukin, Mon Jan 6 20:47:30 2025 +0900 : Feat: 맵 추가
+03d5a44d - hagukin, Mon Jan 6 18:11:20 2025 +0900 : Feat: 룸 타입별 배치 기능 추가
+3266f51b - hagukin, Sun Jan 5 17:36:25 2025 +0900 : Feat: 거리 상한 하한에 따라 데미지 배율 조정 기능 추가
+86688ada - hagukin, Sun Jan 5 16:16:29 2025 +0900 : Feat: 처치 시 데미지 부여 기능 추가
+f70d9607 - hagukin, Sun Jan 5 15:54:30 2025 +0900 : Feat: 맵 추가
+5e3bbad0 - hagukin, Sun Jan 5 15:15:09 2025 +0900 : Fix: 라이팅 소폭 조정
+6b8101cd - hagukin, Sun Jan 5 15:06:41 2025 +0900 : Feat: 맵 추가
+463e24e0 - hagukin, Thu Jan 2 09:36:11 2025 +0900 : Fix: SIK 에러 수정
+7466c600 - hagukin, Wed Jan 1 04:54:09 2025 +0900 : Feat: 깊이에 따른 레벨 결정 시스템 추가
+52ae80e6 - hagukin, Wed Jan 1 04:15:58 2025 +0900 : Feat: 보스 봇 스폰 테스트
+155e136d - hagukin, Tue Dec 31 18:15:38 2024 +0900 : Feat: 보스전 시스템 추가
+fb87d1ae - hagukin, Mon Dec 30 06:58:34 2024 +0900 : Fix: GAS 모듈 제거
+266c4b49 - hagukin, Sun Dec 29 08:12:21 2024 +0900 : Feat: 던전 액터 위치, 회전 동기화 개선
+72d55e6b - hagukin, Sun Dec 29 07:50:25 2024 +0900 : Feat: 플랫폼 액터 클라이언트에서 움직임 동기화, 함정 및 함정 트리거 추가
+f8c0cd1a - hagukin, Sat Dec 28 23:44:23 2024 +0900 : Chore: 함정 에셋 추가
+f466c654 - hagukin, Fri Dec 27 01:24:17 2024 +0900 : Feat: 에어샷 배율 추가
+d6694c43 - hagukin, Fri Dec 27 00:56:47 2024 +0900 : Feat: 총기 적중, 미스 시 효과 추가
+570643ff - hagukin, Thu Dec 26 23:56:51 2024 +0900 : Fix: VirtualTarget 콜리전 채널 추가를 통해 조준 오차 개선
+66265330 - hagukin, Thu Dec 26 23:33:22 2024 +0900 : Chore: SIK 테스트 환경 수정
+7ff9140a - hagukin, Wed Dec 25 20:12:42 2024 +0900 : Chore: Bullet Rebirth AppID 추가
+bd847c70 - hagukin, Wed Dec 25 05:28:14 2024 +0900 : Chore: Trail VFX 추가
+c598c298 - hagukin, Mon Dec 23 02:13:06 2024 +0900 : Fix: 불릿 트레이서 VFX 컬링되는 문제 수정
+afa1e6f6 - hagukin, Mon Dec 23 02:06:11 2024 +0900 : Fix: 레벨 트랜지션 시 아이콘 생성이 되지 않는 문제 수정
+65cf92ac - hagukin, Mon Dec 23 01:46:28 2024 +0900 : Fix: Projectile interpolation 제거
+27c077df - hagukin, Sun Dec 22 23:30:50 2024 +0900 : Fix: GunItem 콜리전이 클라, 서버값이 달라지게 되는 기존 코드로 인해 발생하는 문제 수정
+66cbf692 - hagukin, Sun Dec 22 23:16:01 2024 +0900 : Fix: 무브먼트가 아닌 외부 영향을 통한 이동속도 조정 기능 제거
+664d8da1 - hagukin, Sun Dec 22 22:15:57 2024 +0900 : Chore: SIK 테스트 환경 구성
+4c3dc6de - hagukin, Sun Dec 22 16:40:11 2024 +0900 : Chore: SIK 플러그인 추가
+12a3131c - hagukin, Sun Dec 22 16:24:30 2024 +0900 : Chore: AdvancedSessions 제거 및 에셋 유효성 검사
+adf9283f - hagukin, Sun Dec 22 04:29:44 2024 +0900 : Feat: 아이템 피직스 동기화
+d3d8dbe2 - hagukin, Sun Dec 22 03:46:42 2024 +0900 : Feat: 퍽 텍스쳐 적용된 매터리얼 인스턴스 추가
+f24535ac - hagukin, Sun Dec 22 02:28:38 2024 +0900 : Feat: 그랩 기능 제거
+17261bd8 - hagukin, Sun Dec 22 01:58:57 2024 +0900 : Feat: 피직스 그랩 개선
+92f4693d - hagukin, Fri Dec 20 20:19:13 2024 +0900 : Feat: 투사체 client prediction 적용
+7e0529b9 - hagukin, Fri Dec 20 19:37:35 2024 +0900 : Feat: Projectile Interpolation 적용
+487dce77 - hagukin, Fri Dec 20 17:47:04 2024 +0900 : Fix: 가상타깃을 설정할 때 CurrFireActor가 아직 설정되지 않아 자기 자신을 타깃으로 설정하는 문제 수정
+a429dca8 - hagukin, Fri Dec 20 15:20:18 2024 +0900 : Feat: 히트스캔 관통 기능 추가
+867fa1ce - hagukin, Fri Dec 20 14:35:06 2024 +0900 : Feat: 투사체 관통 기능 추가
+6a774acf - hagukin, Fri Dec 20 01:32:42 2024 +0900 : Chore: 던전 스태틱메쉬 나나이트 해제
+75119d84 - hagukin, Fri Dec 20 01:26:47 2024 +0900 : Feat: 봇들이 플랫폼 위로 네비게이션 할 수 있도록 수정
+08870793 - hagukin, Thu Dec 19 19:21:50 2024 +0900 : Fix: 레드모드 진입 이후에도 State가 변경되는 문제 수정
+7e550fb4 - hagukin, Thu Dec 19 18:43:47 2024 +0900 : Fix: 드래그 드랍 액션이 레벨 트랜지션 시 취소되도록 수정
+18ccd279 - hagukin, Thu Dec 19 18:26:05 2024 +0900 : Feat: 스폰 몬스터 선택 시스템 추가
+e9de4af1 - hagukin, Thu Dec 19 17:41:04 2024 +0900 : Feat: 스폰포인트 시스템 추가
+370619f3 - hagukin, Thu Dec 19 16:09:10 2024 +0900 : Fix: 던전 생성 실패 시 파라미터 리셋
+77d22bae - hagukin, Thu Dec 19 15:53:57 2024 +0900 : Fix: 레벨 트랜지션 시 HUD 삭제 안되는 문제 수정
+c9269fd3 - hagukin, Thu Dec 19 10:05:00 2024 +0900 : Feat: 포탈 파티클 바운딩 박스 수정, 일부 맵 디테일 개선
+77e296ca - hagukin, Thu Dec 19 09:26:42 2024 +0900 : Feat: 로비 개선, 포탈 파티클 오류 수정
+acab80bb - hagukin, Wed Dec 18 21:12:02 2024 +0900 : Feat: Exit 룸 디자인 개선
+b1489bb5 - hagukin, Wed Dec 18 20:59:19 2024 +0900 : Fix: 레벨 트랜지션 시 타이머에 전달한 람다의 this 참조가 null로 변해 발생하는 오류 수정
+21f5b95c - hagukin, Wed Dec 18 20:43:30 2024 +0900 : Feat: 프로덕션 룸 추가
+77f7113f - hagukin, Wed Dec 18 19:46:05 2024 +0900 : Fix: 네브메쉬 생성이 되지 않는 오류 수정
+f7f62ce2 - hagukin, Wed Dec 18 19:05:45 2024 +0900 : Feat: 이동하는 플랫폼 추가, 프로덕션 룸 추가
+cd80e085 - hagukin, Wed Dec 18 16:33:28 2024 +0900 : Feat: 프로덕션 룸 추가
+40998915 - hagukin, Wed Dec 18 15:17:50 2024 +0900 : Feat: 스폰 룸 제작
+0cf56260 - hagukin, Wed Dec 18 14:07:51 2024 +0900 : Feat: 던전 스카이라이트 추가
+e9bce7fe - hagukin, Sun Dec 15 10:57:49 2024 +0900 : Feat: 맵 프로토타이핑
+ed0154dc - hagukin, Sun Dec 15 10:44:12 2024 +0900 : Feat: 메쉬 콜리전 개선
+d7be3716 - hagukin, Sun Dec 15 08:15:55 2024 +0900 : Feat: StatusEffect가 총기 스테이터스에 영향을 줄 수 있도록 구조 개선
+8db53539 - hagukin, Sun Dec 15 03:51:24 2024 +0900 : Chore: 프레임 테스트를 위해 디버그 드로잉 해제
+83736b22 - hagukin, Thu Dec 12 07:51:04 2024 +0900 : Chore: 던전 생성 최대 룸의 수 제한
+23def29b - hagukin, Thu Dec 12 07:32:16 2024 +0900 : Chore: 룸 비지빌리티 기준이 되는 폰 변경 가능한 유틸리티 함수 추가
+353c4622 - hagukin, Thu Dec 12 07:19:06 2024 +0900 : Chore: 플러그인 네브메쉬 리빌딩 시 빌드락 추가하도록 수정
+ecffb42e - hagukin, Thu Dec 12 07:11:41 2024 +0900 : Chore: 플러그인 버그픽스
+2ee972b9 - hagukin, Thu Dec 12 02:34:38 2024 +0900 : Feat: 봇 메쉬에 대해 CPU에서 GPU Skinning으로 변경
+c384f54a - hagukin, Sun Dec 8 20:42:51 2024 +0900 : Fix: AI 및 AIPool의 로직 오류 수정
+a9afc7da - hagukin, Sat Dec 7 21:33:44 2024 +0900 : Chore: 성능 개선을 위해 일부 렌더링 설정 변경
+6678c171 - hagukin, Sat Dec 7 20:41:12 2024 +0900 : Fix: 공격자와 적대관계가 아닐 경우 콜백 호출이 되지 않는 문제 수정
+4bdea433 - hagukin, Sat Dec 7 20:33:11 2024 +0900 : Feat: 총기 나이아가라 최적화
+63261512 - hagukin, Sat Dec 7 19:37:13 2024 +0900 : Feat: 히트박스 성능 개선
+02caca2c - hagukin, Sat Dec 7 17:52:36 2024 +0900 : Feat: 투사체 개선
+b27ee3c6 - hagukin, Sat Dec 7 02:38:25 2024 +0900 : Feat: 봇 최적화를 위한 파라미터 변경
+ae310dc3 - hagukin, Fri Dec 6 23:20:28 2024 +0900 : Feat: 바닥 메쉬 콜리전 최적화
+03bb02d6 - hagukin, Fri Dec 6 22:58:27 2024 +0900 : Feat: 오버랩 조건 추가
+83ca6b97 - hagukin, Fri Dec 6 21:41:32 2024 +0900 : Feat: 아이콘 생성 오프셋 조정
+3e02f084 - hagukin, Fri Dec 6 20:49:55 2024 +0900 : Feat: 아군 판정 기능 추가, 투사체 스텟 BP에 노출
+42dbac01 - hagukin, Fri Dec 6 20:00:04 2024 +0900 : Feat: 불필요한 오버랩 이벤트 해제
+8c66464c - hagukin, Fri Dec 6 17:36:29 2024 +0900 : Feat: FindRandomLocation task 개선
+5e2ff56f - hagukin, Fri Dec 6 17:09:20 2024 +0900 : Feat: AI 원거리 공격 중 스트레이핑 기능 추가
+4db06014 - hagukin, Thu Dec 5 16:22:34 2024 +0900 : Feat: AI 근접 로직 개선
+7aa8798b - hagukin, Thu Dec 5 04:33:59 2024 +0900 : Fix: AI의 원거리 조준 시 pitch, roll 값이 변하지 않도록 고정
+e141af1c - hagukin, Thu Dec 5 04:17:11 2024 +0900 : Feat: AI 구조적 개선
+3b0de407 - hagukin, Thu Dec 5 00:24:23 2024 +0900 : Refactor: AI의 타깃에 대한 레퍼런스를 WeakPtr에서 Ptr로 변경
+68022a3e - hagukin, Thu Dec 5 00:12:09 2024 +0900 : Fix: 투사체 로직 오류 수정
+1906a309 - hagukin, Mon Dec 2 22:19:27 2024 +0900 : Feat: RangeAttackComponent 추가
+13297f85 - hagukin, Mon Dec 2 20:52:55 2024 +0900 : Feat: 원거리 AI 초안 제작
+d3b9abd1 - hagukin, Mon Dec 2 00:50:17 2024 +0900 : Feat: 불릿 트레이서 client prediction 적용, 다른 호스트의 격발 VFX가 중단되지 않는 문제 수정
+232bcedf - hagukin, Sun Dec 1 22:51:29 2024 +0900 : Feat: 캐릭터 이동 파라미터 조정
+13d94c3e - hagukin, Sun Dec 1 22:42:40 2024 +0900 : Feat: 점프, 앉기 client prediction 적용
+04823e3e - hagukin, Sun Dec 1 20:32:58 2024 +0900 : Feat: 스프린트 로직을 RPC에서 CMC로 이동
+1e69baf5 - hagukin, Sun Dec 1 19:39:43 2024 +0900 : Fix: 아이콘 액터 생성 위치 조정
+5b5a89de - hagukin, Fri Nov 29 23:09:57 2024 +0900 : Feat: 무브먼트 컴포넌트 파라미터 조정
+9dfd962a - hagukin, Fri Nov 29 15:52:02 2024 +0900 : Fix: 스트레이핑 계산 오류 수정
+b572cbdb - hagukin, Fri Nov 29 15:06:52 2024 +0900 : Feat: 슬라이딩 개선, 스트레이핑 추가
+4db999b0 - hagukin, Fri Nov 29 12:50:56 2024 +0900 : Feat: 슬라이딩 로직 초안 제작; 무브먼트 컴포넌트 개선
+d642b03d - hagukin, Thu Nov 28 07:49:53 2024 +0900 : Fix: 총기 격발 시의 카메라 셰이크 제거
+68d2abfc - hagukin, Thu Nov 28 07:26:12 2024 +0900 : Feat: 대시 후 크라우칭 시 슬라이딩 되도록 마찰 조정, 대시 Z 가속도 추가
+a9724a6b - hagukin, Thu Nov 28 06:32:28 2024 +0900 : Feat: 캐릭터 무브먼트 컴포넌트 개선
+bd090afc - hagukin, Wed Nov 27 07:53:26 2024 +0900 : Fix: UI 토글 시 키 인풋버퍼가 플러쉬 되지 않는 문제 수정
+37255313 - hagukin, Wed Nov 27 07:23:00 2024 +0900 : Fix: 콜리전 설정 오류 수정
+6205ee5d - hagukin, Wed Nov 27 05:55:26 2024 +0900 : Fix: divide by zero 체크하도록 수정
+67db429d - hagukin, Wed Nov 27 05:33:04 2024 +0900 : Fix: 총기 부착 회전 오프셋 조정
+29151ccd - hagukin, Wed Nov 27 05:03:54 2024 +0900 : Feat: BulletTracer 나이아가라로 변경; 히트스캔 로직 개선 및 최적화
+507ccb77 - hagukin, Tue Nov 26 05:18:36 2024 +0900 : Chore: 적 에셋 추가
+367eabc5 - hagukin, Tue Nov 26 04:42:55 2024 +0900 : Chore: 룬 지형지물 모델 추가
+215ee1ce - hagukin, Tue Nov 26 03:59:50 2024 +0900 : Chore: 총기 SFX 추가
+5cccc67d - hagukin, Tue Nov 26 03:53:37 2024 +0900 : Chore: 반지, 아뮬렛 모델 추가
+3df82a26 - hagukin, Tue Nov 26 03:46:16 2024 +0900 : Chore: 큐브 VFX 플러그인 추가
+afb4affe - hagukin, Tue Nov 26 03:38:40 2024 +0900 : Chore: UI 아이콘 추가
+43490821 - hagukin, Mon Nov 25 08:06:28 2024 +0900 : Feat: 히트스캔 오류 수정, 데미지 넘버 표시 위치 개선
+54db4a17 - hagukin, Mon Nov 25 06:17:24 2024 +0900 : Feat: 삼인칭 시점 추가, 무기 궤적 선정 알고리즘 개선
+1f770f6b - hagukin, Mon Nov 25 04:19:03 2024 +0900 : Fix: ModelingTool 플러그인 비활성화
+4e001fd2 - hagukin, Sun Nov 24 23:32:51 2024 +0900 : Chore: FOV Scaling 해제
+6bf651e1 - hagukin, Sun Nov 24 21:22:54 2024 +0900 : Chore: 스무드 프레임 레이트 해제, 아이템 간 콜리전 해제
+4f137c43 - hagukin, Sun Nov 24 21:05:21 2024 +0900 : Chore: AI 에이전트 최대 100개로 확대
+03a269a9 - hagukin, Sun Nov 24 04:56:50 2024 +0900 : Feat: 게임 캐릭터 드랍 시 Deferred 버퍼 시스템 추가를 통한 성능 최적화
+067d0bf1 - hagukin, Sat Nov 23 16:46:40 2024 +0900 : Chore: 마우스 스무딩 해제, 플레이어 캐릭터에 대해 레플리케이션 거리 제한 해제
+e23297f7 - hagukin, Sat Nov 23 15:39:25 2024 +0900 : Fix: 레플리케이션 거리로 인해 클라이언트에서 아이콘 메쉬가 보이지 않는 문제 수정, 캡처 시 라이팅 해제
+32ed0638 - hagukin, Sat Nov 23 14:59:16 2024 +0900 : Feat: 아이콘 생성 시스템 개선
+e35fb6ca - hagukin, Sat Nov 23 13:58:06 2024 +0900 : Revert "Feat: 아이템 배경 투명하게 만들도록 렌더타깃 및 다이나믹 매터리얼 제작"
+c79a4158 - hagukin, Sat Nov 23 13:58:01 2024 +0900 : Revert "Feat: Deferred capture 기능 개선, 베이스로 머터리얼 인스턴스 대신 머터리얼을 사용하도록 변경"
+20aec5ca - hagukin, Sat Nov 23 13:57:56 2024 +0900 : Revert "Refactor: 아이콘 생성 관련 불필요한 코드 제거"
+8b139d6a - hagukin, Fri Nov 22 03:13:02 2024 +0900 : Refactor: 아이콘 생성 관련 불필요한 코드 제거
+f9f6dc87 - hagukin, Fri Nov 22 02:49:20 2024 +0900 : Feat: Deferred capture 기능 개선, 베이스로 머터리얼 인스턴스 대신 머터리얼을 사용하도록 변경
+7b057056 - hagukin, Thu Nov 21 20:18:58 2024 +0900 : Feat: 아이템 배경 투명하게 만들도록 렌더타깃 및 다이나믹 매터리얼 제작
+54c3568d - hagukin, Wed Nov 20 19:22:20 2024 +0900 : Fix: 인자 잘못 전달된 부분 수정
+919dcc30 - hagukin, Wed Nov 20 19:10:01 2024 +0900 : Fix: 아이콘 생성 타이머 제거
+297c852c - hagukin, Wed Nov 20 19:01:36 2024 +0900 : Fix: Attribute 여러번 표시되는 문제 수정, TextAlert 위젯 생성 시 항상 Visible로 생성되는 문제 수정
+79a40c9d - hagukin, Wed Nov 20 18:16:44 2024 +0900 : Feat: Item detail UI 개선, 총기 사격 속도 파라미터 전달되도록 수정, 미구현된 Gun 스테이터스 제거
+e0c6a87b - hagukin, Tue Nov 19 19:55:23 2024 +0900 : Feat: 상점 로직 네트워크 동기화
+621bde04 - hagukin, Tue Nov 19 18:18:32 2024 +0900 : Feat: 상점 로직 UI와 연결; 게임 폰트 변경 및 HUD 개선
+8d23123d - hagukin, Sun Nov 17 23:54:31 2024 +0900 : Feat: 위젯 관리 시스템 제작, 상점 위젯 등장하도록 구현
+8a29e7d7 - hagukin, Sat Nov 16 08:41:07 2024 +0900 : Feat: 재화 및 상점 로직 제작, Interact 기능 추가, 콜리전 세부 설정 변경
+aa771e27 - hagukin, Thu Nov 14 17:24:27 2024 +0900 : Feat: 전체적 UI 수정
+9962c9dc - hagukin, Thu Nov 14 06:10:12 2024 +0900 : Chore: UI 에셋 추가
+8a7db17b - hagukin, Thu Nov 14 05:12:13 2024 +0900 : Feat: Explosion 오브젝트 필터 추가
+d7f38971 - hagukin, Mon Nov 11 07:41:03 2024 +0900 : Feat: 던전 생성 시도 실패할 때마다 DoorBlocker 제거
+24261954 - hagukin, Mon Nov 11 07:32:03 2024 +0900 : Feat: 던전 생성 시도 실패 때마다 분기 처리를 해주기 위한 인터페이스 추가
+f3e3370a - hagukin, Mon Nov 11 07:16:04 2024 +0900 : Feat: 던전 생성 무한루프 방지
+a6d1be3e - hagukin, Mon Nov 11 03:08:08 2024 +0900 : Fix: 레벨 트랜지션 후 더이상 유효하지 않은 위젯에 대해 접근하는 부분 수정
+2bb0d328 - hagukin, Mon Nov 11 02:31:06 2024 +0900 : Feat: 구르기 메카닉 대싱으로 변경
+ac233119 - hagukin, Mon Nov 11 01:45:32 2024 +0900 : Feat: 구르기 로직 개선
+37d3c7d0 - hagukin, Sat Nov 9 03:17:22 2024 +0900 : Feat: AI 에지케이스 감지용 노드 제작
+d96fb316 - hagukin, Sat Nov 9 02:55:55 2024 +0900 : Feat: AI 개선
+87f00003 - hagukin, Fri Nov 8 23:21:19 2024 +0900 : Feat: UX 개선
+8eca1a5c - hagukin, Fri Nov 8 19:54:11 2024 +0900 : Fix: 룸 라이팅 더 밝게 조정
+97164d87 - hagukin, Fri Nov 8 19:04:43 2024 +0900 : Fix: 던전 생성이 끝나지 않았을 경우 던전 틱을 사용하지 않도록 수정
+a5d4f662 - hagukin, Fri Nov 8 17:36:24 2024 +0900 : Chore: 상점 모델 추가
+88ea7d93 - hagukin, Fri Nov 8 17:19:30 2024 +0900 : Chore: KeyKeeper 에셋 추가
+3337994c - hagukin, Fri Nov 8 17:04:21 2024 +0900 : Chore: RHI DX11으로 변경
+b56fe09c - hagukin, Fri Nov 8 16:49:34 2024 +0900 : Feat: 데미지 넘버 위젯 및 액터 수명관리 기능 추가
+fe07883f - hagukin, Fri Nov 8 15:32:37 2024 +0900 : Feat: 몬스터 스폰 위치 결정 알고리즘 개선
+4c107e9d - hagukin, Fri Nov 8 03:22:27 2024 +0900 : Fix: DoorBlocker 수정
+ea60731d - hagukin, Fri Nov 8 02:59:35 2024 +0900 : Fix: 외곽 히트박스에 가로막혀 뒤 캐릭터의 히트스캔 판정이 이뤄지지 않는 문제 수정
+4a33fbab - hagukin, Fri Nov 8 01:41:47 2024 +0900 : Feat: 프로덕션용 룸 추가, 네브메쉬 설정 파라미터 조정
+cb9d3814 - hagukin, Thu Nov 7 22:12:27 2024 +0900 : Chore: 퍽 메쉬 에셋 추가
+fa3973cc - hagukin, Thu Nov 7 01:59:01 2024 +0900 : Fix: 룸 라이팅 수정
+4220c5c1 - hagukin, Wed Nov 6 22:03:26 2024 +0900 : Feat: 룸 라이팅 조정
+5b799b41 - hagukin, Wed Nov 6 20:43:10 2024 +0900 : Feat: 프로덕션 콘텐츠용 룸 추가
+0df75279 - hagukin, Sat Nov 2 15:16:12 2024 +0900 : Feat: 상자 및 미믹 아이템 드랍 로직 구현
+a87315ed - hagukin, Sat Nov 2 14:52:46 2024 +0900 : FIx: 상자 애니메이션이 열고 다시 닫히는 문제 수정
+87703487 - hagukin, Sat Nov 2 13:39:22 2024 +0900 : Feat: 미믹 상자 흔들기 로직 ABP에서 액터로 이동; 미믹 소환 VFX 추가
+045ad4b4 - hagukin, Sat Nov 2 12:22:08 2024 +0900 : Feat: 미믹 공격 애니메이션, 상자 Attraction 애니메이션 추가
+2f82cec4 - hagukin, Sat Nov 2 10:29:59 2024 +0900 : Feat: 미믹, 상자 베이스 제작; 폭발 VFX 추가
+13399a8b - hagukin, Fri Nov 1 20:26:03 2024 +0900 : Fix: NavWalking 코드 제거
+c69790ab - hagukin, Wed Oct 30 20:10:47 2024 +0900 : Fix: 사망 시 네임태그 사라지도록 수정
+3e5eb1ef - hagukin, Wed Oct 30 20:02:46 2024 +0900 : Feat: 데미지 가해질 경우 데미지 넘버 생성하도록 로직 추가
+0baaae8b - hagukin, Wed Oct 30 19:27:42 2024 +0900 : Feat: UserSpecificWidgetActor 추가
+32ee804d - hagukin, Tue Oct 29 06:32:37 2024 +0900 : Fix: Smooth FrameRate 적용, MinDesiredFramerate 설정
+8086c0ba - hagukin, Sat Oct 26 05:41:49 2024 +0900 : Feat: 반동 애니메이션 세분화 및 반동 정보 동기화 구현
+0ec64a86 - hagukin, Tue Oct 22 22:16:34 2024 +0900 : Feat: 히트마커 가시성 개선
+35f26dc4 - hagukin, Tue Oct 22 21:59:29 2024 +0900 : Feat: 히트박스 최적화
+6c575056 - hagukin, Thu Oct 17 16:58:05 2024 +0900 : Feat: 폭발 성능 및 정확성 개선
+17884c5e - hagukin, Thu Oct 17 16:20:01 2024 +0900 : Feat: DamageNumber 위젯 추가
+2f538b6e - hagukin, Mon Oct 14 19:08:23 2024 +0900 : FIx: 플러그인 수정사항 Revert
+632583ea - hagukin, Mon Oct 14 18:56:45 2024 +0900 : Feat: AI BT 개선
+9a368a8d - hagukin, Mon Oct 14 17:29:54 2024 +0900 : Feat: 히트서클 방향 오류 수정
+e66505f9 - hagukin, Sun Oct 13 22:11:51 2024 +0900 : Feat: 네임태그 개선, 디폴트 안티앨리어싱 설정
+b7d0b4ba - hagukin, Sun Oct 13 19:20:20 2024 +0900 : Feat: 봇 MoveComp, SkelMesh 최적화
+85d9a99e - hagukin, Sun Oct 13 18:37:15 2024 +0900 : Refactor: ABP 불필요한 로직 삭제
+7323db10 - hagukin, Sun Oct 13 17:36:16 2024 +0900 : Chore: 불필요한 애니메이션 관련 에셋 삭제 및 ABP 파라미터 삭제
+a8ef52ad - hagukin, Sun Oct 13 14:38:42 2024 +0900 : Feat: 퍽 아이템 추가, 불필요한 총기 스테이터스 제거
+81cdb5ec - hagukin, Sun Oct 13 13:46:27 2024 +0900 : Feat: 던전 제너레이터 로직 C++로 포팅; 로딩 스크린 위젯 레거시 함수 변경
+1d75f26a - hagukin, Sun Oct 13 12:53:14 2024 +0900 : Feat: 던전 생성 완료 시 텔레포트 하는 방식으로 기존 Fallblocker 대체
+1a57387e - hagukin, Sun Oct 13 12:38:47 2024 +0900 : Chore: 플러그인 Modification 재적용 + 3.3.1의 버그픽스 코드 적용
+fff2cc76 - hagukin, Sun Oct 13 12:17:58 2024 +0900 : Chore: 플러그인 3.3.0으로 롤백
+b2ce5cdb - hagukin, Sun Oct 13 09:48:53 2024 +0900 : Feat: UI 보완, 폰트 추가
+069281ce - hagukin, Wed Oct 9 09:40:14 2024 +0900 : Feat: Hit circle 추가
+cd8cfbc5 - hagukin, Wed Oct 9 05:32:55 2024 +0900 : Fix: 봇 캡슐이 Perception을 막는 문제 수정
+4b26d431 - hagukin, Wed Oct 9 05:16:02 2024 +0900 : Feat: 레벨 트랜지션 로딩 스크린 제작
+0857510b - hagukin, Mon Oct 7 04:35:55 2024 +0900 : Fix: MoveFromInvToInv에서 잘못된 Id를 발급하는 문제 수정
+548affe3 - hagukin, Mon Oct 7 02:04:55 2024 +0900 : Feat: 특정 아이템에 한해서만 StatusEffect를 적용할 수 있도록 플래그 추가
+598e2527 - hagukin, Mon Oct 7 01:57:55 2024 +0900 : Fix: StatusEffect 인스턴스 생성 시점 변경 및 적용 방식 개선
+220c9113 - hagukin, Thu Oct 3 04:09:40 2024 +0900 : Feat: Status Effect, 아이템 부가효과 초기 구조 제작
+016804cd - hagukin, Thu Oct 3 03:29:50 2024 +0900 : Fix: MoveFromInvToInv의 ReplicatedSubobject를 최신화하지 않는 부분 수정
+a50ad209 - hagukin, Wed Oct 2 22:15:01 2024 +0900 : Feat: 데미지 타입 추가
+5ef6530a - hagukin, Tue Oct 1 20:02:54 2024 +0900 : Chore: 주석 추가
+15786598 - hagukin, Tue Oct 1 19:51:19 2024 +0900 : Feat: 절차적 폭발 생성 시스템 제작, 폭발 로직 오류 수정
+e0296f36 - hagukin, Tue Oct 1 16:29:54 2024 +0900 : Feat: Explosion 스테이터스 구조체로 분리, 폭발 유도자에게 별도 데미지 배율 적용
+acdd17c9 - hagukin, Tue Oct 1 15:22:53 2024 +0900 : Refactor: 래그돌화 코드 개선
+b4f18ae9 - hagukin, Tue Oct 1 14:30:06 2024 +0900 : Fix: 플레이어 본 트랜스폼 연산이 컬링되어 총구 위치가 잘못 처리되던 문제 수정
+6e3c50c7 - hagukin, Mon Sep 30 23:26:39 2024 +0900 : Feat: 폭발 로직 추가
+495236c5 - hagukin, Sun Sep 29 15:44:08 2024 +0900 : Fix: 나이아가라 관련 불필요한 코드 삭제
+0893e836 - hagukin, Sun Sep 29 15:31:45 2024 +0900 : Feat: 아이템 생성 시 아이콘 동적 초기화되도록 기능 추가
+4dfc58a4 - hagukin, Sat Sep 28 19:47:59 2024 +0900 : Fix: 그랩 상태에서 픽업 시 릴리즈가 안되는 문제 수정
+20ed6b1f - hagukin, Sat Sep 28 19:30:37 2024 +0900 : Feat: IconStageActor 생성 위치 동적 결정
+2001630d - hagukin, Sat Sep 28 18:31:23 2024 +0900 : Fix: RoomObserverComp 미사용 시 삭제하도록 수정
+c711aa34 - hagukin, Sat Sep 28 00:52:48 2024 +0900 : Fix: 투사체 콜리전 오류 수정
+b64f9590 - hagukin, Fri Sep 27 23:43:24 2024 +0900 : Feat: ActItemComponent의 트리거 Interval 추가 및 클라이언트 Interval prediction 추가
+7133f3e1 - hagukin, Fri Sep 27 23:20:19 2024 +0900 : Refactor: 총기 Fx 관련 프로퍼티의 레플리케이션 지점을 액터 프로퍼티 대신 컴포넌트 프로퍼티에서 처리하도록 수정
+a0d15dcf - hagukin, Thu Sep 26 21:19:29 2024 +0900 : Fix: 빌드 오류 수정
+e255e714 - hagukin, Wed Sep 25 20:15:37 2024 +0900 : Feat: SK_Skeleton 피직스 에셋 최적화
+c454e141 - hagukin, Tue Sep 24 20:25:54 2024 +0900 : Fix: 던전 생성이 완료되지 않았을 경우 메모이제이션을 하지 않도록 수정
+c807330f - hagukin, Mon Sep 23 19:36:50 2024 +0900 : Config: Lumen, Nanite, Virtual shadow mapping 사용 해제
+508bfb43 - hagukin, Mon Sep 23 19:18:58 2024 +0900 : Fix: 콜리전 채널 이름에 포함된 세미콜론 삭제
+e1d8f7e8 - hagukin, Mon Sep 23 19:14:54 2024 +0900 : Fix: 던전 Traversal 메모이제이션에 사용되는 룸 id의 개수를 4개에서 8개로 증가
+8ae798af - hagukin, Mon Sep 23 18:38:00 2024 +0900 : Feat: 던전 룸 Traversal 메모이제이션을 통한 최적화
+6288dc8e - hagukin, Mon Sep 23 15:41:09 2024 +0900 : Feat: 애니메이션 Rate Optimization
+7a104feb - hagukin, Sun Sep 22 07:37:41 2024 +0900 : Fix: 적 생성 주기 관련 프로퍼티 일부를 에디터에 노출
+ca9f2c3a - hagukin, Sun Sep 22 06:30:48 2024 +0900 : Chore: Niagara VFX CPU에서 GPU 연산으로 변경
+2f46b2ea - hagukin, Sun Sep 22 05:12:55 2024 +0900 : Feat: SK_Skeleton LOD 최적화
+45bb4c5a - hagukin, Sat Sep 21 12:15:52 2024 +0900 : Feat: Dynamic crosshair 추가
+01485efd - hagukin, Sat Sep 21 09:38:11 2024 +0900 : Chore: Crosshair 플러그인 추가
+4c9ead71 - hagukin, Sat Sep 21 09:14:20 2024 +0900 : Fix: 투사체 무브먼트 레플리케이션 개선
+43505208 - hagukin, Sat Sep 21 08:49:23 2024 +0900 : Fix: 탄피 콜리전 설정 Decoration으로 변경
+02c8dba4 - hagukin, Sat Sep 21 08:44:05 2024 +0900 : Fix: 클라이언트에서 투사체 콜리전 해제, 탄피 VFX 생성 방향 조정
+5dada6f6 - hagukin, Sat Sep 21 08:25:33 2024 +0900 : Feat: 탄피 VFX 적용
+7eb89202 - hagukin, Sat Sep 21 05:16:10 2024 +0900 : Feat: 탄피 이펙트 추가, 콜리전 프리셋 사용하도록 리팩토링
+cebbd374 - hagukin, Sat Sep 21 03:04:46 2024 +0900 : Fix: Rolling 애니메이션 속도 변경
+34414bd8 - hagukin, Fri Sep 20 08:23:55 2024 +0900 : Feat: 히트스캔 피격 VFX 추가, 히트 시 VFX 렌더 방향 수정
+137529df - hagukin, Fri Sep 20 07:07:55 2024 +0900 : Feat: 인벤토리 아이콘 생성 시스템 개선
+17f33226 - hagukin, Fri Sep 20 05:19:35 2024 +0900 : Fix: PSO Precaching 적용
+3f35703d - hagukin, Thu Sep 19 01:00:12 2024 +0900 : Feat: 산탄 기능 총기 설명 추가
+36ac9270 - hagukin, Thu Sep 19 00:49:02 2024 +0900 : Feat: 산탄 기능 추가, 투사체 동기화 개선
+0ffa3e30 - hagukin, Fri Sep 13 21:43:16 2024 +0900 : Feat: AI 타깃 추적 외에도 특정 상황에서 OnAggroStart 호출하도록 수정
+4e2bbb0a - hagukin, Fri Sep 13 20:53:44 2024 +0900 : Feat: AI 피격 시 공격자 위치 조사하도록 로직 개선
+10ec2876 - hagukin, Fri Sep 13 06:51:58 2024 +0900 : Feat: GPC에서의 투사체 커스터마이제이션 기능 추가
+557517fc - hagukin, Wed Sep 11 23:21:30 2024 +0900 : Fix: 플레이어 리스폰 시 체력 0으로 리스폰 되는 문제 수정
+936267fc - hagukin, Wed Sep 11 23:00:10 2024 +0900 : Feat: GPC에서의 FX 커스터마이제이션 기능 추가, 총기 레플리케이션 개선
+020b4985 - hagukin, Tue Sep 10 21:36:13 2024 +0900 : Fix: Niagara pooling 사용하도록 변경
+66869e80 - hagukin, Tue Sep 10 01:33:55 2024 +0900 : Feat: 아이템 아이콘 동적 생성 기능 제작
+5f86feb1 - hagukin, Sun Sep 8 00:07:12 2024 +0900 : Fix: 무기 어태치 세부 수치 조정
+19321ac4 - hagukin, Sat Sep 7 23:57:37 2024 +0900 : Fix: 반동 세기 및 1인칭 카메라 위치 수정
+02039dbe - hagukin, Sat Sep 7 02:10:41 2024 +0900 : Fix: 아이템 격자 충돌 연산 시의 연산 오류 수정
+0b062d5c - hagukin, Sat Sep 7 01:02:51 2024 +0900 : Fix: 루트셋 리킹 안전성 증가
+46e9b574 - hagukin, Sat Sep 7 00:47:40 2024 +0900 : Fix: 일부 정보가 레벨 트랜지션 시 전달되지 않는 문제 수정
+3be55a3b - hagukin, Sat Sep 7 00:06:25 2024 +0900 : Feat: 데미지 피해 받을 경우 카메라 셰이크 추가
+35dbf6c7 - hagukin, Fri Sep 6 23:37:31 2024 +0900 : Chore: 플러그인 업데이트
+f5da130f - hagukin, Fri Sep 6 23:26:57 2024 +0900 : Feat: 던전 룸 배치 실패 시 Blocker 배치
+6c3eb93d - hagukin, Fri Sep 6 22:19:05 2024 +0900 : Feat: 카메라 셰이크 추가
+c689dc76 - hagukin, Fri Sep 6 19:47:36 2024 +0900 : Revert "Temp: 시연 테스트용 임시 코드 수정"
+6d0baeb6 - hagukin, Fri Sep 6 19:47:32 2024 +0900 : Revert "Temp: 시연용 AI 벨런스 조정"
+06f59e58 - hagukin, Fri Sep 6 19:47:28 2024 +0900 : Revert "Temp: 시연용 안개 밝기 변경"
+24abf104 - hagukin, Thu Sep 5 18:29:56 2024 +0900 : Temp: 시연용 안개 밝기 변경
+2a41ac99 - hagukin, Thu Sep 5 18:27:37 2024 +0900 : Temp: 시연용 AI 벨런스 조정
+ea5ec8a0 - hagukin, Thu Sep 5 18:19:21 2024 +0900 : Temp: 시연 테스트용 임시 코드 수정
+31c1d52e - hagukin, Thu Sep 5 17:40:02 2024 +0900 : Misc: GXG 시연용 코드 수정
+289ed91f - hagukin, Sun Sep 1 12:21:24 2024 +0900 : Feat: 포탈 모든 플레이어가 접촉할 때만 동작하도록 수정
+7ba5b915 - hagukin, Sun Sep 1 11:51:31 2024 +0900 : Fix: 사망 시 그랩 아이템이 릴리즈되지 않는 문제 수정
+fb0cf130 - hagukin, Sun Sep 1 11:24:00 2024 +0900 : Fix: AI의 잔여정보로 비정상적 동작하는 오류 수정
+06e1fd26 - hagukin, Sun Sep 1 10:24:32 2024 +0900 : Fix: RecoilComp가 층계 이동시 작동이 안되는 문제 해결
+e2d19523 - hagukin, Thu Aug 29 07:21:03 2024 +0900 : Misc: GXG 2024 시연용 코드 추가
+be7726cc - hagukin, Wed Aug 28 08:11:44 2024 +0900 : Feat: 밀리 공격 애니메이션 개선
+3701369d - hagukin, Wed Aug 28 07:18:22 2024 +0900 : Feat: 근접공격 애니메이션 후보 여러 개 사용 가능하도록 제작
+2fbe0323 - hagukin, Wed Aug 28 07:12:52 2024 +0900 : Feat: 리치 추가
+3880a5e4 - hagukin, Wed Aug 28 04:18:50 2024 +0900 : Fix: GunDesc 문구 수정
+6e7dc66b - hagukin, Wed Aug 28 03:08:53 2024 +0900 : Chore: 블루프린트 경로 변경
+e47feafa - hagukin, Tue Aug 27 10:40:28 2024 +0900 : Fix: 공격키 홀드 시 라이트가 사라지지 않는 문제 수정
+5946a009 - hagukin, Tue Aug 27 10:25:15 2024 +0900 : Fix: 총기 Desc 문구 수정
+614436e4 - hagukin, Tue Aug 27 10:07:51 2024 +0900 : Test: 임시 GPC 스텟 부여
+50e42be2 - hagukin, Sat Aug 24 23:25:12 2024 +0900 : Feat: 슬롯 0,3번 인풋 추가
+a3c5743c - hagukin, Sat Aug 24 23:11:53 2024 +0900 : Feat: 현재 선택중인 슬롯 정보를 수정하지 못하던 문제 개선
+e5483c93 - hagukin, Sat Aug 24 22:54:17 2024 +0900 : Feat: 장착 시스템 UX 개선
+56bdc90d - hagukin, Sat Aug 24 21:45:38 2024 +0900 : Feat: 격발 시 라이팅 추가
+9ded00ca - hagukin, Sat Aug 24 20:18:33 2024 +0900 : Fix: 로비맵 사소한 라이팅 오류 수정
+1c14bd85 - hagukin, Sat Aug 24 05:57:39 2024 +0900 : Feat: 레드모드 발동 시 라이팅 효과 추가
+f84671a0 - hagukin, Sat Aug 24 04:34:19 2024 +0900 : Feat: 던전 레드 모드 추가
+e5f8bc0d - hagukin, Sat Aug 24 03:23:17 2024 +0900 : Feat: 보석 아이템에 포인트 라이트 추가
+39cad2d7 - hagukin, Sat Aug 24 03:08:18 2024 +0900 : Feat: 거리 당 Damage falloff 제작
+ff01778b - hagukin, Sat Aug 24 01:39:42 2024 +0900 : Fix: 던전 포인트 라이트 수정
+53c980e7 - hagukin, Fri Aug 23 23:48:44 2024 +0900 : Feat: 포스트프로세싱, Fog 추가
+f7519b02 - hagukin, Fri Aug 23 22:05:53 2024 +0900 : Feat: 각종 디버깅 드로잉 삭제, 기본 그래픽 설정 상향
+20279bee - hagukin, Fri Aug 23 21:51:53 2024 +0900 : Fix: 봇들간의 공격 데미지 판정 해제
+11d1267d - hagukin, Fri Aug 23 21:40:34 2024 +0900 : Feat: 플레이어가 데미지 입을 경우 속도 저하
+d2fbd629 - hagukin, Fri Aug 23 20:17:21 2024 +0900 : Fix: 무기 - 폰 충돌 기본값 변경
+4523b220 - hagukin, Thu Aug 22 17:24:58 2024 +0900 : Feat: 앉기 인풋 토글에서 홀드로 전환
+3d6f34b5 - hagukin, Thu Aug 22 17:14:09 2024 +0900 : Feat: 레벨업 시 탄약 재충전 구현
+eed4b49c - hagukin, Thu Aug 22 16:57:21 2024 +0900 : Fix: 처치 시 LastAttackedBy가 제대로 적용되지 않는 문제 수정
+a8d2da05 - hagukin, Thu Aug 22 14:28:57 2024 +0900 : Feat: 인풋 및 UX 개선
+66ad1ee2 - hagukin, Wed Aug 21 22:02:12 2024 +0900 : Feat: 무기 Retrieve 시 ItemData 캐싱 안되는 문제 수정
+5c001f37 - hagukin, Wed Aug 21 21:42:23 2024 +0900 : Feat: 장탄수 시스템 구축
+f317d525 - hagukin, Wed Aug 21 20:13:31 2024 +0900 : Feat: 네트워크 연동 타이머 제작
+c336164d - hagukin, Tue Aug 20 23:25:09 2024 +0900 : Fix: 아이템 설명에 Seperator가 없을 경우 발생하는 오류 수정
+d5d41a2c - hagukin, Tue Aug 20 23:11:09 2024 +0900 : Feat: 던전 층수 추가
+5f3648d8 - hagukin, Tue Aug 20 16:03:35 2024 +0900 : Feat: 무기 스텟 설명 추가
+9c4d5ff0 - hagukin, Sun Aug 18 14:04:51 2024 +0900 : Feat: 메쉬 총구 기준 발사 기능 추가
+f3a8dd0e - hagukin, Sun Aug 18 12:39:31 2024 +0900 : Fix: 클라이언트 FX에 필요한 값 레플리케이션이 제대로 전달되지 않는 문제 수정
+c6274fac - hagukin, Sat Aug 17 14:33:51 2024 +0900 : Feat: 히트스캔 게임 로직 추가
+807c98a3 - hagukin, Sat Aug 17 11:25:06 2024 +0900 : Feat: 총기 로직 커스터마이제이션 기능 구조 작성
+baaf8faa - hagukin, Tue Aug 13 03:44:41 2024 +0900 : Feat: 탈출 룸 제작 및 생성 로직 추가
+bd515550 - hagukin, Mon Aug 12 21:07:58 2024 +0900 : Chore: 빌드 준비
+3348c386 - hagukin, Mon Aug 12 18:34:44 2024 +0900 : Feat: 투사체 및 TriggerVolume 충돌 설정 변경
+9fc210af - hagukin, Mon Aug 12 18:03:01 2024 +0900 : Feat: 포탈 매터리얼 추가, 로비 포탈 추가
+34ac4612 - hagukin, Mon Aug 12 17:21:28 2024 +0900 : Feat: Projectile VFX 에셋 추가
+e5bafc8f - hagukin, Mon Aug 12 16:51:02 2024 +0900 : Feat: 플레이어 네임태그 네트워크 동기화
+82d154d7 - hagukin, Sun Aug 11 14:15:36 2024 +0900 : Feat: 레벨 트랜지션 간 데이터 유지 시의 문제 수정, 타이틀 UI 제작
+db9dc194 - hagukin, Sat Aug 10 16:49:29 2024 +0900 : Feat: 충돌 VFX 추가
+20ecbb9b - hagukin, Sat Aug 10 15:45:15 2024 +0900 : Feat: Bullet Trace 구현
+5c076731 - hagukin, Sat Aug 10 12:34:01 2024 +0900 : Feat: VFX 추가 및 레플리케이션 적용, 클라이언트 격발 FX 선제처리 기능 구현
+171acb51 - hagukin, Fri Aug 9 10:56:53 2024 +0900 : Feat: VFX 에셋 임포트
+bc8db2d5 - hagukin, Wed Aug 7 14:23:26 2024 +0900 : Feat: Token 아이템 및 레벨업 시 토큰 리워드 제공 기능 추가
+ae581d1e - hagukin, Wed Aug 7 12:44:14 2024 +0900 : Feat: ExpComponent 레플리케이션 구현
+2968b7eb - hagukin, Wed Aug 7 12:12:47 2024 +0900 : Feat: Exp HUD 추가
+e592747e - hagukin, Tue Aug 6 18:18:03 2024 +0900 : Feat: 매거진, 머즐, 사이트 파츠 추가
+14131ed7 - hagukin, Tue Aug 6 12:50:48 2024 +0900 : Feat: RandomChoiceActor 개선 및 Procgen Room에 적용
+7c0488c6 - hagukin, Tue Aug 6 12:31:38 2024 +0900 : Feat: 랜덤하게 DungeonActor 선택해 생성하는 액터 추가, Altar와 Soul 메쉬 변경
+4ada8cd1 - hagukin, Tue Aug 6 10:51:36 2024 +0900 : Feat: 랜덤 생성된 무기에 발사 로직 컴포넌트와 반동 적용
+3f49c203 - hagukin, Tue Aug 6 09:26:44 2024 +0900 : Refactor: 무기 발사 로직 계층화 축소
+26149672 - hagukin, Tue Aug 6 07:03:47 2024 +0900 : Fix: Recoil data asset 디폴트값 추가
+7399f42f - hagukin, Sun Aug 4 14:38:53 2024 +0900 : Feat: 레벨 트랜지션 이후 ItemData 복구 로직 추가
+2bfd7902 - hagukin, Sun Aug 4 14:07:42 2024 +0900 : Feat: 인벤토리 드랍 로직 수정, UI 생명주기 관리
+0202cdde - hagukin, Sat Aug 3 11:23:27 2024 +0900 : Feat: 체력 UI 로직 적용, 액터 사망 처리 로직 수정, 사망 시 UI 제거 로직 추가
+aeb76ce3 - hagukin, Sat Aug 3 08:36:11 2024 +0900 : Fix: 인벤토리 컴포넌트 층간 이동 동기화 버그 수정
+c4998dd4 - hagukin, Fri Aug 2 14:57:09 2024 +0900 : Chore: UI 에셋 디렉토리 이동
+2f990633 - hagukin, Fri Aug 2 14:53:02 2024 +0900 : Feat: 인벤토리, 장착품 UI 로직 구현
+6ab935b1 - hagukin, Fri Aug 2 08:42:02 2024 +0900 : Feat: 장착 UI 개선
+3e6d8b9b - hagukin, Fri Aug 2 07:21:49 2024 +0900 : Feat: UI 위젯 제작
+1b7d85bb - hagukin, Fri Aug 2 03:37:07 2024 +0900 : Feat: 총기 조준점 반동 로직 제작
+5dcf05bf - hagukin, Thu Aug 1 09:40:43 2024 +0900 : Feat: 연사 시 총기 반동 추가
+1bf572dd - hagukin, Thu Aug 1 08:18:48 2024 +0900 : Feat: 연사 시스템 구현, 무기 로직 컴포넌트 추상화
+6d261fdc - hagukin, Thu Aug 1 05:13:08 2024 +0900 : Fix: 클라이언트 사이드에서 캐릭터 이동 시 총기 흔들림 애니메이션이 잘못 재생되는 에러 수정
+b3e37e53 - hagukin, Tue Jul 30 10:20:40 2024 +0900 : Feat: 레벨 트랜지션 시 장착품 데이터 유지 구현
+6bb6d452 - hagukin, Tue Jul 30 09:57:59 2024 +0900 : Feat: 레벨 트랜지션 시의 인스턴스 데이터 유지 구현
+75455522 - hagukin, Sat Jul 27 07:06:45 2024 +0900 : Fix: 관전 시 Occulusion으로 인해 관전자 던전이 안보이는 문제 해결
+bb3a6976 - hagukin, Sat Jul 27 06:50:59 2024 +0900 : Feat: 다수의 적에 대한 성능 최적화, 스폰 시 잔여 데이터로 인한 AI 오류 수정
+716888be - hagukin, Thu Jul 25 00:57:18 2024 +0900 : Feat: AI 컨트롤러 풀링 및 동적 할당 기능 제작
+7e5bcf49 - hagukin, Wed Jul 24 17:11:22 2024 +0900 : Feat: 디렉터 시스템 및 적 다수 운영 최적화
+3213d37f - hagukin, Mon Jul 22 23:16:03 2024 +0900 : Feat: 디렉터 시스템 개선
+876fac01 - hagukin, Mon Jul 22 22:18:07 2024 +0900 : Feat: Intensity 기반 스폰 Director 시스템 추가
+7c2f4f0a - hagukin, Sun Jul 21 23:42:01 2024 +0900 : Revert "Chore: 플러그인 업데이트"
+cd7eb6d2 - hagukin, Sun Jul 21 23:41:49 2024 +0900 : Feat: State 기반 Intensity 알고리즘 작성
+16ea10d1 - hagukin, Sat Jul 20 22:18:11 2024 +0900 : Chore: 플러그인 업데이트
+1b4646f3 - hagukin, Fri Jul 19 21:07:07 2024 +0900 : Feat: Server authoritative한 Occulusion culling 기반 플레이어들의 시야 내 룸 목록 가져오는 기능 추가
+2ea52d74 - hagukin, Thu Jul 18 21:04:41 2024 +0900 : Feat: 던전 룸 진입 및 탈출 감지 기능 추가
+1828eea6 - hagukin, Thu Jul 18 09:31:01 2024 +0900 : Chore: 플러그인 업데이트
+9b8acc81 - hagukin, Thu Jul 18 09:07:55 2024 +0900 : Fix: 액터 스폰 시 콜리전이 발생해 스폰이 무시되는 경우 방지
+144e134a - hagukin, Thu Jul 18 08:52:56 2024 +0900 : Feat: GunItem의 피직스 처리 개선
+beabe1f7 - hagukin, Thu Jul 18 05:59:58 2024 +0900 : Feat: 총기 파지 모션 개선
+c1aa701d - hagukin, Wed Jul 17 06:58:57 2024 +0900 : Feat: 플레이어 네임태그 추가
+f455df3c - hagukin, Wed Jul 17 06:03:25 2024 +0900 : Feat: Descend 기능 추가
+80c9e780 - hagukin, Wed Jul 17 04:44:51 2024 +0900 : Fix: BP_TRPlayerController를 사용하도록 수정
+4f69a161 - hagukin, Wed Jul 17 04:43:07 2024 +0900 : Feat: TextAlert 위젯 제작
+660b6daa - hagukin, Sat Jul 13 03:35:35 2024 +0900 : Feat: GunPart 랜덤 생성 시스템 구축
+bb794e7b - hagukin, Fri Jul 12 01:58:09 2024 +0900 : Feat: 로비 인터랙션 추가
+8dc3f56e - hagukin, Thu Jul 11 23:17:19 2024 +0900 : Feat: 플레이어 트리거 볼륨 제작, 같은 레벨 내 액터 간 상호작용을 위한 트리거 메세징 시스템 구축
+532b2239 - hagukin, Thu Jul 11 18:57:52 2024 +0900 : Feat: PlayerTriggerVolume 추가, SetIsOut 호출 시점을 사망 시점에서 관전 시작 시점으로 변경
+045e9e33 - hagukin, Thu Jul 11 17:37:38 2024 +0900 : Feat: 히트스캔 컴포넌트 추가
+8c34ff6b - hagukin, Thu Jul 11 00:20:10 2024 +0900 : Feat: 던전 룸 추가
+c26db09f - hagukin, Wed Jul 10 01:44:20 2024 +0900 : Feat: 로비 맵 추가
+407a67f0 - hagukin, Fri Jul 5 07:42:55 2024 +0900 : Feat: 영혼 아이템 추가
+706f9fde - hagukin, Fri Jul 5 05:38:06 2024 +0900 : Feat: 재단 추가
+26fa8f0c - hagukin, Tue Jul 2 12:32:45 2024 +0900 : Fix: 봇에 대해 서버 사이드 애니메이션 및 본 연산을 렌더링되지 않을 때도 처리되도록 수정
+242c5983 - hagukin, Tue Jul 2 12:00:38 2024 +0900 : Feat: AI 타겟팅 개선
+7bca80f5 - hagukin, Tue Jul 2 10:27:36 2024 +0900 : Feat: 근접공격 히트판정 로직 추가
+531d6727 - hagukin, Mon Jul 1 09:06:04 2024 +0900 : Feat: 총기 스테이터스 커스터마이제이션 뼈대 제작
+af824373 - hagukin, Mon Jul 1 03:51:43 2024 +0900 : Feat: AI 타깃이 없을 때 밀리 애니메이션 재생 중임에도 이동하는 문제 수정
+c6571b3d - hagukin, Fri Jun 28 21:22:41 2024 +0900 : Feat: 경험치 시스템, 킬 보상 경험치 시스템 추가; 리워드 아이템 드랍 시스템 초안 제작
+93f5529a - hagukin, Wed Jun 26 23:38:36 2024 +0900 : Feat: 부위별 히트 판정 기능 추가, 투사체 판정 코드 구조 개선
+cf66a614 - hagukin, Wed Jun 26 18:36:22 2024 +0900 : Feat: AI 부드러운 방향 전환, 타깃 설정/해제 시 속도 변경 기능 추가
+fe2701a4 - hagukin, Wed Jun 26 17:54:42 2024 +0900 : Feat: AI 기초적인 타겟팅 제작
+66af3e9a - hagukin, Wed Jun 26 02:29:41 2024 +0900 : Feat: 근접 공격 AI 부분 제작, Lyra 오류 수정
+cab48fd6 - hagukin, Mon Jun 24 21:24:38 2024 +0900 : Feat: 애님 클래스 레이어 레플리케이션
+1ebc5f0c - hagukin, Mon Jun 24 05:35:54 2024 +0900 : Feat: 에임 애니메이션 레플리케이션
+91b1ee50 - hagukin, Mon Jun 24 04:41:59 2024 +0900 : Refactor: 앉기 기능 수정
+b6b6f4f9 - hagukin, Mon Jun 24 01:17:51 2024 +0900 : Fix: Procedural Aim 애니메이션이 적용되지 않는 문제 수정
+30242297 - hagukin, Sat Jun 22 19:23:08 2024 +0900 : Refactor: 불필요한 코드 삭제
+cec57351 - hagukin, Sat Jun 22 14:02:42 2024 +0900 : Feat: 플레이어 캐릭터 애니메이션 적용 및 기존 스프링암 관련 코드 삭제
+bb1e1b18 - hagukin, Sat Jun 22 11:43:14 2024 +0900 : Feat: 플레이어 캐릭터 에셋 적용
+5117f40d - hagukin, Sat Jun 22 08:25:32 2024 +0900 : Fix: 스켈레톤 VB 누락으로 인해 팔 고정되지 않는 문제 수정
+a542bbf3 - hagukin, Sat Jun 22 07:30:02 2024 +0900 : Feat: FPSCharacter과 초기 연동
+c0c4f356 - hagukin, Sat Jun 22 07:15:06 2024 +0900 : Refactor: FPS 애님블루프린트 리팩토링
+8abd1cad - hagukin, Sat Jun 22 06:20:47 2024 +0900 : Feat: Lyra 불필요한 기능 삭제, Inertialization 관련 ABP 오류 수정
+9b4d0d0f - hagukin, Fri Jun 21 05:06:55 2024 +0900 : Feat: Lyra 에셋 마이그레이션
+a162045d - hagukin, Wed Jun 19 20:52:38 2024 +0900 : Feat: 적 캐릭터 던전 생성과 함께 테스트
+ac0ca962 - hagukin, Wed Jun 19 20:39:28 2024 +0900 : Feat: 에셋 Bot에 적용, 간단한 적 애니메이션 추가
+4a3f924c - hagukin, Wed Jun 19 19:57:58 2024 +0900 : Feat: 적 에셋 추가
+22f5587a - hagukin, Wed Jun 19 17:43:58 2024 +0900 : Feat: 애니메이션 BP Sprint 관련 오류 수정
+d4edfeaa - hagukin, Wed Jun 19 15:57:26 2024 +0900 : Feat: 총기 애니메이션 추가 및 레플리케이션 개선
+88e838e5 - hagukin, Tue Jun 18 21:54:53 2024 +0900 : Feat: 1인칭 카메라 개선, 머리 메쉬 Hide 기능 추가, 기존 뷰모델 생성 코드 삭제, 가로세로 비 관계없이 FOV 유지되도록 .ini 수정
+20354c37 - hagukin, Tue Jun 18 15:42:26 2024 +0900 : Feat: 반동 애니메이션 멀티플레이어 동기화
+cfb67515 - hagukin, Tue Jun 18 15:06:16 2024 +0900 : Feat: Procedural recoil animation system 추가
+b7393b45 - hagukin, Mon Jun 17 23:46:02 2024 +0900 : Feat: 1인칭 카메라 스프링암 추가
+134f156e - hagukin, Mon Jun 17 22:13:35 2024 +0900 : Feat: Equip 시스템 개선, 1인칭 뷰모델 추가
+14aaebcb - hagukin, Mon Jun 17 17:05:32 2024 +0900 : Feat: Leaning 삭제
+fb0dc8f8 - hagukin, Mon Jun 17 16:52:20 2024 +0900 : Feat: 1인칭 카메라 시스템 수정, Rolling 삭제
+9cfe799a - hagukin, Sun Jun 16 14:43:56 2024 +0900 : Feat: 파츠 랜덤 생성 샘플 코드 작성
+87cb37c6 - hagukin, Sun Jun 16 14:25:07 2024 +0900 : Fix: 그랩 시스템 전체적 개선
+3810df90 - hagukin, Sun Jun 16 12:09:19 2024 +0900 : Refactor: 불필요한 매터리얼 에셋 제거
+2e64c0ea - hagukin, Sun Jun 16 12:05:33 2024 +0900 : Refactor: 그랩 시 동적 매터리얼 사용하는 코드 삭제
+6b7bee9a - hagukin, Sun Jun 16 11:59:39 2024 +0900 : Refactor: 피직스 속성 중복해서 초기화하는 부분 리팩토링
+2fd3454f - hagukin, Sat Jun 15 20:29:42 2024 +0900 : Fix: Equip 시 캐싱 누락되는 문제 해결
+a975255c - hagukin, Sat Jun 15 19:15:43 2024 +0900 : Feat: 동적 메쉬 트리 생성 및 레플리케이션
+abf203ef - hagukin, Sat Jun 15 11:20:30 2024 +0900 : Refactor: InvObject, ItemData 생성 시점을 BeginPlay에서 PostInitializeComponents로 변경
+269dd6c0 - hagukin, Sat Jun 15 10:50:31 2024 +0900 : Fix: 아이템 루트 컴포넌트 변경 작업을 서버와 클라 모두에서 처리하도록 수정
+0da40c97 - hagukin, Fri Jun 14 18:12:20 2024 +0900 : Feat: GunItemData를 사용한 멀티플레이 상황에서의 총기 생성 동기화 기능 제작
+930a1941 - hagukin, Thu Jun 13 09:54:58 2024 +0900 : Feat: 무기 에셋 레퍼런스 주소 매크로로 분리
+11138ce9 - hagukin, Thu Jun 13 09:48:10 2024 +0900 : Fix: 리스폰 시 위젯 재생성이 안되는 오류 수정, 리스폰 시 SetIsOut 변경해주지 않아 발생하는 오류 수정
+1fda1ca2 - hagukin, Thu Jun 13 07:46:23 2024 +0900 : Chore: Copyright 표기 변경
+e621a045 - hagukin, Thu Jun 13 07:32:57 2024 +0900 : Feat: 총기 생성 시스템 기반 제작
+7d0418b6 - hagukin, Wed Jun 12 18:11:59 2024 +0900 : Feat: GunItem, GunPartComponent 제작
+6c616784 - hagukin, Sun Jun 9 02:13:49 2024 +0900 : Feat: 무기 리소스 카테고리화
+653d8dc9 - hagukin, Thu Jun 6 03:49:36 2024 +0900 : Feat: 리스폰 시스템 추가
+c9bb39a3 - hagukin, Tue Jun 4 02:10:03 2024 +0900 : Feat: 관전 시스템 추가
+65199478 - hagukin, Sun Jun 2 01:03:07 2024 +0900 : Feat: 사망 시 장착품 드랍 기능 추가
+c160ea32 - hagukin, Sun Jun 2 00:40:28 2024 +0900 : Fix: 장착중인 무기 그랩 가능한 문제 해결
+f730fb5c - hagukin, Sun Jun 2 00:29:20 2024 +0900 : Fix: StopDucking 충돌 처리 오류 수정
+f9baccea - hagukin, Sat Jun 1 23:46:10 2024 +0900 : Fix: 래그돌 레플리케이션 수정
+aab29c24 - hagukin, Sat Jun 1 23:36:34 2024 +0900 : Feat: 게임 오버 조건 추가
+b16ade4d - hagukin, Sat Jun 1 02:34:08 2024 +0900 : Feat: 사망 시 아이템 드랍 기능 추가, 래그돌화 시 타 컴포넌트 해제하도록 수정
+cc00a63a - hagukin, Fri May 31 22:46:52 2024 +0900 : Feat: 던전 프로토타입 제작
+109d3055 - hagukin, Fri May 31 02:19:15 2024 +0900 : FIx: 피직스 핸들 그랩 시 각속도 0으로 설정하도록 수정
+1e69e97c - hagukin, Fri May 31 02:09:20 2024 +0900 : Feat: 래그돌 레플리케이션
+f5ad2c90 - hagukin, Fri May 31 01:59:39 2024 +0900 : Refactor: 관전 및 래그돌 기능 함수로 분리
+04b35aa2 - hagukin, Fri May 31 01:51:44 2024 +0900 : Feat: 사망 로직 제작, 관전 모드 프로토타입 제작, 래그돌 추가
+33023dce - hagukin, Fri May 31 00:39:16 2024 +0900 : Feat: 패키지 테스트를 위해 그래픽 옵션 낮추는 기능 추가
+31b7be7f - hagukin, Thu May 30 22:06:38 2024 +0900 : Fix: 빌드 설정 변경 및 구조체 변수 초기화 수정
+9fdaccae - hagukin, Thu May 30 21:34:40 2024 +0900 : Fix: bReplicateUsingRegisteredSubObjectList 관련 에러 해결
+5e3dc85a - hagukin, Thu May 30 21:19:28 2024 +0900 : Fix: 컴포넌트 생성 시 SetIsReplicatedByDefault 사용하도록 변경
+d697703a - hagukin, Thu May 30 21:10:05 2024 +0900 : Feat: 레벨 트랜지션 기능 추가
+deaeb52b - hagukin, Thu May 30 19:01:27 2024 +0900 : Feat: async한 BTTask 프로토타입 제작
+92f8c65a - hagukin, Wed May 29 23:11:32 2024 +0900 : Fix: BaseItem이 기존 루트의 Transform을 그대로 사용한 채 액터를 스폰하는 문제 수정
+94276669 - hagukin, Wed May 29 22:33:10 2024 +0900 : Fix: BaseItem 인스턴스를 메모리에 로딩한 채 액터를 리인스턴싱 시 엔진이 멈추는 현상 해결
+37b61622 - hagukin, Wed May 29 20:41:22 2024 +0900 : Feat: 체력 시스템 추가
+30b23d66 - hagukin, Tue May 28 21:01:41 2024 +0900 : Fix: NavMesh 매뉴얼 리빌딩 삭제; 플러그인 업데이트
+da605bea - hagukin, Mon May 27 19:12:15 2024 +0900 : Test: Geometry brush와 Procgen dynamic navmesh 호환성 테스트
+34b70cae - hagukin, Sat May 18 06:35:51 2024 +0900 : Feat: ABaseItem의 구조적 수정, 소켓 탈부착 동기화 구현
+b9c110f6 - hagukin, Wed May 15 22:57:49 2024 +0900 : Feat: WieldItem 구현, EquipSystem 구현 및 네트워크 동기화
+07f453c2 - hagukin, Tue May 14 22:37:16 2024 +0900 : Feat: 총기 조준 모션 구현 및 네트워크 동기화
+1fd1ac86 - hagukin, Sat Apr 13 15:52:18 2024 +0900 : Feat: 프로토타입 룸 추가
+921638d9 - hagukin, Sat Apr 13 14:39:05 2024 +0900 : Chore: 플러그인 업데이트
+81e0c57f - hagukin, Fri Apr 12 10:52:28 2024 +0900 : Feat: SlotComponent 추가
+f08e80c5 - hagukin, Sat Mar 23 23:11:59 2024 +0900 : Feat: Sprint, Duck, Roll 레플리케이트 되도록 기능 수정
+666e981f - hagukin, Tue Mar 19 22:17:21 2024 +0900 : Feat: 캐릭터 Duck 기능 구현
+bf9c4642 - hagukin, Tue Mar 19 07:54:21 2024 +0900 : Feat: 캐릭터 Sprint 기능 구현
+715664e6 - hagukin, Tue Mar 19 07:16:33 2024 +0900 : Feat: 캐릭터 Roll 기능 구현
+05d70aac - hagukin, Sat Mar 16 21:03:45 2024 +0900 : Feat: 애니메이션 애셋 추가, 큰 파일에 대해 LFS 적용
+037df9e0 - hagukin, Sat Mar 16 18:22:51 2024 +0900 : Feat: Procgen 테스트 데이터 추가, AGameCharacter가 Navmesh 생성에 영향주지 않도록 수정
+034aec02 - hagukin, Mon Mar 11 19:03:07 2024 +0900 : Feat: 인벤토리 컴포넌트 네트워크 레플리케이션 구현
+7c05d208 - hagukin, Mon Mar 11 00:27:32 2024 +0900 : Fix: 클라이언트 인벤토리 UI 업데이트 되도록 수정
+48274834 - hagukin, Mon Mar 11 00:20:53 2024 +0900 : Fix: TArray 제대로 Replication 되도록 수정
+0d2420ec - hagukin, Mon Mar 11 00:02:24 2024 +0900 : Feat: 인벤토리 레플리케이션 기반 코드 제작, ReplicatedObject 제작
+40e4f3ce - hagukin, Sun Mar 10 22:15:23 2024 +0900 : Refactor: Subobject replication이 가능하도록 인벤토리 내부 데이터 저장 구조 변경
+0e49a505 - hagukin, Sat Mar 9 20:00:19 2024 +0900 : Feat: 인벤토리 그리드 UX 개선, GameCharacter가 InvObject 드랍 시 머즐 위치에 떨어지게끔 구조 개선
+f8291129 - hagukin, Sat Mar 9 17:42:57 2024 +0900 : Fix: ItemData 제대로 전달되도록 수정
+bcaf0fb6 - hagukin, Fri Mar 8 14:38:57 2024 +0900 : Feat: InvObject와 아이템 간의 데이터 연동 구현, 아이템 드랍 구현
+94380bb5 - hagukin, Tue Mar 5 17:57:23 2024 +0900 : Feat: 인벤토리 그리드 드래그 기능 제작
+9e72ef69 - hagukin, Mon Mar 4 04:34:59 2024 +0900 : Feat: 인벤토리에 배치된 아이템이 보이도록 기능 제작
+99ffc305 - hagukin, Sun Mar 3 00:21:45 2024 +0900 : Feat: 인벤토리 픽업 및 격자 배치 로직 제작
+c1379146 - hagukin, Sat Mar 2 05:33:22 2024 +0900 : Feat: 인벤토리 위젯 제작
+8d2d7049 - hagukin, Wed Feb 28 06:53:52 2024 +0900 : Feat: 멀티플레이 환경에서 동작하는 PhysicsHandle 추가, BaseItem과의 상호작용 구현
+6b27376a - hagukin, Wed Feb 28 04:45:50 2024 +0900 : Feat: BaseItem 매터리얼 검증 코드 추가 및 구조 개선
+8a006062 - hagukin, Wed Feb 28 04:45:12 2024 +0900 : Feat: 던전 생성 프로토타입 제작
+2a684db6 - hagukin, Sun Feb 25 12:39:50 2024 +0900 : Feat: 아이템이 다양한 UPrimitiveComponent를 콜리전 컴포넌트로 가질 수 있도록 개선
+ece9d12a - hagukin, Sun Feb 25 01:50:42 2024 +0900 : Feat: 멀티플레이 환경에서의 BaseItem Grab 기능 구현, 레플리케이션 코드 리팩토링
+5dded5f1 - hagukin, Thu Feb 22 23:50:15 2024 +0900 : FIx: 기울이기 과정에서의 충돌 판정 개선, 카메라 Clipping 현상 수정
+88269482 - hagukin, Thu Feb 22 20:08:00 2024 +0900 : Fix: 이동 애니메이션 블렌드스페이스 스무딩 적용
+8a36fed1 - hagukin, Thu Feb 22 17:51:28 2024 +0900 : Feat: 8-way 이동 애니메이션 추가, FPS 카메라 스프링암 추가
+e938cc8a - hagukin, Wed Feb 21 18:16:49 2024 +0900 : Fix: GetActorEyesViewPoint 기준 위치를 카메라 위치로 변경
+8ca2651f - hagukin, Wed Feb 21 01:21:11 2024 +0900 : Feat: 부위 별 콜리전 박스 추가, 몸 기울일 때 충돌 시 밀어내기 기능 추가
+46b33a13 - hagukin, Tue Feb 20 14:42:23 2024 +0900 : Feat: InputModifier를 사용해 이동 입력 처리 개선, 좌우 기울이기 기능 추가, 1인칭과 3인칭 모델을 통합
+27e14051 - hagukin, Mon Feb 12 07:47:02 2024 +0900 : Feat: Steam Online Subsystem 사용한 P2P 멀티플레이 구현, 메인메뉴 제작
+9b0a1786 - hagukin, Fri Feb 9 07:53:31 2024 +0900 : Feat: AI 움직임 개선, 커스텀 CharacterMovementComponent 제작
+98092418 - hagukin, Wed Feb 7 08:32:09 2024 +0900 : Feat: AI 뼈대 작성, ThirdPerson 에셋 추가
+347d7482 - hagukin, Sun Feb 4 20:22:19 2024 +0900 : Feat: BaseProjectile 레플리케이션 연동
+8096ec15 - hagukin, Sun Feb 4 02:07:55 2024 +0900 : Chore: 커스텀 빌드 엔진으로 프로젝트 마이그레이션
+c8c84bb0 - hagukin, Fri Feb 2 18:28:20 2024 +0900 : Feat: 1인칭 애니메이션, 크로스헤어 HUD 추가
+3822b8d0 - hagukin, Thu Feb 1 22:28:38 2024 +0900 : Feat: 투사체 충돌 적용, 수명 설정
+d9bc2bdb - hagukin, Thu Feb 1 00:39:52 2024 +0900 : Add: 아이템 객체 구조 설계, 투사체 발사 기능 제작
+caa4b714 - hagukin, Wed Jan 31 20:16:40 2024 +0900 : Add: 1인칭 카메라, 메쉬 추가
+fef29944 - hagukin, Wed Jan 31 19:12:57 2024 +0900 : 초기 커밋.
+1ed0fa19 - hagukin, Wed Jan 31 19:12:54 2024 +0900 : .gitattributes, .gitignore 및 README.md을(를) 추가합니다.

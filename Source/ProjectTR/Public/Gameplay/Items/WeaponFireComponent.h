@@ -52,6 +52,16 @@ public:
 	// 트리거 가능한지 확인
 	virtual bool Host_CanTrigger(class AGameCharacter* Invoker) override;
 
+protected:
+	// 총기의 경우 연사 시 매 격발 시점마다 인터벌 타이머도 갱신시킨다
+	// 이렇게 하지 않을 경우, 연사 처리 과정에도 actitemcomp의 인터벌이 '트리거 가능' 상태로 설정되어 버리기 때문에 
+	// (각 연사는 개별 트리거가 아니라 한번의 트리거로 처리되기 때문)
+	// 연사가 시작되고 얼마 지나고 나서 빠르게 다시 격발을 시도할 경우 총알이 곧바로 격발되는 일이 발생한다
+	// 이를 방지하기 위해 연사 동안에는 트리거 인터벌도 계속 루프시켜 재격발을 방지한다
+	// 이게 가능하려면 트리거 인터벌 = 연사 인터벌이라는 전제가 있어야 하기에, 이를 내부적으로 확인하고 오차 발생 시 로그를 남긴다
+	virtual bool Server_ShouldLoopIntervalTimer() const override;
+	virtual bool Client_ShouldLoopIntervalTimer() const override;
+
 /* 격발 목표 지점 예상 */
 protected:
 	// 주어진 지점에서 방향으로 LineTrace를 계산해 처음 감지되는 사격 가능한 게임 내 타깃의 거리를 계산해 CurrVirtualTargetRange에 저장한다
@@ -213,8 +223,8 @@ public:
 protected:
 	// 개별 충돌에 대한 로직을 작성한다; 즉 관통 시 매 충돌마다 처리해야 하는 로직들을 정의한다
 	// GunOwner 혹은 Shooter 인자가 nullptr인 경우 처리를 중단한다
-	void OnPerHitscanHitboxCollision(class UHitboxComponent* HitboxComp, FVector NormalImpulse, const FHitResult& Hit, class AGunItem* GunOwner, class AGameCharacter* Shooter, bool bIgnoreColVFX);
-	void OnPerHitscanObjectCollision(TWeakObjectPtr<class UPrimitiveComponent> ObjectComp, FVector NormalImpulse, const FHitResult& Hit, class AGunItem* GunOwner, class AGameCharacter* Shooter, bool bIgnoreColVFX);
+	void OnPerHitscanHitboxCollision(class UHitboxComponent* HitboxComp, const FHitResult& Hit, class AGunItem* GunOwner, class AGameCharacter* Shooter, bool bIgnoreColVFX);
+	void OnPerHitscanObjectCollision(const FHitResult& Hit, class AGunItem* GunOwner, class AGameCharacter* Shooter, bool bIgnoreColVFX);
 
 	// 히트스캔 격발 매 회에 대한 로직을 작성한다; 즉 관통 여부와 무관하게 한번만 처리되는 로직들을 정의한다
 	// 유효한 히트스캔 충돌이 없었다면 FirstValidHit는 nullptr가 전달된다

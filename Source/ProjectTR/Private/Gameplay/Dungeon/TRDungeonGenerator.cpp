@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/LevelStreamingDynamic.h"
 #include "Blueprint/UserWidget.h"
+#include "GameFramework/PlayerStart.h"
 #include "DungeonGraph.h"
 
 #include "Room.h"
@@ -96,23 +97,56 @@ void ATRDungeonGenerator::Server_SetAllPlayerLocationBackToSpawn()
 		AProjectTRGameModeBase* TRGM = Cast<AProjectTRGameModeBase>(World->GetAuthGameMode());
 		if (TRGM)
 		{
+			bool bSpawnFound = false;
+			TArray<const APlayerStart*> SpawnPoints;
 			const TArray<ATRPlayerController*>& Players = TRGM->GetPlayersConnected();
+			const UDungeonGraph* DG = GetRooms();
+			if (DG)
+			{
+				URoom* Entrance = GetRoomByIndex(0);
+				if (Entrance)
+				{
+					TArray<AActor*> RoomActors = GetAllActorsInRoom(Entrance);
+					for (const AActor* RoomActor : RoomActors)
+					{
+						if (RoomActor->IsA<APlayerStart>())
+						{
+							SpawnPoints.Add(Cast<APlayerStart>(RoomActor));
+							bSpawnFound = true;
+						}
+					}
+
+					if (SpawnPoints.Num() < Players.Num())
+					{
+						UE_LOG(LogTemp, Error, TEXT("Server_SetAllPlayerLocationBackToSpawn - Player start actor count is insufficient(%d)! Check spawn room."), SpawnPoints.Num());
+					}
+				}
+			}
 
 			// 모든 플레이어를 최초 시작지점으로 이동시킨다
+			int PlayerIdx = 0;
 			for (ATRPlayerController* PC : Players)
 			{
 				if (!IsValid(PC)) continue;
 				APawn* PlayerPawn = PC->GetPawnOrSpectator();
 				if (!PlayerPawn) continue;
 
-				AActor* PlayerStartActor = TRGM->FindPlayerStart(PC);
-				if (PlayerStartActor)
+				if (bSpawnFound && SpawnPoints.IsValidIndex(PlayerIdx) && SpawnPoints[PlayerIdx])
 				{
-					PlayerPawn->SetActorLocation(PlayerStartActor->GetActorLocation());
+					PlayerPawn->SetActorLocation(SpawnPoints[PlayerIdx]->GetActorLocation());
+					PlayerIdx++;
 				}
 				else
 				{
-					UE_LOG(LogTemp, Error, TEXT("Server_SetAllPlayerLocationBackToSpawn - Failed to find player start location(s). Aborting."));
+					AActor* PlayerStartActor = TRGM->FindPlayerStart(PC);
+					if (PlayerStartActor)
+					{
+						PlayerPawn->SetActorLocation(PlayerStartActor->GetActorLocation());
+					}
+					else
+					{
+						UE_LOG(LogTemp, Error, TEXT("Server_SetAllPlayerLocationBackToSpawn - Failed to find player start location(s). Aborting."));
+					}
 				}
 			}
 		}

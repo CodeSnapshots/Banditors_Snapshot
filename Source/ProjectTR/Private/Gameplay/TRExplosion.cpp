@@ -26,12 +26,12 @@ ATRExplosion::ATRExplosion()
     SetRootComponent(ExplRootComp);
 
     // 기본 VFX 컨픽 바인딩
-    if (!FxConfig)
+    if (!GunFxConfig)
     {
-        static ConstructorHelpers::FObjectFinder<UFxConfig> FXFinder(TEXT(ASSET_DEFAULT_FX));
+        static ConstructorHelpers::FObjectFinder<UGunFxConfig> FXFinder(TEXT(ASSET_DEFAULT_GUN_FX));
         if (FXFinder.Succeeded())
         {
-            FxConfig = FXFinder.Object;
+            GunFxConfig = FXFinder.Object;
         }
         else
         {
@@ -46,9 +46,9 @@ void ATRExplosion::PostInitializeComponents()
 
     if (HasAuthority())
     {
-        if (FxConfig)
+        if (GunFxConfig)
         {
-            ExplosionVFX = FxConfig->SearchNiagaraFromEnum(ExplosionInfo.ExplosionVFXEnum);
+            ExplosionVFX = GunFxConfig->SearchNiagaraFromEnum(ExplosionInfo.ExplosionVFXEnum);
         }
         float ScaleScalar = (ExplosionInfo.ExplosionRadius * ExplosionInfo.VFXRadiusConstant);
         ExplosionVFXScale = FVector(ScaleScalar, ScaleScalar, ScaleScalar);
@@ -96,8 +96,6 @@ void ATRExplosion::Server_Explode()
 
     for (AActor* Target : Targets)
     {
-        UPrimitiveComponent* PhysComp = nullptr;
-
         AGameCharacter* GameCharacter = Cast<AGameCharacter>(Target);
         ABaseItem* GameItem = Cast<ABaseItem>(Target);
 
@@ -128,7 +126,29 @@ void ATRExplosion::Server_Explode()
                         ExplosionInfo.ExplosionDamageType
                     );
                 }
-                PhysComp = Cast<UPrimitiveComponent>(GameCharacter->GetCapsuleComponent());
+
+                const FVector& KnockbackDirection = (GameCharacter->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+
+                // Linear하게 넉백 감소
+                float ExplRadius = FMath::Max(ExplosionInfo.ExplosionRadius, 1.f); // divide by zero 방지
+                float KnockbackStrength = FMath::Lerp<float>(
+                    0.f,
+                    ExplosionInfo.BaseImpactStrength,
+                    (ExplRadius - FMath::Min(GetDistanceTo(GameCharacter), ExplRadius)) / ExplRadius
+                );
+
+                // 자가 넉백 배수
+                if (GameCharacter == GetInstigator())
+                {
+                    KnockbackStrength *= ExplosionInfo.InstigatorImpactMult;
+                }
+
+                GameCharacter->LaunchCharacter(
+                    KnockbackDirection * KnockbackStrength * TR_EXPL_KNOCKBACK_CONST_FOR_CHARACTERS,
+                    false,
+                    false
+                );
+
 #if WITH_EDITOR
                 if (CVarShowDebugShapes.GetValueOnGameThread())
                 {
@@ -138,7 +158,18 @@ void ATRExplosion::Server_Explode()
             }
             else if (GameItem)
             {
-                PhysComp = GameItem->GetPhysComponent();
+                UPrimitiveComponent* PhysComp = GameItem->GetPhysComponent();
+                if (PhysComp && ExplosionInfo.bApplyImpactOnExplosion && ExplosionInfo.ExplosionTargetType.Contains(PhysComp->GetCollisionObjectType()))
+                {
+                    PhysComp->AddRadialImpulse(
+                        GetActorLocation(), 
+                        ExplosionInfo.ExplosionRadius, 
+                        ExplosionInfo.BaseImpactStrength,
+                        ERadialImpulseFalloff::RIF_Linear,
+                        true
+                    );
+                }
+
 #if WITH_EDITOR
                 if (CVarShowDebugShapes.GetValueOnGameThread())
                 {
@@ -149,13 +180,6 @@ void ATRExplosion::Server_Explode()
             else
             {
                 // NOTE: 현재로는 캐릭터와 아이템에만 폭발 로직을 적용
-            }
-
-            // 공통 물리 로직
-            // 적용 대상에게만 사용
-            if (PhysComp && ExplosionInfo.bApplyImpactOnExplosion && ExplosionInfo.ExplosionTargetType.Contains(PhysComp->GetCollisionObjectType()))
-            {
-                PhysComp->AddRadialImpulse(GetActorLocation(), ExplosionInfo.ExplosionRadius, ExplosionInfo.BaseImpactStrength, static_cast<ERadialImpulseFalloff>(ExplosionInfo.ImpactFalloffType), true);
             }
         }
     }

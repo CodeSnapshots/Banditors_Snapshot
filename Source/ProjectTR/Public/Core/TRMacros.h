@@ -14,25 +14,39 @@
 
 /* Log */
 #define TR_LOGKEY_DUNGEONSTAT 16
-#define TR_LOGKEY_PLAYERSPEED 18
+#define TR_LOGKEY_PLAYERMOVEMENT 18
+#define TR_LOGKEY_CAMERA_ROT 20
 
 /* System */
 #define TR_MAX_PLAYER_COUNT 5
 #define TR_PROJ_MOVEMENT_TICKRATE 0.033f
 #define TR_PROJ_MOVEREPL_RATE 20
+#define TR_PROJ_PREDICTION_ALLOWANCE_DEGREE 10.f
 #define TR_BOT_MOVECOMP_TICKRATE 0.0167f
+#define TR_BOT_MOVECOMP_NAVAGENTRADIUS_RATIO_TO_CAPSULE 1.5f
 #define TR_DEFAULT_CONTROLLER_PITCH_SYNC_RATE 0.066f
+#define TR_CAM_DEFAULT_FOV 105.0f
 
 /* Niagara */
 #define TR_NIAGARA_MAX_HIT_VFX_CNT 32
 #define TR_NIAGARA_MAX_TRACER_VFX_CNT 32
 #define TR_NIAGARA_MAX_EXPLOSION_VFX_CNT 32
 
+/* Material */
+// Scalar
+#define TR_MAT_HIT_EFFECT_START_TIME "HitFxStart"
+#define TR_MAT_HIT_EFFECT_PLAY_DURATION "HitFxLen"
+#define TR_MAT_HIT_EFFECT_STRENGTH "HitFxStrength"
+
+// Vector
+#define TR_MAT_HIT_EFFECT_COLOR "HitFxColor"
+
 /* General */
 #define TR_LONG_LINETRACE_DIST 100000.f
 #define TR_DIST_CLOSE_TO_PLAYER_HEIGHT 200.f
 #define TR_DEFAULT_HITSCAN_RECURSION 32
 #define TR_MAX_HITSCAN_RECURSION 64
+#define TR_AMMO_FULL -1
 
 /* Gameplay */
 #define TR_GUN_LONG_DIST 2000.0f
@@ -41,6 +55,8 @@
 #define TR_MAX_MULTIKEY_LOCKED_DOORS_PER_LEVEL 3
 
 #define TR_MAX_SHOP_ITEM_CNT 16
+
+#define TR_EXPL_KNOCKBACK_CONST_FOR_CHARACTERS 1.2
 
 /* Collision Channels */
 #define ECC_Projectile ECollisionChannel::ECC_GameTraceChannel1
@@ -58,12 +74,16 @@
 #define ECC_PlayerPawn ECollisionChannel::ECC_GameTraceChannel13
 #define ECC_BotPawn ECollisionChannel::ECC_GameTraceChannel14
 #define ECC_SearchOuterHitbox ECollisionChannel::ECC_GameTraceChannel15
+#define ECC_BreakableDecoration ECollisionChannel::ECC_GameTraceChannel16
+#define ECC_BreakableCollision ECollisionChannel::ECC_GameTraceChannel17
+#define ECC_OverlappableInteractive ECollisionChannel::ECC_GameTraceChannel18
 
 /******************** Level ********************/
 #define LVL_DUNGEON_ASSET "/Game/Game/Maps/LVL_Dungeon"
 
 /********************* FX **********************/
-#define ASSET_DEFAULT_FX "/Game/Assets/FxConfig.FxConfig"
+#define ASSET_DEFAULT_GUN_FX "/Game/Assets/GunFxConfig.GunFxConfig"
+#define ASSET_DEFAULT_TIER_FX "/Game/Assets/TierFxConfig.TierFxConfig"
 #define ASSET_DEFAULT_CAMSHAKE "/Game/Assets/CamShakeConfig.CamShakeConfig"
 #define ASSET_DEFAULT_PROJECTILE "/Game/Assets/ProjectileConfig.ProjectileConfig"
 #define ASSET_DEFAULT_BULLET "/Game/Assets/BulletConfig.BulletConfig"
@@ -86,6 +106,9 @@
 #define STENCIL_WHITE 0
 #define STENCIL_RED 2
 
+/* UI Prediction */
+#define UI_PRED_AMMO_REFRESH_DELAY 0.166f
+
 /* 인벤토리 빈칸 식별 id */
 #define INV_EMPTY 0
 
@@ -93,7 +116,7 @@
 #define MAX_REFR_DIFF 100
 
 /* 인벤토리 격자 당 픽셀 크기 */
-#define INV_GRID_PIXEL 72.0f
+#define INV_GRID_PIXEL 72
 
 /* 인벤토리 아이템 아이콘 생성 시 사용할 베이스 매터리얼 */
 #define ASSET_DEFAULT_ICON_MATERIAL "/Game/VFX/M_IconObject.M_IconObject"

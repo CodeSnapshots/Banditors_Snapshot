@@ -2,7 +2,9 @@
 
 
 #include "Characters/Components/FPSCameraComponent.h"
+#include "Core/TRMacros.h"
 
 UFPSCameraComponent::UFPSCameraComponent()
 {
+	FieldOfView = TR_CAM_DEFAULT_FOV;
 }

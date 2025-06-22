@@ -78,6 +78,9 @@ protected:
 	// 구르기
 	void Roll(const FInputActionValue& Value);
 
+	// 점프 가능 시점 판정 로직 수정
+	bool CanJumpInternal_Implementation() const override;
+
 /* 물체 상호작용 */
 	// 기본 상호작용
 	void Interact(const FInputActionValue& Value);
@@ -159,6 +162,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Camera")
 	TObjectPtr<class UFPSCameraComponent> FPSCamera = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Camera")
+	TObjectPtr<class USpringArmComponent> FPSSpringArm = nullptr;
+
 	// 3인칭 카메라
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Camera")
 	TObjectPtr<class UFPSCameraComponent> TPSCamera = nullptr;
@@ -225,12 +231,6 @@ protected:
 #pragma endregion
 
 #pragma region /** Gameplay */
-/* Sliding */
-protected:
-	// 슬라이딩 여부
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
-	bool bIsSliding = false;
-	
 /* Interaction */
 protected:
 	// 리치 거리
@@ -309,7 +309,7 @@ protected:
 private:
 /* 에임 타깃 UI */
 	// 주기마다 업데이트
-	float Local_AimedTargetUIUpdateRate = 0.1f;
+	float Local_AimedTargetUIUpdateRate = 0.066f;
 
 	FTimerHandle AimedTargetUITimer;
 	FCollisionQueryParams AimedTargetUICollisionParams;

@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SystemActors/PlayerTriggerVolume.h"
+#include "SystemActors/CharacterTriggerVolume.h"
 #include "LobbyFallVolume.generated.h"
 
 /**
  * 오버랩 시 스폰 위치로 이동시킨다
  */
 UCLASS()
-class PROJECTTR_API ALobbyFallVolume : public APlayerTriggerVolume
+class PROJECTTR_API ALobbyFallVolume : public ACharacterTriggerVolume
 {
 	GENERATED_BODY()
 	
